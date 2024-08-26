@@ -1,32 +1,35 @@
 import json
 import os
-import argparse
+import parsing
 import constants
 
-class _UpdateValueAction(argparse.Action):
-    def __init__(self, 
-                 option_strings, 
-                 dest, 
-                 type,
-                 data = None, 
-                 nargs = None, 
-                 **kwargs):
-        super().__init__(option_strings, dest, type=type, nargs=nargs, **kwargs)
-        
-        self.data = data
+class _MenuAction(parsing.Action):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
-        key = self.dest
-        
-        if self.type is bool: 
-           self.data[key] = not self.map_ref[key]     
+        if "current_menu" not in kwargs:
+            self.current_menu = None
         else:
-            self.data[key] = values
-    
-class MasterConfig():
-    def __init__(self, config_dir):
+            self.current_menu = kwargs["current_menu"]
+
+    def __call__(self, argument, values):
+        key = argument.name
+        
+        if issubclass(argument.argument_type, MasterMenu): 
+            self.current_menu.sub_menu = values[0]
+            pass     
+        elif argument.argument_type is bool:
+            self.current_menu.config_data[key] = not self.current_menu.config_data[key]
+        else:
+            self.current_menu.config_data[key] = values[0]
+
+class MasterMenu():
+    def __init__(self, config_dir, selected_config=constants.CONFIG_DEFAULT_FILE):
         self.config_dir = config_dir
-        self.config = {}
+        self.sub_menu = None
+        
+        self.config_data = self.load_config(selected_config)
+        self.parser = self.prepare_parser()
 
     def get_load_options(self):
         files = []
@@ -39,16 +42,21 @@ class MasterConfig():
         
         return files
 
-    def load(self, config_file):
+    def load_config(self, config_file):
         """Loads configuration data from the specified file."""
-        if os.path.exists(self.config_file):
-            with open(self.config_file, 'r') as file:
-                self.config_data = json.load(file)
+        config_path = os.path.join(self.config_dir, config_file)
+    
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as file:
+                return json.load(file)
+        elif config_file is not constants.CONFIG_DEFAULT_FILE:
+            print(f"No config file found at {config_path}, loading defaults.")
+            return self.load_defaults()
         else:
-            print(f"No config file found at {self.config_file}, loading defaults.")
-            self.set_defaults()
+            print("Default file could not be loaded.")
+            return {}
 
-    def save(self, config_file):
+    def save_config(self, config_file):
         """Saves the current configuration data to the specified file."""
         with open(config_file, 'w') as file:
             json.dump(self.config_data, file, indent=4)
@@ -58,36 +66,60 @@ class MasterConfig():
             print(f"{key}: {value}")   
         print()
 
+    def get_config_entry(self, key):
+        return self.config_data[key]
+
+    def get_sub_menu(self):
+        return self.sub_menu
+    
+    def load_defaults(self):
+        return self.load_config(constants.CONFIG_DEFAULT_FILE)
+
     def prepare_parser(self):
-        parser = argparse.ArgumentParser(prog=constants.USAGE_PROGRAM_NAME,
-                                     description=constants.USAGE_PROGRAM_DESC)
+        parser = parsing.Parser()
 
         for argument, value in self.config_data.items():
             arg_type = type(value)
 
             parser.add_argument(
-                argument,
-                dest    = argument, 
+                name    = argument,
+                action  = _MenuAction,
+                argument_type = arg_type,
                 nargs   = 0 if arg_type is bool else 1,
-                help    = "",
-                type    = arg_type,
-                action  = _UpdateValueAction,
-                data    = self.config_data)
+                current_menu = self)
+        
+        return parser
+        
 
 
-
-class HyperParameterConfig(MasterConfig):
-    def __init__(self, config_dir=constants.CONFIG_PATH_HYPER_PARAMETERS):
+class MainMenu(MasterMenu):
+    def __init__(self, config_dir=constants.CONFIG_PATH_MAIN):
         super().__init__(config_dir)
-        self.config_data = {
-        "batch_size":       False,
-        "amount_epochs":    64,
-        }
-    
+        # self.config_data = {
+        #     "print_this":    False,
+        #     "print_that":    False,
+        # }
 
-class DebugConfig(MasterConfig):
+class DebugMenu(MasterMenu):
     def __init__(self, config_dir=constants.CONFIG_PATH_DEBUG):
+        super().__init__(config_dir)
         self.config_data = {
             "print_this":    False,
             "print_that":    False,
+        }
+
+class PTGModelMenu(MasterMenu):
+    def __init__(self, config_dir=constants.CONFIG_PATH_HYPER_PARAMETERS):
+        super().__init__(config_dir)
+        self.config_data = {
+            "batch_size":       False,
+            "amount_epochs":    64,
+        }
+
+class HyperParameterMenu(MasterMenu):
+    def __init__(self, config_dir=constants.CONFIG_PATH_HYPER_PARAMETERS):
+        super().__init__(config_dir)
+        self.config_data = {
+            "batch_size":       False,
+            "amount_epochs":    64,
         }

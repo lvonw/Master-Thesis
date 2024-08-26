@@ -1,5 +1,7 @@
 import argparse
 import enum
+import configuration
+import parsing
 
 class EnumAction(argparse.Action):
     """
@@ -27,57 +29,56 @@ class EnumAction(argparse.Action):
         value = self._enum._value2member_map_[values[0]]
         setattr(namespace, self.dest, value)
 
-def prepare_arg_parser():
-    pass
-    # parser = argparse.ArgumentParser(prog=constants.USAGE_PROGRAM_NAME,
-    #                                  description=constants.USAGE_PROGRAM_DESC)
-    # parser.add_argument("-a",
-    #                     "--ask",
-    #                     dest="question", 
-    #                     nargs=1,
-    #                     help=constants.USAGE_ASK,
-    #                     type=str)
-    # parser.add_argument("-db",
-    #                     "--database",
-    #                     dest="database",
-    #                     default=constants.DEFAULT_DATABASE,
-    #                     nargs=1,
-    #                     help=constants.USAGE_DATABASE,
-    #                     type=constants.LoaderMethod,
-    #                     action=EnumAction) 
-    # parser.add_argument("-m",
-    #                     "--model",
-    #                     dest="model",
-    #                     default=constants.DEFAULT_MODEL,
-    #                     nargs=1,
-    #                     help=constants.USAGE_MODEL,
-    #                     type=constants.ModelMethod,
-    #                     action=EnumAction) 
-    # parser.add_argument("-g",
-    #                     "--gpt",
-    #                     dest="gpt", 
-    #                     nargs=1,
-    #                     default=constants.DEFAULT_GPT,
-    #                     choices=['gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-3.5-turbo', 'gpt-4-32k-0613', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4', 'gpt-4-1106-preview'],
-    #                     help=constants.USAGE_GPT) 
-    # parser.add_argument("-i", 
-    #                     "--init", 
-    #                     dest="init",
-    #                     action="store_true",
-    #                     help=constants.USAGE_INIT)
-    # parser.add_argument("-v", 
-    #                     "--validate", 
-    #                     dest="validate",
-    #                     action="store_true",
-    #                     help=constants.USAGE_INIT)
-    # parser.add_argument("-cv",
-    #                     "--closest-vectors",
-    #                     dest="cv",
-    #                     action="store_true",
-    #                     help=constants.USAGE_CLOSEST_V)
-    # parser.add_argument("-c",
-    #                     "--cli",
-    #                     dest="cli",
-    #                     action="store_true",
-    #                     help=constants.USAGE_CLI)
-    # return parser
+class _CLIAction(parsing.Action):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        if "cli" not in kwargs:
+            self.cli = None
+        else:
+            self.cli = kwargs["cli"]
+
+    def __call__(self, argument, values):
+        key = argument.name
+        
+        if key == "exit":
+            self.cli.quit_loop = True
+            
+
+class CLI():
+    def __init__(self):
+        self.nav_root = configuration.MainMenu()
+        
+        self.nav_stack = [self.nav_root]
+        self.quit_loop = False
+
+        self.cli_parser = parsing.Parser()
+        self.cli_parser.add_argument(
+                name    = "exit",
+                action  = _CLIAction,
+                nargs   = 0,
+                cli = self)
+        
+
+        self.__add_cli_controls(self.nav_root.parser)
+
+    def __add_cli_controls(self, parser):
+        parser.decorate(self.cli_parser)
+
+    def cli_loop(self):
+        while not self.quit_loop:
+            self.nav_stack[-1].print()
+            # print cli things
+
+            user_input = input(">>> ")
+
+            self.nav_stack[-1].parser.parse(user_input)
+
+            sub_menu = self.nav_stack[-1].get_sub_menu()
+            if sub_menu is not None:
+                self.__add_cli_controls(sub_menu)
+                self.nav_stack.append(sub_menu)
+
+
+
+

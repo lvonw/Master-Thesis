@@ -1,0 +1,5 @@
+{
+    "test": "test",
+    "test_int": 123,
+    "test_bool": false
+}
