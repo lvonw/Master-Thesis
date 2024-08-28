@@ -26,7 +26,7 @@ class Configuration():
                 if name == configuration_name:
                     return configuration
 
-    def get_load_options(self):
+    def print_load_options(self):
         files = []
 
         for file in os.listdir(self.directory):
@@ -35,7 +35,7 @@ class Configuration():
                 
                 files.append(file)
         
-        return files
+        print (files)
 
     def load_defaults(self):
         self.load(constants.CONFIG_DEFAULT_FILE)
@@ -52,12 +52,12 @@ class Configuration():
             for section_name, section_configuration in loaded_data.items():  
                 self.add_section(section_name, section_configuration)
 
-
         elif config_file is not constants.CONFIG_DEFAULT_FILE:
             print(f"No config file found at {config_path}, loading defaults.")
             loaded_data = self.load_defaults()
         else:
             print("Default file could not be loaded.")
+            self.print_load_options()
             return
 
     def save(self, config_file=constants.CONFIG_DEFAULT_FILE):

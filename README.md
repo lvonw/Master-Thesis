@@ -7,9 +7,12 @@ Leopold von Wendt
 
 ## Datasets
 
+For a closer inspection of each dataset the free and open source program qgis
+is highly recommended.
+
 | Field                  | Dataset  | Source                                         |
 | ---------------------- | -------  | ---------------------------------------------- |
-| Topography             | SRTM GL1 | NASA                                           |
+| Topography             | SRTM     | NASA, SRTM GL1                                 |
 | Geology                | GLiM     | Hartmann Moosdorf 2012 Coarse Raster           |
 | Climate                | Climate  | Peel et al. 2007 Koeppen-Geiger Model          |
 | Soil                   | DSMW     | Land and Water Development Division, FAO, Rome |

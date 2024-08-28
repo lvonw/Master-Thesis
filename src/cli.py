@@ -1,6 +1,7 @@
 import menues
 import parsing
 
+from debug import Printer
 
 class _CLIAction(parsing.Action):
     def __init__(self, **kwargs):
@@ -47,6 +48,8 @@ class CLI():
         self.cli_parser.add_argument(
                 name    = "load",
                 nargs   = 1)
+        self.cli_parser.add_argument(
+                name    = "options")
         
         self.__add_cli_controls(self.nav_root.parser)
 
@@ -63,11 +66,14 @@ class CLI():
         print (nav_stack_string)
         print ("---")
 
+    def print(self):
+        self.__print_nav_stack()
+
     def cli_loop(self):
         while not self.quit_loop:
             self.nav_stack[-1].print()
             # print cli things
-            self.__print_nav_stack()
+            self.print()
             user_input = input(">>> ")
 
             parser = self.nav_stack[-1].parser
@@ -84,8 +90,10 @@ class CLI():
                 self.configuration.load(parser.get_and_set_false("load"))
             elif parser["save"]:
                 self.configuration.save(parser.get_and_set_false("save"))
+            elif parser.get_and_set_false("options"):
+                self.configuration.print_load_options()
             elif parser.get_and_set_false("exit"):
-                self.self.quit_loop = True
+                self.quit_loop = True
 
 
             

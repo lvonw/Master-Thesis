@@ -7,14 +7,33 @@ import enum
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Config Paths
-CONFIG_PATH = os.path.join(PROJECT_PATH, "cfg")
+CONFIG_PATH         = os.path.join(PROJECT_PATH, "cfg")
 CONFIG_DEFAULT_FILE = "default.json"
 
 # Data Paths
-DATA_PATH_MASTER = os.path.join(PROJECT_PATH, "data")
+DATA_PATH_MASTER    = os.path.join(PROJECT_PATH, "data")
+DATA_PATH_DEM       = os.path.join(DATA_PATH_MASTER, "DEMs")
+DATA_PATH_DEM_LIST  = os.path.join(DATA_PATH_DEM, "SRTM_GL1_list.txt")
+DATA_PATH_DEMS      = os.path.join(DATA_PATH_DEM, "SRTM_GL1_srtm")
+DATA_PATH_GLIM      = os.path.join(DATA_PATH_MASTER, 
+                                   "GLiM", 
+                                   "hartmann-moosdorf_2012", 
+                                   "glim_wgs84_0point5deg.txt.asc")
+DATA_PATH_CLIMATE   = os.path.join(DATA_PATH_MASTER, 
+                                   "Climate", 
+                                   "peel-et-al_2007", 
+                                   "koeppen_wgs84_0point1deg.txt.asc")
+DATA_PATH_DSMW      = os.path.join(DATA_PATH_MASTER, 
+                                   "DSMW",
+                                   "dsmw-fao",
+                                   "dmsw_wgs84_0point08deg.txt.asc")
+DATA_PATH_GTC      = os.path.join(DATA_PATH_MASTER, 
+                                   "GTC",
+                                   "Iwahashi_etal_2018",
+                                   "GlobalTerrainClassification_Iwahashi_etal_2018.tif")
 
 # Model Paths
-MODEL_PATH_MASTER = os.path.join(PROJECT_PATH, "models")
+MODEL_PATH_MASTER   = os.path.join(PROJECT_PATH, "models")
 
 
 # =============================================================================
@@ -56,7 +75,7 @@ BACKGROUND_DARK_GRAY    = '\033[100m'
 # Enums
 # =============================================================================
 class LogLevel(enum.Enum):
-    TEMP        = ("TEMP", COLOUR_GRAY)
-    INFO        = ("INFO", COLOUR_BLUE)
-    WARNING     = ("WARNING", COLOUR_YELLOW)
-    ERROR       = ("ERROR", COLOUR_RED) 
+    TEMP        = ("TEMP",      COLOUR_GRAY)
+    INFO        = ("INFO",      COLOUR_BLUE)
+    WARNING     = ("WARNING",   COLOUR_YELLOW)
+    ERROR       = ("ERROR",     COLOUR_RED) 
