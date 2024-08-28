@@ -1,0 +1,14 @@
+{
+    "Main": {
+        "test": "test",
+        "test_int": 123,
+        "test_bool": false
+    },
+    "Debug": {
+        "Schmebug": "ugug"
+    },
+    "PTG Model": {
+    },
+    "Hyperparameters": {
+    }
+}

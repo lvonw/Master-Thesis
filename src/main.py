@@ -1,7 +1,10 @@
 from cli import CLI
+from configuration import Configuration
 
 def main():
-    cli = CLI();
+    config = Configuration()
+    config.load_defaults()
+    cli = CLI(config);
     cli.cli_loop();
     
 

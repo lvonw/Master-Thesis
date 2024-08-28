@@ -1,33 +1,6 @@
-import argparse
-import enum
-import configuration
+import menues
 import parsing
 
-class EnumAction(argparse.Action):
-    """
-    Argparse action for handling Enums
-    """
-    def __init__(self, **kwargs):
-        # Pop off the type value
-        enum_type = kwargs.pop("type", None)
-
-        # Ensure an Enum subclass is provided
-        if enum_type is None:
-            raise ValueError("type must be assigned an Enum when using EnumAction")
-        if not issubclass(enum_type, enum.Enum):
-            raise TypeError("type must be an Enum when using EnumAction")
-
-        # Generate choices from the Enum
-        kwargs.setdefault("choices", tuple(e.value for e in enum_type))
-
-        super(EnumAction, self).__init__(**kwargs)
-
-        self._enum = enum_type
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        # Convert value back into an Enum
-        value = self._enum._value2member_map_[values[0]]
-        setattr(namespace, self.dest, value)
 
 class _CLIAction(parsing.Action):
     def __init__(self, **kwargs):
@@ -43,41 +16,80 @@ class _CLIAction(parsing.Action):
         
         if key == "exit":
             self.cli.quit_loop = True
-            
 
-class CLI():
-    def __init__(self):
-        self.nav_root = configuration.MainMenu()
+class _FlowControlAction(_CLIAction):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def __call__(self, argument, values):
+        key = argument.name
         
+        if key == "exit":
+            self.cli.quit_loop = True
+            
+class CLI():
+    def __init__(self, configuration, flow_control={}):
+        self.configuration = configuration
+
+        self.nav_root = menues.MainMenu(configuration)
         self.nav_stack = [self.nav_root]
+
         self.quit_loop = False
 
         self.cli_parser = parsing.Parser()
         self.cli_parser.add_argument(
-                name    = "exit",
-                action  = _CLIAction,
-                nargs   = 0,
-                cli = self)
+                name    = "exit")
+        self.cli_parser.add_argument(
+                name    = "back")
+        self.cli_parser.add_argument(
+                name    = "save",
+                nargs   = 1)
+        self.cli_parser.add_argument(
+                name    = "load",
+                nargs   = 1)
         
-
         self.__add_cli_controls(self.nav_root.parser)
 
     def __add_cli_controls(self, parser):
         parser.decorate(self.cli_parser)
 
+    def __print_nav_stack(self):
+        nav_stack_string = ""
+        for i in range(len(self.nav_stack)-1):
+            nav_stack_string += self.nav_stack[i].title
+            nav_stack_string += ">"
+        nav_stack_string += self.nav_stack[-1].title
+
+        print (nav_stack_string)
+        print ("---")
+
     def cli_loop(self):
         while not self.quit_loop:
             self.nav_stack[-1].print()
             # print cli things
-
+            self.__print_nav_stack()
             user_input = input(">>> ")
 
-            self.nav_stack[-1].parser.parse(user_input)
+            parser = self.nav_stack[-1].parser
+            parser.parse(user_input)
 
-            sub_menu = self.nav_stack[-1].get_sub_menu()
-            if sub_menu is not None:
-                self.__add_cli_controls(sub_menu)
-                self.nav_stack.append(sub_menu)
+            chosen_sub_menu = self.nav_stack[-1].get_and_reset_sub_menu()
+            
+            if chosen_sub_menu is not None:
+                self.__add_cli_controls(chosen_sub_menu.parser)
+                self.nav_stack.append(chosen_sub_menu)
+            elif parser.get_and_set_false("back") and len(self.nav_stack) > 1 :
+                self.nav_stack.pop()
+            elif parser["load"]:
+                self.configuration.load(parser.get_and_set_false("load"))
+            elif parser["save"]:
+                self.configuration.save(parser.get_and_set_false("save"))
+            elif parser.get_and_set_false("exit"):
+                self.self.quit_loop = True
+
+
+            
+            
 
 
 
