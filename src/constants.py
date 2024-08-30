@@ -43,6 +43,7 @@ CONFIGURATION_MAIN              = "Main"
 CONFIGURATION_DEBUG             = "Debug"
 CONFIGURATION_HYPER_PARAMETERS  = "Hyperparameters"
 CONFIGURATION_PTG_MODEL         = "PTG Model"
+CONFIGURATION_DATA              = "Data"
 
 # =============================================================================
 # Terminal Formatting

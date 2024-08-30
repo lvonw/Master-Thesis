@@ -107,6 +107,7 @@ class MainMenu(_MasterMenu):
                          sub_menues = [
                             DebugMenu(configuration),
                             PTGModelMenu(configuration),
+                            DataMenu(configuration),
                          ])
 
 class DebugMenu(_MasterMenu):
@@ -128,6 +129,14 @@ class PTGModelMenu(_MasterMenu):
 class HyperParameterMenu(_MasterMenu):
     def __init__(self, configuration):
         super().__init__(constants.CONFIGURATION_HYPER_PARAMETERS,
+                         configuration,
+                         sub_menues = [
+                             
+                         ])
+        
+class DataMenu(_MasterMenu):
+    def __init__(self, configuration):
+        super().__init__(constants.CONFIGURATION_DATA,
                          configuration,
                          sub_menues = [
                              

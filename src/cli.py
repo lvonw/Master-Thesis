@@ -71,8 +71,8 @@ class CLI():
 
     def cli_loop(self):
         while not self.quit_loop:
+            
             self.nav_stack[-1].print()
-            # print cli things
             self.print()
             user_input = input(">>> ")
 
