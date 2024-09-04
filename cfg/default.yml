@@ -1,0 +1,57 @@
+Main:
+  description: |-
+    Main Menu of the program, here you can define the behaviour
+    @author Leopold von Wendt
+  Configurations:
+    train:
+      value: true
+      usage: ""
+    validate:
+      value: false
+      usage: ""
+    test:
+      value: false
+      usage: ""
+    generate:
+      value: false
+      usage: ""
+
+Debug:
+  description: ""
+  Configurations:
+    train:
+      value: true
+      usage: ""
+
+Data:
+  description: "Here you can configure everything regarding the used data"
+  Configurations:
+    GLiM:
+      value: true
+      usage: ""
+    climate:
+      value: false
+      usage: ""
+    DSMW:
+      value: false
+      usage: ""
+    GTC:
+      value: false
+      usage: ""
+    Data_Split:
+      value: 1.0
+      usage: ""
+
+PTG_Model: 
+  description: ""
+  Configurations:
+    train:
+      value: true
+      usage: ""
+
+Hyperparameters:
+  description: ""
+  Configurations:
+    train:
+      value: true
+      usage: ""

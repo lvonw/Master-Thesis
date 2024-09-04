@@ -1,1 +1,0 @@
-aws s3 cp s3://raster/SRTM_GL1/ ./data/DEMs/ --recursive --endpoint-url https://opentopography.s3.sdsc.edu --no-sign-request

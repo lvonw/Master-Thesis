@@ -1,8 +1,16 @@
 {
     "Main": {
-        "test": "test",
-        "test_int": 123,
-        "test_bool": false
+        "description":"",
+        "Settings":{
+            "train": {
+                "Setting": true,
+                "Usage": ""
+            },
+            "validate": false,
+            "test": false,
+            "test_bool": false
+        }
+        
     },
     "Debug": {
         "Schmebug": "ugug"
@@ -10,7 +18,7 @@
     "Data": {
         "Schmebug": "ugug"
     },
-    "PTG Model": {
+    "PTG_Model": {
     },
     "Hyperparameters": {
     }

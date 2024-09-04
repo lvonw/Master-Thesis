@@ -60,16 +60,18 @@ class Parser():
     def __init__(self):
         self.argument_map = {}
         self.value_map = {}
-        self.super_parser = None
+        self.super_parsers = []
 
     def __getitem__(self, key):
         if key in self.value_map:
             return self.value_map[key]
-        elif self.is_decorated() and key in self.super_parser.value_map:
-            return self.super_parser.value_map[key]
-
+        
+        for super_parser in self.super_parsers:
+            if key in super_parser.value_map:
+                return super_parser.value_map[key]  
+              
         return None
-    
+
     def __setitem__(self, key, value):
         self.value_map[key] = value
 
@@ -79,9 +81,13 @@ class Parser():
         if key in self.value_map:
             value = self.value_map[key]
             self.value_map[key] = False
-        elif self.is_decorated() and key in self.super_parser.value_map:
-            value = self.super_parser.value_map[key]
-            self.super_parser.value_map[key] = False
+        
+        elif self.is_decorated():
+            for super_parser in self.super_parsers:
+                if key in super_parser.value_map:
+                    value = super_parser.value_map[key]
+                    super_parser.value_map[key] = False
+                    return value
 
         return value
         
@@ -108,11 +114,11 @@ class Parser():
     def contains_argument(self, argument):
         return argument in self.argument_map
     
-    def decorate(self, parser):
-        self.super_parser = parser
+    def decorate(self, super_parser):
+        self.super_parsers.append(super_parser)
 
     def is_decorated(self):
-        return not (self.super_parser is None)
+        return len(self.super_parsers)
 
     def parse(self, user_input):
         user_input = user_input.lower()
@@ -125,9 +131,12 @@ class Parser():
         argument = None
         if self.contains_argument(split_input[0]):
             argument = self.argument_map[split_input[0]]
-        elif self.is_decorated() and self.super_parser.contains_argument(split_input[0]):
-            argument = self.super_parser.argument_map[split_input[0]]
-        else: 
+        elif self.is_decorated():
+            for super_parser in self.super_parsers:
+                if super_parser.contains_argument(split_input[0]):
+                    argument = super_parser.argument_map[split_input[0]]
+
+        if argument is None:  
             print("argument could not be found")
             return
 

@@ -13,7 +13,30 @@ class DataAccessor():
         
         return dataset
     
-
     def open_DEM(name):
         return DataAccessor.open_gdal_dataset(
              os.path.join(constants.DATA_PATH_DEMS, name))
+    
+    def compile_DEM_list():
+        files = []          
+        with os.scandir(constants.DATA_PATH_DEMS) as entries:
+            for entry in entries:
+                if entry.is_file():
+                    files.append(entry.name) 
+
+        with open(constants.DATA_PATH_DEM_LIST, 'w') as file:
+            for name in files:
+                file.write(f"{name}\n")
+
+        return files
+
+    def open_DEM_list(compile_list=False):
+        if compile_list or not os.path.exists(constants.DATA_PATH_DEM_LIST):
+            return DataAccessor.compile_DEM_list()
+
+        dem_list = []
+        with open(constants.DATA_PATH_DEM_LIST, 'r') as file:
+            for line in file:
+                dem_list.append(line.strip())
+        
+        return dem_list    

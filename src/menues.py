@@ -3,7 +3,9 @@ import os
 import parsing
 import constants
 
-from configuration import Section
+
+from configuration import Configuration, Section
+from debug import Printer
 
 class _MenuAction(parsing.Action):
     def __init__(self, **kwargs):
@@ -42,26 +44,34 @@ class _SubMenuAction(_MenuAction):
         self.current_menu.chosen_sub_menu = self.sub_menu
 
 class _MasterMenu():
-    def __init__(self, title, configuration, sub_menues=[]):
+    def __init__(self, title, configuration: Configuration, sub_menues=[]):
         self.title = title
         self.chosen_sub_menu = None
         self.sub_menues = sub_menues
+        self.config_data: Section = configuration[self.title]
+        self.description = self.config_data.get_description()
         
-        self.config_data = configuration[self.title]
         self.parser = self.prepare_parser()
 
     def print(self):
+        printer = Printer()
+
         line_counter = 0
-        for key, value in self.config_data.items():
-            print(f"{constants.COLOUR_GRAY if line_counter % 2 == 1 else constants.STYLE_RESET}{key}: {value}{constants.STYLE_RESET}")
+        printer.print("===================")
+        printer.print(self.description)
+        printer.print("===================")
+
+        printer.print_headline("Values")
+        for key, value in self.config_data.values():
+            printer.print(f"\t{constants.COLOUR_GRAY if line_counter % 2 == 1 else constants.STYLE_RESET}{key}: {value}{constants.STYLE_RESET}")
             line_counter += 1
-        
-        print("---")
+        printer.print("===================")
 
+
+        printer.print_headline("Sub Menues")
         for sub_menu in self.sub_menues: 
-            print (sub_menu.title)
-
-        print("---")
+            printer.print (f"\t{sub_menu.title}")
+        printer.print("===================")
         
         return line_counter
     
@@ -79,7 +89,7 @@ class _MasterMenu():
     def prepare_parser(self):
         parser = parsing.Parser()
 
-        for argument, value in self.config_data.items():
+        for argument, value in self.config_data.values():
             arg_type = type(value)
 
             parser.add_argument(

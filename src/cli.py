@@ -1,45 +1,23 @@
 import menues
 import parsing
+import configuration
 
 from debug import Printer
 
-class _CLIAction(parsing.Action):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        if "cli" not in kwargs:
-            self.cli = None
-        else:
-            self.cli = kwargs["cli"]
-
-    def __call__(self, argument, values):
-        key = argument.name
-        
-        if key == "exit":
-            self.cli.quit_loop = True
-
-class _FlowControlAction(_CLIAction):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def __call__(self, argument, values):
-        key = argument.name
-        
-        if key == "exit":
-            self.cli.quit_loop = True
-            
 class CLI():
-    def __init__(self, configuration, flow_control={}):
-        self.configuration = configuration
+    def __init__(self, 
+                 configuration: configuration.Configuration):
+        
+        self.configuration  = configuration
 
-        self.nav_root = menues.MainMenu(configuration)
-        self.nav_stack = [self.nav_root]
-
-        self.quit_loop = False
+        self.nav_root   = menues.MainMenu(configuration)
+        self.nav_stack  = [self.nav_root]
 
         self.cli_parser = parsing.Parser()
         self.cli_parser.add_argument(
                 name    = "exit")
+        self.cli_parser.add_argument(
+                name    = "start")
         self.cli_parser.add_argument(
                 name    = "back")
         self.cli_parser.add_argument(
@@ -70,11 +48,15 @@ class CLI():
         self.__print_nav_stack()
 
     def cli_loop(self):
-        while not self.quit_loop:
+        should_quit = False
+        quit_loop = False
+        
+        while not quit_loop:
             
             self.nav_stack[-1].print()
             self.print()
             user_input = input(">>> ")
+            # TODO Printer clear here
 
             parser = self.nav_stack[-1].parser
             parser.parse(user_input)
@@ -93,7 +75,12 @@ class CLI():
             elif parser.get_and_set_false("options"):
                 self.configuration.print_load_options()
             elif parser.get_and_set_false("exit"):
-                self.quit_loop = True
+                quit_loop = True
+                should_quit = True
+            elif parser.get_and_set_false("start"):
+                quit_loop = True
+        
+        return self.configuration, should_quit
 
 
             
