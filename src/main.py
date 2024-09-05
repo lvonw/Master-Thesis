@@ -9,6 +9,7 @@ def main():
     config.load_defaults()
 
     cli = CLI(config);
+
     config, should_quit = cli.cli_loop();
 
     if should_quit:
@@ -25,7 +26,7 @@ def main():
 
     for i, data in tqdm(enumerate(dataloader, 0), total=len(dataloader)):
     #for i, data in enumerate(dataloader, 0):
-        continue
+        break
     
 
 if __name__ == "__main__":

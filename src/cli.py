@@ -34,29 +34,31 @@ class CLI():
     def __add_cli_controls(self, parser):
         parser.decorate(self.cli_parser)
 
-    def __print_nav_stack(self):
+    def __print_nav_stack(self, printer):
         nav_stack_string = ""
         for i in range(len(self.nav_stack)-1):
             nav_stack_string += self.nav_stack[i].title
             nav_stack_string += ">"
         nav_stack_string += self.nav_stack[-1].title
 
-        print (nav_stack_string)
-        print ("---")
+        printer.print(nav_stack_string)
+        printer.print("---")
 
-    def print(self):
-        self.__print_nav_stack()
+    def print(self, printer):
+        self.__print_nav_stack(printer)
 
     def cli_loop(self):
+        printer = Printer()
+
         should_quit = False
         quit_loop = False
         
         while not quit_loop:
             
             self.nav_stack[-1].print()
-            self.print()
-            user_input = input(">>> ")
-            # TODO Printer clear here
+            self.print(printer)
+            user_input = printer.input(">>> ")
+            printer.clear_all()
 
             parser = self.nav_stack[-1].parser
             parser.parse(user_input)

@@ -1,6 +1,5 @@
 import constants
 import math
-import os
 import torch
 
 import matplotlib.pyplot    as plt
@@ -12,9 +11,6 @@ from mpl_toolkits.mplot3d   import Axes3D
 from osgeo                  import gdal
 from torchvision            import transforms
 from torch.utils.data       import Dataset, random_split
-
-
-from tqdm import tqdm
 
 
 class GeoUtil():
@@ -79,7 +75,7 @@ class GeoUtil():
         min = np.iinfo(np.int64).max
         max = np.iinfo(np.int64).min
 
-        for dem in tqdm(DEM_list):
+        for dem in DEM_list:
             d = DataAccessor.open_DEM(dem)
 
             a = d.GetRasterBand(1).ReadAsArray()
@@ -105,18 +101,23 @@ def show_dataset_2D(dataset):
 
     plt.figure(figsize=(10, 10))
     plt.imshow(dataset_array)
-
-    x,y = GeoUtil.geo_coordinates_to_cell(dataset.GetGeoTransform(), 9.993682, 53.551086)
-
-    plt.scatter(0, 0, color='blue', s=20, zorder=5)
-    plt.scatter(dataset_array.shape[0], 
-                dataset_array.shape[1], color='red', s=20, zorder=5)
     
     plt.title('Raster Image')
     plt.xlabel('Column (x)')
     plt.ylabel('Row (y)')
-    #plt.colorbar(label='Pixel Values')
+    plt.colorbar(label='Pixel Values')
     plt.show()
+
+def show_array(array):
+    plt.figure(figsize=(10, 10))
+    plt.imshow(array)
+    
+    plt.title('Raster Image')
+    plt.xlabel('Column (x)')
+    plt.ylabel('Row (y)')
+    plt.colorbar(label='Pixel Values')
+    plt.show()
+
 
 def show_dataset_3D(dataset):
     dataset_array = dataset.GetRasterBand(1).ReadAsArray()
@@ -148,6 +149,10 @@ class TerrainDataset(Dataset):
     
     def __getitem__(self, index):
         DEM_dataset = DataAccessor.open_DEM(self.DEM_list[index])
+       
+        # band = gds.GetRasterBand(1)
+        # p = gds.GetProjection()
+        # show_dataset_2D(DEM_dataset)
 
         if DEM_dataset.RasterCount == 0:
             return None, None
@@ -157,6 +162,9 @@ class TerrainDataset(Dataset):
             global_min = constants.DEM_GLOBAL_MIN,
             global_max = constants.DEM_GLOBAL_MAX
         )
+
+        show_array(DEM_array)
+
         DEM_tensor  = torch.tensor(DEM_array, dtype=torch.float32).unsqueeze(0)
         
         channels    = [DEM_tensor]
@@ -192,12 +200,14 @@ class TerrainDataset(Dataset):
                 data_frame = cache_array[top_left_cell[1]:bot_right_cell[1]+1, 
                                          top_left_cell[0]:bot_right_cell[0]+1]
         
-                data_tensor = torch.from_numpy(data_frame).unsqueeze(0)            
+                data_tensor = torch.from_numpy(data_frame).unsqueeze(0)
                 data_tensor = resize(data_tensor)
 
                 channels.append(data_tensor)
       
         data_entry = torch.cat(channels, dim=0)
+        print (torch.min(data_entry))
+        print (torch.max(data_entry))
 
         if self.transform:
             data_entry = self.transform(data_entry)
@@ -210,7 +220,8 @@ class DatasetFactory():
         DEM_List = DataAccessor.open_DEM_list()
 
         data_cache_list = []
-
+        #TODO make it so that the preprocess happens immediately after every load
+        # or parallelize it
         if data_configuration["GLiM"]:
             data_cache_list.append(DataAccessor.open_gdal_dataset(
                 constants.DATA_PATH_GLIM))
@@ -287,35 +298,3 @@ class DatasetFactory():
             )
 
         return processed_cache
-            
-
-# Testing TODO delete
-def main():
-    # r = FullDataset()
-
-    # gds = r.open_DEM("N53E009.tif")
-    # gt = gds.GetGeoTransform()
-    # p = gds.GetProjection()
-    # rc = gds.RasterCount
-    # band = gds.GetRasterBand(1)
-    # arr = band.ReadAsArray()
-    # arr = np.clip(arr, 0, 17)
-
-
-    # # print(gt)
-
-    # show_dataset(r.open_GLiM())
-    # # show_dataset(r.open_DSMW())
-    # # show_dataset(r.open_climate())
-    # # show_dataset(r.open_GTC())
-
-    #show_dataset_2D(DataAccessor.open_DEM("N53E009.tif"))
-    # show_dataset_3D(r.open_DEM("N53E009.tif"))
-    pass
-    
-    
-
-    
-    
-if __name__ == "__main__":
-    main()

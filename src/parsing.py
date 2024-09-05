@@ -1,5 +1,6 @@
 import enum
-import debug
+import constants
+from debug import Printer
 
 class Action():
     def __init__(self, **kwargs):
@@ -49,12 +50,20 @@ class EnumAction(Action):
         setattr(namespace, self.dest, value)
 
 class Argument():
-    def __init__(self, name, action, parser, argument_type=str, nargs=0, **kwargs):
-        self.name = name
-        self.argument_type = argument_type
-        self.action = action(**kwargs)
-        self.nargs = nargs
-        self.parser = parser
+    def __init__(self, 
+                 name, 
+                 action, 
+                 parser, 
+                 argument_type=str, 
+                 nargs=0, 
+                 usage="",
+                 **kwargs):
+        self.name           = name
+        self.argument_type  = argument_type
+        self.action         = action(**kwargs)
+        self.nargs          = nargs
+        self.parser         = parser
+        self.usage          = usage
 
 class Parser():
     def __init__(self):
@@ -95,7 +104,8 @@ class Parser():
                      name, 
                      action=None, 
                      argument_type=str, 
-                     nargs=0, 
+                     nargs=0,
+                     usage="",
                      **kwargs):
 
         if action is None:
@@ -121,11 +131,13 @@ class Parser():
         return len(self.super_parsers)
 
     def parse(self, user_input):
+        printer = Printer()
         user_input = user_input.lower()
         split_input = user_input.split(" ")
 
         if len(split_input) == 0 or user_input == "":
-            print("no argument provided")
+            printer.print_log("no argument provided", 
+                              constants.LogLevel.ERROR)
             return
         
         argument = None
@@ -137,13 +149,15 @@ class Parser():
                     argument = super_parser.argument_map[split_input[0]]
 
         if argument is None:  
-            print("argument could not be found")
+            printer.print_log("argument could not be found", 
+                              constants.LogLevel.ERROR)
             return
 
         values = split_input[1:]
 
         if len(values) is not argument.nargs:
-            print(f"Expected {argument.nargs} arguments, got {len(values)}")
+            printer.print_log(f"Expected {argument.nargs} arguments, got {len(values)}", 
+                              constants.LogLevel.INFO)
             return
 
         casted_values = []

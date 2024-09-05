@@ -21,11 +21,11 @@ class Configuration():
     def get_section(self, section_name):
         return self[section_name]
 
-    # def find_configuration(self, configuration_name):
-    #     for _, section in self.sections.items():
-    #         for name, configuration in section.items():
-    #             if name == configuration_name:
-    #                 return configuration
+    def find_configuration(self, configuration_name):
+        for _, section in self.sections.items():
+            for name, configuration in section.items():
+                if name == configuration_name:
+                    return configuration
 
     def print_load_options(self):
         files = []
@@ -74,22 +74,28 @@ class Section():
     def __init__(self, section_name, section):
         self.name           = section_name
         self.description    = section["description"]
-        self.configurations = section["Configurations"]
+        self.configurations = self.__prepare_items(section["Configurations"])
 
     def __getitem__(self, configuration_name):
         if configuration_name in self.configurations:
-            return self.configurations[configuration_name]["value"]
+            return self.configurations[configuration_name].value
         return None
     
     def __setitem__(self, configuration_name, configuration):
-        self.configurations[configuration_name]["value"] = configuration
+        self.configurations[configuration_name].value = configuration
 
     def __contains__(self, configuration_name):
         return configuration_name in self.configurations
+    
+    def __prepare_items(self, configuration_items):
+        configurations = {}
+        for name, item in configuration_items.items():
+            configurations[name] = Item(item["value"], item["usage"])
+        return configurations
 
     def get_usage(self, configuration_name):
         if configuration_name in self.configurations:
-            return self.configurations["usage"]
+            return self.configurations[configuration_name].usage
         return ""
     
     def get_description(self):
@@ -98,11 +104,16 @@ class Section():
     def items(self):
         return self.configurations.items()
     
-    #TODO better name for this
     def values(self):
         values = []
         for name, config in self.configurations.items():
-            values.append((name, config["value"]))
+            values.append((name, config.value))
         return values
+    
+class Item():
+    def __init__(self, value, usage):
+        self.value  = value
+        self.usage  = usage   
+        self.type   = type(value) 
     
 

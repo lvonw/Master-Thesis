@@ -56,25 +56,50 @@ class _MasterMenu():
     def print(self):
         printer = Printer()
 
-        line_counter = 0
         printer.print("===================")
         printer.print(self.description)
         printer.print("===================")
-
-        printer.print_headline("Values")
-        for key, value in self.config_data.values():
-            printer.print(f"\t{constants.COLOUR_GRAY if line_counter % 2 == 1 else constants.STYLE_RESET}{key}: {value}{constants.STYLE_RESET}")
-            line_counter += 1
+        self.__print_values(printer)
         printer.print("===================")
 
 
         printer.print_headline("Sub Menues")
         for sub_menu in self.sub_menues: 
-            printer.print (f"\t{sub_menu.title}")
+            printer.print (f"{constants.FIXED_INDENT}{sub_menu.title}")
         printer.print("===================")
-        
-        return line_counter
     
+    def __print_values(self, printer):
+        printer.print_headline("Values")
+
+        value_line      = []
+        line_counter    = 0
+
+        for key, item in self.config_data.items():
+            value_line.append(constants.FIXED_INDENT)
+
+            if line_counter % 2 == 1:
+                value_line.append(constants.COLOUR_GRAY)
+            else:
+                value_line.append(constants.STYLE_RESET)
+
+            value_line.append(f"{key}: ")
+
+            if item.type is bool:
+                if item.value:
+                    # value_line.append(constants.COLOUR_GREEN)
+                    value_line.append("✅")
+                else:
+                    #value_line.append(constants.COLOUR_RED)
+                    value_line.append("❌")
+            else:
+                value_line.append(str(item.value))
+            
+            value_line.append(constants.STYLE_RESET)
+            printer.print("".join(value_line))
+
+            line_counter += 1
+            value_line.clear()
+
     def get_config_entry(self, key):
         return self.config_data[key]
 
@@ -89,24 +114,24 @@ class _MasterMenu():
     def prepare_parser(self):
         parser = parsing.Parser()
 
-        for argument, value in self.config_data.values():
-            arg_type = type(value)
+        for name, item in self.config_data.items():
 
             parser.add_argument(
-                name    = argument,
-                action  = _MenuValueAction,
-                argument_type = arg_type,
-                nargs   = 0 if arg_type is bool else 1,
-                current_menu = self)
+                name            = name,
+                action          = _MenuValueAction,
+                argument_type   = item.type,
+                nargs           = 0 if item.type is bool else 1,
+                usage           = item.usage,
+                current_menu    = self)
             
         for sub_menu in self.sub_menues:
             parser.add_argument(
-                name    = sub_menu.title,
-                action  = _SubMenuAction,
-                argument_type = type(sub_menu),
-                nargs   = 0,
-                sub_menu = sub_menu,
-                current_menu = self)
+                name            = sub_menu.title,
+                action          = _SubMenuAction,
+                argument_type   = type(sub_menu),
+                nargs           = 0,
+                sub_menu        = sub_menu,
+                current_menu    = self)
 
         return parser
         
