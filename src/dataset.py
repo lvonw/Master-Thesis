@@ -139,10 +139,15 @@ def show_dataset_3D(dataset):
     plt.show()
 
 class TerrainDataset(Dataset): 
-    def __init__(self, DEM_list, data_cache, transform=None):
-        self.transform  = transform
-        self.DEM_list   = DEM_list
-        self.data_cache = data_cache
+    def __init__(self, 
+                 DEM_list, 
+                 channel_data_cache,
+                 label_data_cache, 
+                 transform=None):
+        self.transform              = transform
+        self.DEM_list               = DEM_list
+        self.channel_data_cache     = channel_data_cache
+        self.label_data_cache       = label_data_cache
 
     def __len__(self):
         return len(self.DEM_list)
@@ -153,6 +158,7 @@ class TerrainDataset(Dataset):
         # band = gds.GetRasterBand(1)
         # p = gds.GetProjection()
         # show_dataset_2D(DEM_dataset)
+        label = None
 
         if DEM_dataset.RasterCount == 0:
             return None, None
@@ -163,14 +169,11 @@ class TerrainDataset(Dataset):
             global_max = constants.DEM_GLOBAL_MAX
         )
 
-        show_array(DEM_array)
-
         DEM_tensor  = torch.tensor(DEM_array, dtype=torch.float32).unsqueeze(0)
-        
         channels    = [DEM_tensor]
 
         # Extract all the specified additional data from other maps
-        if self.data_cache: 
+        if self.channel_data_cache: 
             # Get the reference coordinates for the respective data frame
             top_left_geo    = GeoUtil.cell_to_geo_coordinates(
                 DEM_dataset.GetGeoTransform(), 
@@ -183,7 +186,7 @@ class TerrainDataset(Dataset):
 
             resize          = transforms.Resize(DEM_array.shape)
             
-            for cache in self.data_cache:
+            for cache in self.channel_data_cache:
                 cache_array = cache[1]
 
                 top_left_cell   = GeoUtil.geo_coordinates_to_cell(
@@ -212,7 +215,7 @@ class TerrainDataset(Dataset):
         if self.transform:
             data_entry = self.transform(data_entry)
 
-        return data_entry, data_entry
+        return data_entry, label
     
 class DatasetFactory():
     def create_dataset(data_configuration: Section) -> tuple[TerrainDataset, 
