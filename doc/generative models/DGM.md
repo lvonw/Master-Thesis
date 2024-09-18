@@ -1459,10 +1459,1095 @@ p_\theta(x) = \frac{1}{Z(\theta)}g_\theta(x)
 = \frac{1}{\text{volume}(g_\theta)}g_\theta(x)
 $$
 
-Then by definition $\int p_\theta(x) dx = 1$
+We call Z the partition function you might wonder why it doesnt depend on the 
+_input_ x when there is an x parameter for the function you are integrating 
+over. The reason for this is that the x is provided by the integral operator
+NOT the input to the probability density function. They are different variables
+
+Then by definition $\int p_\theta(x) dx = 1$ So now as long as you can compute
+the integral of g easily you can choose any g for a valid probability density 
+function
+
+This leads us to energy based models, which need not necessarily be analytically
+integrable. The main difference here is just the exponential which ensures
+its always positive
+
+$$
+p_\theta(x) = \frac{1}{\int \exp(f_\theta(x)) dx}\exp(f_\theta(x))
+= \frac{1}{Z(\theta)}\exp(f_\theta(x))\\
+Z(\theta)= \int \exp(f_\theta(x)) dx
+$$
+
+We choose the exponential because it allows us large variations in probability.
+For example theres a big discrepancy between a well formed image and noise.
+This allows us to smoothly use log likelihood which is very smooth (???)
+
+These distributions arise under fairly general assumptions in statistical 
+physics. $-f_\theta(x)$ is called the energy, hence the name
 
 
+So this is very flexible, however its also very expensive when you sample
+or try to evaluate a probability. 
+
+But when you only try to compare probabilities this is not an issue, because
+you divide both by the same value, which means to know which one is higher
+you only need to evaluate the function
+
+You can ensemble models via a product. Which behaves like an and of models.
+
+When it comes to training and sampling these models you would need to calculate
+Z which is too difficult of a problem to do reliably. So instead what you can
+do is monte carlo approximate. Because really what maximum likelihood is doing
+is its increasing the probability of the given datapoint while at the same time
+through the 1 integral decreasing everything else. So you can approximate this
+through taking just a sample and decreasing the likelihood for that one.
+
+This we call **contrastive divergence algorithm**\
+Let $x_\text{sample} \sim p_\theta$
+$$
+\nabla_\theta (f_\theta(x_\text{data}) - f_\theta(x_\text{sample}))
+$$
+
+As you can see the gradient of that function will optimize it therefore trying
+to increase the first term, and decreasing the second one. Because we divide
+them in theory through the same Z this will converge
+
+Maximizing log likelihood for gradient based models
+ (pure f because of the exponent):
+$$
+\max_\theta f_\theta(x_\text{data})-\log Z(\theta)
+$$
+
+Gradient of log likelihood
+$$
+\nabla_\theta f_\theta(x_\text{data}) - \nabla_\theta \log Z(\theta)
+$$
+First derivation chain  rule step on Z (derivative of the lox)
+$$
+=\nabla_\theta f_\theta(x_\text{data})
+-\frac{\nabla_\theta Z(\theta)}{Z_\theta} \\
+= \nabla_\theta f_\theta(x_\text{data})
+-\frac{1}{Z_\theta} \int \nabla_\theta \exp(f_\theta(x)) dx \\
+= \nabla_\theta f_\theta(x_\text{data})
+-\frac{1}{Z_\theta} \int \exp(f_\theta(x)) \nabla_\theta f_\theta(x)dx \\
+= \nabla_\theta f_\theta(x_\text{data})
+- \int \frac{\exp(f_\theta(x))}{Z_\theta}  \nabla_\theta f_\theta(x)dx \\
+= \nabla_\theta f_\theta(x_\text{data})
+- \mathbf E_{x_\text{sample}} [\nabla_\theta f_\theta(x)dx] \\
+\approx \nabla_\theta f_\theta(x_\text{data})
+- \nabla_\theta f_\theta(x_\text{sample})dx
+$$
+
+Sampling works through a process called **Markov Chain Monte Carlo**
+Really all this means is that we simply take the property that an energy model
+can efficiently compare probabilities. Sometimes also called 
+Metropolis-Hastings MCMC\
+So the algorithm is as follows:
+- Initialize $x^0$ with random noise
+- $x' = x^t + \text{Noise}$
+- $x^{t+1} = 
+\begin{cases}
+    x',  & f_\theta(x') \gt f_\theta(x^t) \\
+    x' \text{ with probability } \exp(f_\theta(x') - f_\theta(x^t)) , 
+        & \text{otherwise}
+\end{cases}$
+- Repeat
+
+This will converge eventually, but it may take a long time
 
 
+## Lecture 12 - Energy Based Models
 
+Properties of MH MCMC
+- In theory $\lim_{T\rightarrow\infty} x^T = p_\theta(x)$
+- - Satisfies detailed balance condition: 
+$p_\theta(x) T_{x\rightarrow x'}=p_\theta(x')T_{x'\rightarrow x}$ where
+$T_{x\rightarrow x'}$ is hte probability of transitioning from $x$ to $x'$
+- - if $x^t$ is distributed as $p_\theta$ then so is $x^{t+1}$
+
+So this works in theory, but in practice you will need a lot of steps
+
+However there has been a slightly better version proposed called **unadjusted
+Langevin MCMC**
+- Initialize $x^0$ with random noise
+- $z^t \sim \mathcal N (0,I)$
+- $x^{t+1} = x^t + \epsilon \nabla_x \log p_\theta(x)|_{x=x^t}
++\sqrt{2\epsilon}z^t$
+
+
+with $\epsilon$ being the step size
+
+Properties 
+- $x^T$ converges to a sample from $p_\theta(x)$ when $T\rightarrow\infty$ and
+$\epsilon \rightarrow 0$
+- $\nabla_x \log p_\theta(x) = \nabla_x f_\theta(x)$
+- Convergence slows down as dimensionality grows
+
+Sampling is slow, and yet we need it in contrastive divergence. So we need a
+training algorithm that can get by without sampling
+
+We do this using a **score based function**
+
+take energy based models 
+
+$$
+p_\theta(x) = \frac{\exp (f_\theta(x))}{Z(\theta)}, 
+\log p_\theta(x) = f_\theta(x) - \log Z(\theta)
+$$
+
+**(Stein) Score Function**
+$$
+s_\theta(x) := \nabla_x \log p_\theta(x) = \nabla_x f_\theta(x) - 
+\underbrace{\nabla_x \log Z(\theta)}_{=0}
+$$
+
+So the essentially the score means how does the sample need to change to have
+maximum likelihood under our model.
+
+Using this property we can construct the so called **Fisher Divergence**
+$$
+D_F(p,q) := \frac{1}{2} \mathbf E_{x\sim p}\
+\left[\left\Vert
+    \nabla_x \log p(x) - \nabla_x \log q(x)
+\right\Vert^2_2\right]
+$$
+
+**Score Matching** is minimizing the Fisher divergence between two models
+being the Data distribution and an Energy Based model
+
+Now how do we deal with the data distribution which we dont know? - 
+Integration by parts!
+
+Univariate Case (x is just a scalar)
+$$
+\frac{1}{2} \mathbf E_{x\sim p_\text{data}}\
+\left[\left(
+    \nabla_x \log p(x) - \nabla_x \log p_\theta(x)
+\right)^2\right]\\
+= \frac{1}{2} \int p_\text{data}(x)
+\left(
+    \nabla_x \log p(x) - \nabla_x \log p_\theta(x)
+\right)^2 dx
+$$
+using 2nd binomial theorem
+$$
+= \frac{1}{2} \int p_\text{data}(x)
+\left(
+    \nabla_x \log p(x)
+\right)^2 dx
+- \int p_\text{data}(x)
+\left(
+     \nabla_x \log p(x) \nabla_x \log p_\theta(x)
+\right) dx
++ \frac{1}{2} \int p_\text{data}(x)
+\left(
+    \nabla_x \log p_\theta(x)
+\right)^2 dx
+$$
+The first term does not depend on theta so we can omit it - Then integrate
+by parts $\int f'g = fg -\int g'f$
+$$
+- \int p_\text{data}(x) \nabla_x \log p_\text{data}(x)\log \nabla_x p_\theta(x)dx \\
+= - \int p_\text{data}(x) \frac{\nabla_x p_\text{data}(x)}{p_\text{data}(x)}
+\log \nabla_x p_\theta(x)dx \\
+= - \int\nabla_x p_\text{data}(x)
+\log \nabla_x p_\theta(x)dx
+
+$$
+Integraition by parts
+$$
+= \underbrace{-p_\text{data}(x)\nabla_x \log p_\theta(x)|^\infty_{x=-\infty}}
+_\text{=0}
++ \int p_\text{data}(x) \nabla_x^2 \log p_\theta(x) dx
+$$
+
+Note that $\nabla^2$ means the 2nd derivative, $|^\infty_{x=-\infty}$ means 
+evaluated at x +- infinity
+
+$$
+= \int p_\text{data}(x) \nabla_x^2 \log p_\theta(x) dx
+$$
+
+Note that this **only** holds if $p_\text{data} (x) \rightarrow 0$ when 
+$x \rightarrow \pm \infty$
+
+$$
+\frac{1}{2} \int p_\text{data}(x)
+\left(
+    \nabla_x \log p(x)
+\right)^2 dx
+- \int p_\text{data}(x)
+\left(
+     \nabla_x \log p(x) \nabla_x \log p_\theta(x)
+\right) dx
++ \frac{1}{2} \int p_\text{data}(x)
+\left(
+    \nabla_x \log p_\theta(x)
+\right)^2 dx \\
+=  \int p_\text{data}(x) \nabla_x^2 \log p_\theta(x) dx
++ \frac{1}{2} \int p_\text{data}(x)
+\left(
+    \nabla_x \log p_\theta(x)
+\right)^2 dx \\
+= \mathbf E_{x \sim \text{data}}
+\left[
+    \nabla_x^2 \log p_\theta(x)
+\right] + 
+\mathbf E_{x \sim \text{data}}
+\left[
+    \frac{1}{2}(\nabla_x \log p_\theta(x))^2
+\right] \\
+= \mathbf E_{x \sim \text{data}}
+\left[
+    \nabla_x^2 \log p_\theta(x) +  \frac{1}{2}(\nabla_x \log p_\theta(x))^2
+\right]
+$$
+
+Now you can see that at least in the univariate case we can define the loss
+function with respect to the fisher divergence without having to evaluate 
+$p_\text{data}(x)$. What about the multivariate case though? We can do 
+multivariate score matching using integration by parts i.e. **Gauss Theorem**
+
+$$
+\frac{1}{2} \mathbf E_{x\sim p_\text{data}}\
+\left[\left\Vert
+    \nabla_x \log p_\text{data}(x) - \nabla_x \log p_\theta(x)
+\right\Vert_2^2\right] \\
+=  \mathbf E_{x\sim p_\text{data}}
+\left[\frac{1}{2} \left\Vert
+    \nabla_x \log p_\theta(x)
+\right\Vert_2^2
++
+tr (\underbrace{\nabla_x^2 \log p_\theta(x)}
+    _\text{Hessian of $\log p_\theta(x)$}) 
+\right] \
+$$
+
+tr is the trace operator (sum of the diagonal of a matrix), the hessian is a 
+matrix denoting the 2nd partial derivative of a multivariate function. So 
+basically the jacobian with respect to the 2nd derivative 
+
+So now we have a loss function that does not require sampling from the energy
+based model by matching the scores of the two distributions by minimizing the
+fisher divergence
+
+_However_ the trace of a hessian is expensive for large models
+
+Theres also another way of training EBMs which is 
+**noised contrastive estimation** which essentially means to learn via 
+contrasting the model with a noise distribution
+
+let $p_n$ be a noise distribution that is analytically tractable and easy to
+sample from. Further let $D_\theta(x)\in [0,1]$ a discriminator which
+discriminates between data and noise samples
+
+$$
+\max_\theta \mathbf E_{x\sim p_\text{data}}[\log D_\theta(x)]
++ \mathbf E_{x\sim p_n}[\log (1-D_\theta(x))]
+$$
+
+What is the optimal discriminiator $D_\theta^*(x)$: 
+$\frac{p_\text{data}}{p_\text{data} + p_n} $
+
+With training in general we are trying to match the model to the data distribution
+so if we assume we had a perfect model, the perfect discriminator would be
+$\frac{p_\theta}{p_\theta + p_n} $
+
+So by training this discriminator for a non perfect model we are implicitly 
+training the model
+
+So this is suitable when the model is defined up to a normalization constant 
+(EBMs)
+
+Equivalently
+
+$$
+p^*_\theta(x) = \frac{p_n(x)D_\theta^*(x)}{1-D_\theta^*(x)}=p_\text{data}(x)
+$$
+
+Let $p_\theta$ be an EBM $p_\theta(x) = \frac{\exp(f_\theta(x))}{Z(\theta)}$
+because Z again is hard to evaluate we will assumme it to be a learnable 
+parameter
+
+$$
+p^*_{\theta, Z}(x) 
+= \frac{\exp(f_\theta(x))}{Z}
+$$
+
+Applying this to our Discriminator
+
+$$
+D_{\theta,Z}(x) 
+= \frac{\frac{\exp(f_\theta(x))}{Z}}{\frac{\exp(f_\theta(x))}{Z}+ p_n(x)}
+=  \frac{\exp(f_\theta(x))}{\exp(f_\theta(x))+ p_n(x)Z}
+$$
+
+Now you can use noise contrastive estimation to optimize theta and Z
+
+$$
+\max_{\theta, Z} \mathbf E_{x\sim p_\text{data}}[\log D_{\theta,Z}(x)]
++ \mathbf E_{x\sim p_n}[\log (1-D_{\theta,Z}(x))]
+$$
+
+Once youve trained this discriminator, which has this special form, you can 
+extract an energy based model from it. The advantage of this training method
+is that it does not require sampling from the EBM at training time
+
+This works better if pn is close to the data distribution, which is why we may
+in practice use a normalizing flow model for this which you then train alongside
+the discriminator in the gan style minimax approach
+
+
+## Lecture 13 - Score Based Models
+
+As weve seen before theres multiple ways to represent a probability density.
+
+One of them is to model them as the PDF for which we have seen some examples
+
+The first is to learn an exact model, which has to ensure the invariant that
+the total probability density or mass is equal to one. This requires a
+specific way to construct the model. \
+Autoregressive models and flow models fulfill this invariant by
+construction. Which makes them suitable for directly learning likelihoods.\
+Opposed to that are models that give up that invariant and use variational
+techniques to approximate the likelihood such as VAEs or EBMs
+
+The Pros of the PDF approach is that you:
+- Can learn using maximum likelihood, which is an easy way to train a model
+- Principled comparisons between models through likelihoods
+
+Cons
+- Special Architectures or surrogate losses to deal with intractable partition
+functions
+
+Another way to model the probability density is to model the sampling process
+So you dont really care about the PDF and just care about that the samples 
+look like they came from the data distribution
+
+These produce good outcomes, however because you cant train them using 
+likelihoods, you have to resort to adverserial training, which is instable and
+prone to mode collapse
+
+Another good way is to use a score function. You can use this when the PDF is 
+differentiable. So rather than working with the PDF itself, you instead work
+with the gradient, which has the advantage that you dont need the partition
+function
+
+$$
+s_\theta(x)=\nabla_x \log p(x)
+$$
+
+Using the score function you can train a model by minimizing the fisher
+divergence 
+
+$$
+D_F(p,q) := \frac{1}{2} \mathbf E_{x\sim p}\
+\left[\left\Vert
+    \nabla_x \log p(x) - \nabla_x \log q(x)
+\right\Vert^2_2\right]
+$$
+
+in a process called score matching
+
+$$
+\mathbf E_{x\sim p_\text{data}}
+\left[\frac{1}{2} \left\Vert
+    \nabla_x \log p_\theta(x)
+\right\Vert_2^2
++
+tr (\nabla_x^2 \log p_\theta(x)) 
+\right] \
+$$
+
+or for an energy based model $p_\theta(x)=\frac{\exp f_\theta(x)}{Z(\theta)}$
+
+$$
+\mathbf E_{x\sim p_\text{data}}
+\left[\frac{1}{2} \left\Vert
+    \nabla_x f_\theta(x)
+\right\Vert_2^2
++
+tr (\nabla_x^2 f_\theta(x)) 
+\right] \
+$$
+
+or with respect to the score, so you already start from a score model which 
+just models the gradients (so you dont have to derivate the PDF)
+
+$$
+\mathbf E_{x\sim p_\text{data}}
+\left[\frac{1}{2} \left\Vert
+    s_\theta(x)
+\right\Vert_2^2
++
+tr (\nabla_x s_\theta(x)) 
+\right] \
+$$
+
+That being said its important to notice that the first version is model agnostic
+so you can use it for any model family so long as you can
+compute $\log p_\theta(x)$
+
+Which makes score based models a very general model family 
+$s_\theta(x):\R^d\mapsto\R^d$
+
+Unfortunately however, score matching is not scalable because the hessian
+is inefficient to compute in high dimensions (or the jacobian of the score).
+In practice however, as you might imagine we dont need the score model to be a 
+proper score function.
+
+### Denoising Score Matching
+
+The first approach to try to approximate the jacobian/ hessian is Denoising
+Score Matching
+
+Consider the pertrubed distribution (distribution with noise)
+$$
+q_\sigma(\tilde x|x) = \mathcal N(x;\sigma^2 I)\\
+q_\sigma(\tilde x) = \int p(x) q_\sigma(\tilde x|x) dx
+$$
+
+$q_\sigma(\tilde x)$ Essentially just means the probability of having produced
+this noised image, for which you of course have to integrate over all possible
+input data, times the probability that this is the noised data for the given
+input data
+
+$\tilde x$ is the data perturbed with noise
+
+Score estimation for $\nabla_{\tilde x}\log q_\sigma(\tilde x)$ is easier; If
+the noise level is small this is a good approximation for the original score
+
+So applying score matching to this concept where we match our model to the noise
+perturbed data
+
+$$
+D_F(p_\theta, q_\sigma) 
+= \frac{1}{2} \mathbf E_{\tilde x \sim q_\sigma}\
+\left[\left\Vert
+    \nabla_{\tilde x} \log q_\sigma(\tilde x) - s_\theta(\tilde x)
+\right\Vert_2^2\right]\\ 
+= \frac{1}{2} \int q_\sigma(\tilde x)
+\left\Vert
+    \nabla_{\tilde x} \log q_\sigma(\tilde x) - s_\theta(\tilde x)
+\right\Vert_2^2 d\tilde x \\
+= \frac{1}{2} \int q_\sigma(\tilde x)
+\left\Vert
+ \nabla_{\tilde x} \log q_\sigma(\tilde x)
+\right\Vert^2_2 d\tilde x
++ \frac{1}{2} \int q_\sigma(\tilde x)
+\left\Vert
+ s_\theta(\tilde x)
+\right\Vert^2_2 d\tilde x
+- \int q_\sigma(\tilde x) 
+\nabla_{\tilde x} \log q_\sigma(\tilde x)^T s_\theta(\tilde x)
+d\tilde x
+$$
+$$
+- \int q_\sigma(\tilde x) 
+\nabla_{\tilde x} \log q_\sigma(\tilde x)^T 
+s_\theta(\tilde x)
+d\tilde x \\
+= - \int q_\sigma(\tilde x) \frac {1}{q_\sigma(\tilde x)}
+\nabla_{\tilde x} q_\sigma(\tilde x)^T
+s_\theta(\tilde x)
+d\tilde x \\
+= - \int 
+\nabla_{\tilde x} q_\sigma(\tilde x)^T
+s_\theta(\tilde x)
+d\tilde x 
+$$
+Inputting the definition of $q_\sigma(\tilde x)$
+$$
+= 
+- \int 
+\nabla_{\tilde x} 
+\left( \int 
+p_\text{data}(x)q_\sigma(\tilde x|x) dx
+\right)^T
+s_\theta(\tilde x)
+d\tilde x \\ 
+= 
+- \int 
+\left( \int 
+p_\text{data}(x)\nabla_{\tilde x} q_\sigma(\tilde x|x) dx
+\right)^T
+s_\theta(\tilde x)
+d\tilde x \\ 
+= 
+- \int 
+\left( \int 
+p_\text{data}(x)
+q_\sigma(\tilde x|x)\nabla_{\tilde x} \log q_\sigma(\tilde x|x) dx
+\right)^T
+s_\theta(\tilde x)
+d\tilde x \\ 
+= 
+- \int 
+\int 
+p_\text{data}(x)
+q_\sigma(\tilde x|x)\nabla_{\tilde x} \log q_\sigma(\tilde x|x) 
+^T
+s_\theta(\tilde x)
+dx d\tilde x \\ 
+= 
+-\mathbf E _{x\sim p_\text{data}(x), \tilde x \sim q_\sigma(\tilde x| x)}
+\left[
+\nabla_{\tilde x} \log q_\sigma(\tilde x|x) ^T
+s_\theta(\tilde x)
+\right]
+$$
+
+Denoising Score Matching. Recall that we are trying to match the scores via
+changing $\theta$ so terms without $\theta$ are for our purposes constants
+
+$$
+\frac{1}{2} \mathbf E_{\tilde x \sim q_\sigma}\
+\left[\left\Vert
+    \nabla_{\tilde x} \log q_\sigma(\tilde x) - s_\theta(\tilde x)
+\right\Vert_2^2\right]\\
+= \text{const.}
++ \frac{1}{2}\mathbf E_{\tilde x \sim q_\sigma(\tilde x)}
+\left[\left\Vert
+ s_\theta(\tilde x)
+\right\Vert^2_2\right]
+- \mathbf E _{x\sim p_\text{data}(x), \tilde x \sim q_\sigma(\tilde x| x)}
+\left[
+\nabla_{\tilde x} \log q_\sigma(\tilde x|x) ^T
+s_\theta(\tilde x)
+\right]
+$$
+By applying 2nd binomial theorem and subtracting the square of the second
+diminuend
+$$
+\text{const.}
++ \frac{1}{2}
+\mathbf E_{x\sim p_\text{data}(x), \tilde x \sim q_\sigma(\tilde x| x)}
+\left[\left\Vert
+    s_\theta(\tilde x) -
+    \nabla_{\tilde x} \log q_\sigma(\tilde x|x)
+\right\Vert^2_2\right]
+- 
+\frac{1}{2}
+\mathbf E_{x\sim p_\text{data}(x), \tilde x \sim q_\sigma(\tilde x| x)}
+\left[\left\Vert
+    \nabla_{\tilde x} \log q_\sigma(\tilde x|x)
+\right\Vert^2_2\right] \\
+= \text{const.}
++ \frac{1}{2}
+\mathbf E_{x\sim p_\text{data}(x), \tilde x \sim q_\sigma(\tilde x| x)}
+\left[\left\Vert
+    s_\theta(\tilde x) -
+    \nabla_{\tilde x} \log q_\sigma(\tilde x|x)
+\right\Vert^2_2\right]
++ \text{const.}
+$$
+
+this happens to be fairly easy to compute as $q_\sigma(\tilde x|x) = 
+\mathcal N(x;x, \sigma^2 I)$\
+So what this in total means is that we dont have to take a jacobian of a score
+anymore if, instead of trying to approximate the score of the data we 
+approximate the noised version of data.
+
+in practice you take gaussian noise as the 
+perturbator $ \nabla_{\tilde x} \log q_\sigma(\tilde x|x) = -
+\frac{\tilde x-x}{\sigma^2}$
+
+In practice it helps to take the score estimation of the noised image, score
+model $\nabla_{\tilde x} \log q_\sigma(\tilde x)$
+
+So essentially what are you learning? 
+$$
+\frac{1}{2}
+\mathbf E_{\tilde x \sim q_\sigma(\tilde x)}
+\left[\left\Vert
+    \nabla_{\tilde x} \log q_\sigma(\tilde x) - s_\theta(\tilde x)
+\right\Vert^2_2\right]
+\\= 
+\frac{1}{2}
+\mathbf E_{x\sim p_\text{data}(x)}
+\mathbf E_{\tilde x \sim q_\sigma(\tilde x| x)}
+
+\left[\left\Vert
+    \frac{x-\tilde x}{\sigma^2}
+    - s_\theta(\tilde x) 
+\right\Vert^2_2\right]
+$$
+(stein unbiased risk estimator)
+
+So this says that trying to match the noised data distribution q is equivalent
+to matching the noise for **a given example**. Because what learning the score
+means is to learn the gradients of a distribution. So what the score means
+is if you take a certain step in the direction of this gradient, the resulting
+image will be **less noisy**. So by learning to predict the noise in an image
+you are learning exactly this, because **learning the noise and removing it** 
+is **equivalent to taking a step on the gradient**. In essence this is to mean
+that learning to predict the denoising steps is the same as predicting the
+gradients of the perturbed data distribution. 
+
+**Tweedies Formula** basically tells us this, that the optimal denoiser is 
+the gradient of the perturbed distribution
+
+$$
+\tilde x + \sigma^2 \nabla_{\tilde x}\log q_\sigma(\tilde x)
+$$
+
+To clarify
+
+Bayes rule with respect to the data distribution and our perturbed distribution
+$$
+p(x|\tilde x) \propto p(x)q_\sigma(\tilde x | x)
+$$
+$$
+q_\sigma(\tilde x) = \int p(x)q_\sigma(\tilde x | x) dx
+$$
+Tweedies Formula (only for gaussians)
+$$
+\mathbf E_{x \sim p(x|\tilde x)}[x] 
+= \tilde x + \sigma^2 \nabla_{\tilde x}\log q_\sigma(\tilde x) \\
+\approx \tilde x + \sigma^2 s_\theta(\tilde x)
+$$
+
+
+### Sliced score matching
+
+Another way to come up with an efficient approximation to the score matching
+loss, that does not include traces of jacobians is to take random projections
+
+If two vector fields are the same, then we expect them to be the same along 
+any projection. Which motivates the idea that our matching problem will be a lot
+simpler along this projection, as it is one dimensional
+
+Objective: Sliced Fisher Divergence
+
+$$
+\frac{1}{2} 
+\mathbf E_{v\sim p_v}
+\mathbf E_{x\sim p_\text{data}}
+\left[
+    (v^T\nabla_x\log p_\text{data}(x)-v^T s_\theta(x))^2
+\right]
+$$
+
+where v is a random direction sampled from pv
+
+Integration by parts
+$$
+\mathbf E_{v\sim p_v}
+\mathbf E_{x\sim p_\text{data}}
+\left[
+    v^T\nabla_x s_\theta(x)v+
+    \frac{1}{2} (v^T s_\theta(x))^2
+\right]
+$$
+
+Jacobian vector products is scalable
+$$
+v^T\nabla_x s_\theta(x)v = v^T\nabla_x(v^Ts_\theta(x))
+$$
+Which means we now have to do backpropagation with only a scalar and not a 
+vector, which means a single pass
+
+So in training you choose a different random direction to project on per vector
+which is usually distributed via a gaussian or Rademacher. 
+
+Here as opposed to denoising score matching we are actually learning the score
+of the data distribution and not of a perturbed one, however its slower
+
+
+### Sampling with Langevin MCMC
+
+How do you sample from a density, if you only have the score
+
+- Initialize $x^0$ with pure noise
+- $z^t \sim \mathcal N (0,I)$
+- $ x^t \leftarrow x^{t-1} + \frac{\epsilon}{2}\nabla_x \log p(x^{t-1}) + 
+\sqrt \epsilon z^t $
+
+If we do this for an infinite amount of steps and epsilon approaches 0 we x
+converges to a true sample from the data distribution
+
+if you train this well enough then
+
+$$
+s_\theta (x) \approx \nabla_x \log p(x) 
+$$
+
+However in practice this produces crap results.
+
+#### Problem 1
+This has problems because data in the real world tends to lie on a manifold 
+(lower dimensional structure in higher dimensional space like a sphere 
+surface)
+
+Which has undefined gradients (apparently) I think this has to do with you 
+having to reach that lower dimensional surface, which would need very high 
+precision
+
+The intuition behind this is that for example the pixels in an image are not 
+independant from each other, they are somehow connected to each other, meaning
+that theres some degrees of freedoms lost in the higher dimensional space 
+essentially reducing its dimensionality making it alower dimensional manifold
+
+#### Problem 2
+We have trouble estimating gradients in low data density areas causing LMCMC
+to get lost
+
+#### Problem 3
+Suppose the data has two modes with disjoint supports and you just take random
+noise samples, then the weight between both modes might not be accurate. So
+if one mode is 2 thirds more likley than the other the gradients might not
+capture that accurately
+
+
+## Lecture 14 - Noise Conditional Score Networks
+
+There happens to be a good solution to all of these issues: 
+**Gaussian perturbation**. This will cause the data to land in the 
+multidimensional space with alot higher variance, causing the above issues to 
+essentially be solved in one go. As all of them are essentially in one way
+or another bound ot the problem that the real data takes up very little space
+in the possible distribution space.
+
+Note how before we wanted the added noise to be as low as possible so it
+resembles the true data distribution 
+
+So this is good to solve with these problems and provides useful directional 
+information for langevin dynamics, however perturbed data does no longer
+approximate the real data distribution. 
+
+
+### Joint score estimation via noise conditional score networks
+
+So you learn the perturbed and noisy data and thus it becomes a trade off over
+estimation accuracy and sample quality. So one idea is to use mutliple noise 
+scales. Which is the key idea behind a score or diffusion based model.
+
+What we end up doing with this approach then is sample using a sequence of
+noise levels $\sigma_1,...,\sigma_L$ Which we anneal down.\
+We call this **annealed Langevin dynamics**
+
+It makes the most sense to use denoising score matching to train these networks
+as they naturally work with the notion of adding noise to data.
+
+Weighted combination of denoising score matching losses
+$$
+\frac{1}{L}\sum_{i=1}^L \lambda(\sigma_i)\mathbf E_{q_{\sigma_i}(x)}
+[\Vert \nabla_x \log q_{\sigma_i}(x) - s_\theta(x,\sigma_i)\Vert^2_2]
+$$
+
+Lambda serves as a weight defining how much we want to prioritize the correct
+estimation of noise levels at certain levels
+
+$$
+= \frac{1}{L}\sum_{i=1}^L \lambda(\sigma_i)\
+\mathbf E_{x\sim p_\text{data}, z \sim \mathcal N(0,I)}
+[\Vert \nabla_{\tilde x} \log q_{\sigma_i}(\tilde x | x) 
+- s_\theta(\tilde x,\sigma_i)\Vert^2_2] \\
+= 
+\frac{1}{L}\sum_{i=1}^L \lambda(\sigma_i)\
+\mathbf E_{x\sim p_\text{data}, z \sim \mathcal N(0,I)}
+\left[\left\Vert
+    s_\theta(x + \sigma_i z,\sigma_i)
+    + \frac{z}{\sigma_i}
+\right\Vert^2_2\right]
+$$
+
+$\sigma_1 \approx$ maximum pairwise distance between datapoints, so you cover 
+the most amount of variance, $\sigma_L$ should be minimally small. Further, 
+adjacent noise levels should have sufficient overlap in their distributions, to
+facilitate transitioning across noise scales in annealed langevin dynamics. For 
+this reason it makes sense to have a geometric progression (each term is 
+multiplied by a common constant) between noise levels with sufficient length
+
+### Choosing the weighting function
+
+a reasonable heuristic for $\lambda(\sigma)$ is to choose 
+$\lambda(\sigma) = \sigma^2$
+
+$$
+\frac{1}{L}\sum_{i=1}^L \sigma_i^2\
+\mathbf E_{x\sim p_\text{data}, z \sim \mathcal N(0,I)}
+\left[\left\Vert
+    s_\theta(x + \sigma_i z,\sigma_i)
+    + \frac{z}{\sigma_i}
+\right\Vert^2_2\right]
+\\ = 
+\frac{1}{L}\sum_{i=1}^L 
+\mathbf E_{x\sim p_\text{data}, z \sim \mathcal N(0,I)}
+\left[\left\Vert
+    \sigma s_\theta(x + \sigma_i z,\sigma_i)
+    + z
+\right\Vert^2_2\right]
+\\ = 
+\frac{1}{L}\sum_{i=1}^L 
+\mathbf E_{x\sim p_\text{data}, z \sim \mathcal N(0,I)}
+\left[\left\Vert
+    \epsilon_\theta(x + \sigma_i z,\sigma_i)
+    + z
+\right\Vert^2_2\right] 
+[\epsilon_\theta (.,\sigma_i):= \sigma_i s_\theta(.,\sigma_i)]
+$$
+
+In this configuration of the loss you are prediction the mean of the noise. 
+Which makes sense, because you already know the variance
+
+While we thing of the noise scales as a discrete variable, in reality it is
+more of a continuum that you discretize. \
+So essentially what this means is that we now have a perturbed density 
+distribution that changes its state throughout different timesteps. 
+$p_t(x)$ where $t \in [0,T]$. $p_0(x)=p_\text{data}(x)$ and $p_T(x)$ is pure 
+noise.
+
+Similarly $\{x_t\}_{t\in [0,T]}$ denotes a random variable of the distribution 
+at different timesteps $p_t(x)$. This continuum of random variables forms a 
+**stochastic process**.
+
+We can describe the evolution of how this random variable continuum changes over
+time through the **stochastic differential equation (SDE)**
+
+$$
+dx_t = 
+\underbrace{f(x_t,t)dt}_\text{deterministic drift} 
++ g(t) \underbrace{dw_t}_\text{infinitesimal noise}
+$$
+essentially this is just a normal differential equation where noise is added at
+each step
+
+WLOG: Toy SDE
+$$
+dx_t = \sigma(t)dw_t
+$$
+
+All of this was from timestep 0 to T so adding noise in each step, however you 
+can also think of it in the reverse direction from pure noise to the data
+
+
+Forward SDE
+$$
+dx_t = \sigma(t)dw_t
+$$
+
+Reverse SDE
+
+$$
+dx_t = -\sigma(t)^2 \nabla_x \log p_t (x_t) dt + \sigma(t)d\bar w_t\\
+\approx -\sigma(t)^2 s_\theta(x_t, t) dt + \sigma(t)
+\underbrace{d \bar w_t}_\text{Infinitesimal noise in reverse time direction}
+$$
+You train the model essentially as before except now you sample out of your the
+timeslots rather than taking the discrete predefined noise levels
+$$
+\mathbf E_{t\in \mathcal U (0,T)} [\lambda(t)\mathbf E_{p_t(x)}
+[\Vert \nabla_x \log p_t(x) - s_\theta(x,t)\Vert^2_2]]
+$$
+
+Once you have this you can step through this function by discretizing time, 
+so what weve essentially already been doing, using methods like Euler-Maruyama
+
+$$
+x\leftarrow x\leftarrow -\sigma(t)^2 s_\theta(x,t)\Delta t + \sigma(t)z \space 
+[z \sim \mathcal N(0,|\Delta t|I)]\\
+t \leftarrow t + \Delta t
+$$
+
+#### Predictor Corrector sampling
+
+You take a numerical SDE solver for the reverse SDE that approximates a solution
+and then you correct it using score based MCMC which worked pretty well.
+
+
+You can also convert an SDE to a so called **ordinary differential equation 
+(ODE)** which you can use as part of a flow
+
+$$
+\frac{dx_t}{dt} = -\frac{1}{2}\sigma(t)^2\nabla_x\log_x p_t(x_t)
+$$
+
+Which is invertible
+
+## Lecture 15 - Evaluation of Generative Models
+
+Kernel density estimation - You have some data points and samples and you 
+measure the distance between them. Essentially you plot the data in your test
+set and then check how close your samples are to that and ideally the resulting
+plot should match the original plot. The distance is computed via a kernel
+and for that kernel you can use a gaussian or something
+
+- However this is bad for high dimensional data
+
+### HYPE
+
+Give people a decreasing amount of time to decide which image is real and which 
+is fake
+
+### Inception Score
+
+works with labelled data. Train a classifier, compare distributions of correct
+classifications between real data and generated data
+
+### Frechet Inception Distance (FID)
+
+Inception score doesnt take into account the desired data distribution directly.
+It only does so via a classifier.
+
+Measures similarities in the feature representations for datapoints sampled 
+from the model and the test set
+
+Computing FID
+- Theres a set G of generated Samples and a set T for the test set
+- Compute feature representations FG and FT for G and T respectively (e.g.
+the prelast layer of the inception net, aka the classifier)
+- Fit a multivariate Gaussian to each FG and FT by adapting the mean and the
+variance of both
+- FID is defined as the Wasserstein 2 (earth mover) distance between both 
+gaussians
+
+### Kernel Inception Distance
+
+Naximum Mean Discrepancy (MMD) is a two sample test statistic that compares 
+samples from two distributions p and q by computing differences in their moments 
+(means variances etc)
+
+Key ideda is to use a suitable kernel such as a gaussian to measure similarity
+between points
+
+So MMD compares the similarity between samples p and q individually to the
+samples from the mixture of p and q
+
+**Kernel inception distance**
+
+compute MMD in the feature space of a classifier (like an inception network)
+
+KID is unbiased whereas FID is faster
+
+
+### Features
+
+use a **clustering technique** to evaluate features.
+
+Measure losslessness of compression to decompression
+
+**Disentanglement** feature representations should be independant and 
+interpretable
+
+
+## Lecture 16 - Score Based Diffusion Models :steamhappy:
+
+### Thinking of diffusion as VAEs
+
+What you are doing in a diffusion network is transforming an image to noise
+over the perturbing process and then restoring an image from noise using 
+langevin dynamics. You can easily see that this has a very similar vibe to a 
+VAE where the encoder q is the perturbing part, and the decoder p are the 
+langevin dynamics
+
+Noise perturbed densities are obtained bu adding Gaussian noise
+
+$$
+q(x_t|x_{t-1})=\mathcal N(x_t; \sqrt{1-\beta_t}x_{t-1}, \beta_t I)
+$$
+
+which essentially defines a joint distribution 
+
+$$
+q(x_{1:T}|x_0)= \prod_{t=1}^T q(x_t|x_{t-1})
+$$
+
+Multi-step transitions are also gaussian and can be computed in closed form!
+
+$$
+q(x_t|x_0)=\mathcal N(x_t; \sqrt{\bar \alpha}x_0, (1-\bar \alpha) I)
+$$
+
+where $\bar \alpha_t = \prod_{s=1}^T (1-\beta_s)$ and $\beta$ being the noise 
+schedule
+
+Parallel to this we can define the decoder
+
+$x_T \sim p(x_T) = \mathcal N(x_T;0,I)$
+
+then iteratively sample from 
+$p_\theta(x_{t-1}|x_t) = \mathcal N(x_{t-1};\mu_\theta(x_t,t), \sigma_t^2I)$
+
+which also defines a joint distribution 
+
+$$
+p_\theta(x_{0:t})= p(x_T)\prod_{t=1}^T p_\theta(x_{t-1}|x_t)
+$$
+
+### From VAE to Hierarchical VAE
+
+Basic vae is a mixture of an infinite number of gaussians
+- $z \sim \mathcal N(0,I)$
+- $p(x|z) = \mathcal N(\mu_\theta(z), \Sigma_\theta(z))$
+
+Where you use ELBO training:
+$\mathbf E_{q_\phi(z|x)} [\log p_\theta(z,x) - \log q_\phi(z|x)]$
+
+
+Hierarchical VAE decoder: $p(x,z_1, z_2) = p(z_2)p(z_1|z_2)p(x|z_1)$\
+Encoder: $q(z_1, z_2 | x)$
+
+ELBO Training: 
+$\mathbf E_{q(z_1, z_2 | x)}[\log p(x, z_1, z_2)- \log q(z_1, z_2 | x)]$
+
+So the Objective would look like this
+$$
+L :=  \underbrace {\mathbf  E_{q(x_0)q(x_{1:T|x_0})}
+\left[
+    -\log \frac{p_\theta(x_{0:T})}{q(x_{1:T}|x_0)}
+\right]}_\text{ELBO (- because we minimize)}
+\ge \mathbf E_{q(x_0)}[-\log p_\theta(x_0)] 
+$$
+
+### Thinking of diffusion as SBMs
+
+if you parameterize the decoder in a specific way for 
+$p_\theta(x_{t-1}|x_t) = \mathcal N(x_{t-1};\mu_\theta(x_t,t), \sigma_t^2I)$
+
+$$
+\mu_\theta(x_t,t)=\frac{1}{\sqrt{1-\beta_t}}
+\left(
+    x_t-\frac{\beta_t}{\sqrt{1-\bar \alpha_t}}\epsilon_\theta(x_t,t)
+\right)
+$$
+
+then the the ELBO is actually equivalent to the denoising score matching
+
+$$
+L = \mathbf E_{
+    x_0\sim q(x_0), 
+    t \sim \mathcal U\{1,T\},
+    \epsilon \sim \mathcal N(0,I)}
+\left[
+    \lambda_t \Vert
+        \epsilon - 
+        \epsilon_\theta (
+            \sqrt{\bar \alpha_t} x_0 
+            + \sqrt{ 1- \bar \alpha_t} \epsilon,t
+        )
+    \Vert^2
+\right]
+\\ = 
+\mathbf E_{
+    x_0\sim q(x_0), 
+    t \sim \mathcal U\{1,T\},
+    \epsilon \sim \mathcal N(0,I)}
+\left[
+    \lambda_t \Vert
+        \epsilon - 
+        \epsilon_\theta (
+            q(x_t|x_0)
+        )
+    \Vert^2
+\right]
+$$
+
+Which means you predict the noise that was used to perturb (or encode)
+ $x_t$
+
+However Diffusion models are not Score based models just because their training
+objectives are the same. The sampling process between the two are different
+SBMs use langevin dynamics, whereas diffusion models use the decoding process\
+Which, however, is also very similar 
 
