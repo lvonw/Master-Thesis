@@ -2551,3 +2551,17 @@ objectives are the same. The sampling process between the two are different
 SBMs use langevin dynamics, whereas diffusion models use the decoding process\
 Which, however, is also very similar 
 
+### Classifier Free guidance
+
+on a high level this means that instead of training two networks for dealing
+with a control signal, we instead only have one. We then set a certain probability
+with which the control signal will be set to zero during training. 
+
+Then for generating the output, so that we dont become too dependant on the
+control signal we sample once with the condition once without and then combine
+the two using a weight
+
+$\hat x = w (\hat x_c - \hat x_u) + \hat x_u$
+
+
+

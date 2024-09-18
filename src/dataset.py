@@ -222,29 +222,35 @@ class DatasetFactory():
                                                              TerrainDataset]:
         DEM_List = DataAccessor.open_DEM_list()
 
-        data_cache_list = []
-        #TODO make it so that the preprocess happens immediately after every load
+        channel_cache   = []
+        label_cache     = []
+        transform_list  = []
+
+        # TODO make it so that the preprocess happens immediately after every load
         # or parallelize it
+        # TODO make it so you can configure what becomes a label and what a 
+        # channel
         if data_configuration["GLiM"]:
-            data_cache_list.append(DataAccessor.open_gdal_dataset(
+            channel_cache.append(DataAccessor.open_gdal_dataset(
                 constants.DATA_PATH_GLIM))
         
         if data_configuration["climate"]:
-            data_cache_list.append(DataAccessor.open_gdal_dataset(
+            channel_cache.append(DataAccessor.open_gdal_dataset(
                 constants.DATA_PATH_CLIMATE))
         
         if data_configuration["DSMW"]:
-            data_cache_list.append(DataAccessor.open_gdal_dataset(
+            channel_cache.append(DataAccessor.open_gdal_dataset(
                 constants.DATA_PATH_DSMW))
         
         if data_configuration["GTC"]:
-            data_cache_list.append(DataAccessor.open_gdal_dataset(
-                constants.DATA_PATH_GTC))
-            
-        data_cache = DatasetFactory.__pre_process_data_cache(data_cache_list)
-            
-        transform_list = []
+            # channel_cache.append(DataAccessor.open_gdal_dataset(
+            #     constants.DATA_PATH_GTC))
 
+            label_cache.append(DataAccessor.open_gdal_dataset(
+                constants.DATA_PATH_GTC))
+  
+        channel_cache = DatasetFactory.__pre_process_data_cache(channel_cache)
+            
         # This probably needs to be the very first operation
         if data_configuration["RandomRotation"]:
             transform_list.append(transforms.RandomRotation(
@@ -273,7 +279,10 @@ class DatasetFactory():
         transform = transforms.Compose(transform_list)
 
         return DatasetFactory.__get_data_splits(
-            TerrainDataset(DEM_List, data_cache, transform),
+            TerrainDataset(DEM_List, 
+                           channel_cache,
+                           label_cache, 
+                           transform),
             data_configuration["Data_Split"])
     
     def __get_data_splits(dataset, training_data_split):

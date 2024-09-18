@@ -17,3 +17,10 @@ is highly recommended.
 | Climate                | Climate  | Peel et al. 2007 Koeppen-Geiger Model          |
 | Soil                   | DSMW     | Land and Water Development Division, FAO, Rome |
 | Terrain Classification | GTC      | Iwahashi et al.                                |
+
+
+## Sources
+
+Guidance on implementing Diffusion Models:
+- https://www.youtube.com/watch?v=ZBKpAp_6TGI
+- https://github.com/Stability-AI/stablediffusion
