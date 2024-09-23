@@ -56,7 +56,7 @@ class Configuration():
 
         elif config_file is not constants.CONFIG_DEFAULT_FILE:
             print(f"No config file found at {config_path}, loading defaults.")
-            loaded_data = self.load_defaults()
+
         else:
             print("Default file could not be loaded.")
             self.print_load_options()

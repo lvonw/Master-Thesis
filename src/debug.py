@@ -13,21 +13,21 @@ class Printer():
 
     def __init__(self):
         self.line_count = 0
-
+    
+    def __count_lines(self, message):
+        return len(message.splitlines())
+    
+    def __increase_counter(self, message):
+        self.line_count += self.__count_lines(message)
+        
     def print(self, message):
+        print(message)
         self.__increase_counter(message)
 
     def input(self, prompt):
         value = input(prompt)
         self.__increase_counter(prompt)
         return value
-    
-    def __count_lines(self, message):
-        print(len(message.splitlines()))
-        return len(message.splitlines())
-    
-    def __increase_counter(self, message):
-        self.line_count += self.__count_lines(message)
     
     def clear_lines(self, amount):
         for _ in range(amount):

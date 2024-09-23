@@ -6,7 +6,7 @@ import matplotlib.pyplot    as plt
 import numpy                as np
 
 from configuration          import Section
-from data_access            import DataAccessor
+from data.data_access       import DataAccessor
 from mpl_toolkits.mplot3d   import Axes3D
 from osgeo                  import gdal
 from torchvision            import transforms

@@ -1,14 +1,14 @@
 import torch
 
-from cli.cli            import CLI
-from configuration      import Configuration
-from dataset            import DatasetFactory
-from torch.utils.data   import DataLoader
-from tqdm               import tqdm
+from cli.cli                import CLI
+from configuration          import Configuration
+from data.dataset           import DatasetFactory
+from torch.utils.data       import DataLoader
+from tqdm                   import tqdm
 
 def generate(condition, 
              input_image, 
-             strength, 
+             strength,  
              do_cfg, 
              cfg_scale, 
              device="cuda",

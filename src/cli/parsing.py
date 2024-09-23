@@ -1,6 +1,6 @@
 import enum
 import constants
-from debug import Printer
+from debug  import Printer
 
 class Action():
     def __init__(self, **kwargs):

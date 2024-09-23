@@ -1,11 +1,10 @@
 import json
 import os
-import cli.parsing  as parsing
 import constants
 
-
-from configuration import Configuration, Section
-from debug import Printer
+from cli            import parsing
+from configuration  import Configuration, Section
+from debug          import Printer
 
 class _MenuAction(parsing.Action):
     def __init__(self, **kwargs):

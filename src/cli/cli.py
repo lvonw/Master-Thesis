@@ -1,16 +1,15 @@
 import configuration
 
-import cli.menues       as menues
-import cli.parsing      as parsing
-
-from debug import Printer
+from cli        import menues
+from cli        import parsing
+from debug      import Printer
 
 class CLI():
     def __init__(self, 
                  configuration: configuration.Configuration):
         
         self.configuration  = configuration
-
+        
         self.nav_root   = menues.MainMenu(configuration)
         self.nav_stack  = [self.nav_root]
 
@@ -55,7 +54,6 @@ class CLI():
         quit_loop = False
         
         while not quit_loop:
-            
             self.nav_stack[-1].print()
             self.print(printer)
             user_input = printer.input(">>> ")
