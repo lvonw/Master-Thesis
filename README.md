@@ -23,4 +23,5 @@ is highly recommended.
 
 Guidance on implementing Diffusion Models:
 - https://www.youtube.com/watch?v=ZBKpAp_6TGI
+- https://www.youtube.com/watch?v=TBCRlnwJtZU
 - https://github.com/Stability-AI/stablediffusion

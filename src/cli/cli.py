@@ -1,6 +1,7 @@
-import menues
-import parsing
 import configuration
+
+import cli.menues       as menues
+import cli.parsing      as parsing
 
 from debug import Printer
 

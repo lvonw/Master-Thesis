@@ -5,10 +5,18 @@ import torch.nn             as nn
 import torch.nn.functional  as f
 
 
+class NonLinearity(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.non_linearity = nn.SiLU()
+
+    def forward(self, x):
+        return self.non_linearity(x)
+
 class Normalize(nn.Module):
     def __init__(self, channels, num_groups=32):
         super().__init__()
-        self.norm = nn.GroupNorm(num_groups, num_channels=channels)
+        self.norm = nn.GroupNorm(num_groups, num_channels=channels, eps=1e-6, affine=True)
 
     def forward(self, x):
         return self.norm(x)
@@ -98,61 +106,7 @@ class ResNetBlock(nn.Module):
 
         return x + self.residual(residual_x) 
 
-class SelfAttention(nn.Module):
-    def __init__(self, channels, num_heads):
-        super().__init__()
-
-        self.norm = Normalize(channels, 32)
-
-        self.in_projection  = nn.Linear (channels, 3*channels, bias=True)
-        self.out_projection = nn.Linear (channels, channels, bias=True)
-        self.num_heads = num_heads
-        self.head_dimension = channels // num_heads
 
 
-    def forward(self, x):
-        batch_size, num_channels, dimension = x.shape
 
-        attention_shape = (batch_size, 
-                           num_channels, 
-                           self.num_heads, 
-                           self.head_dimension)
-
-
-        query, key, value = self.in_projection(x).chunk(3, dim=1)
-
-        query   = query.reshape(attention_shape).permute(0,2,1,3)
-        key     = key.reshape(attention_shape).permute(0,2,1,3)
-        value   = value.reshape(attention_shape).permute(0,2,1,3)
-
-        weight  = query @ key.transpose(2,1) 
-        weight  = weight / math.sqrt(self.head_dimension)
-
-        x = (weight @ value).transpose(1,2).reshape(x.shape)
-        x = self.out_projection(x)
-        return x
-
-class AttentionBlock(nn.Module):
-    def __init__(self, channels):
-        super().__init__()
- 
-        self.norm       = Normalize(channels, 32)
-        self.attention  = SelfAttention(channels, 1)
-
-    def forward(self, x):
-        residual_x = x
-
-        x = self.norm(x)
-
-        batch_size, num_channels, height, width = x.shape()
-        x = x.reshape(batch_size, num_channels, height * width)
-        
-        x = x.permute(0,2,1)
-        x = self.attention(x)
-        x = x.permute(0,2,1)
-
-        x = x.reshape(batch_size, num_channels, height, width)
-
-        # x = self.norm(x)
-
-        return x + residual_x
+    

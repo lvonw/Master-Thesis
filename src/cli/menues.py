@@ -1,6 +1,6 @@
 import json
 import os
-import parsing
+import cli.parsing  as parsing
 import constants
 
 

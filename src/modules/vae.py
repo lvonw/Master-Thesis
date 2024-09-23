@@ -7,8 +7,8 @@ from configuration  import Section
 from util_modules   import (ResNetBlock, 
                             Downsample, 
                             Upsample, 
-                            AttentionBlock,
                             Normalize)
+from attention      import AttentionBlock
 
 class AutoEncoderFactory():
     def __init__(self):
