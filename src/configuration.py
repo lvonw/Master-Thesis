@@ -3,6 +3,8 @@ import json
 import os
 import yaml
 
+from debug import Printer
+
 class Configuration():
     def __init__(self):
         self.name = "Default"
@@ -10,7 +12,12 @@ class Configuration():
         self.directory = constants.CONFIG_PATH
 
     def __getitem__(self, section_name):
-        return self.sections[section_name]
+        if section_name in self.sections:
+            return self.sections[section_name]
+        else:
+            Printer().print_log(f"{section_name} is not a valid section",
+                                log_level=constants.LogLevel.ERROR) 
+            return _InvalidSection()
     
     def add_section(self, section_name, section):
         self.sections[section_name] = Section(section_name, section)
@@ -79,10 +86,17 @@ class Section():
     def __getitem__(self, configuration_name):
         if configuration_name in self.configurations:
             return self.configurations[configuration_name].value
+        else:
+            Printer().print_log(f"{configuration_name} is not a valid item",
+                                log_level=constants.LogLevel.ERROR) 
         return None
     
     def __setitem__(self, configuration_name, configuration):
-        self.configurations[configuration_name].value = configuration
+        if configuration_name in self.configurations:
+            self.configurations[configuration_name].value = configuration
+        else:
+            Printer().print_log(f"{configuration_name} is not a valid item",
+                                log_level=constants.LogLevel.ERROR) 
 
     def __contains__(self, configuration_name):
         return configuration_name in self.configurations
@@ -116,4 +130,15 @@ class Item():
         self.usage  = usage   
         self.type   = type(value) 
     
-
+class _InvalidSection(Section):
+    _singleton = None
+    
+    def __new__(cls, *args, **kwargs):
+        if cls._singleton is None:
+            cls._singleton = super().__new__(cls)
+        return cls._singleton
+    
+    def __init__(self):
+        self.name           = "Invalid Section"
+        self.description    = "Invalid Section, add this section to the config"
+        self.configurations = {}

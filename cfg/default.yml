@@ -27,17 +27,17 @@ Data:
   description: "Here you can configure everything regarding the used data"
   Configurations:
     GLiM:
-      value: true
-      usage: ""
+      value: false
+      usage: "Global Lithography dataset"
     climate:
       value: false
-      usage: ""
+      usage: "Global Climate Classification dataset"
     DSMW:
       value: false
-      usage: ""
+      usage: "Global Soil Classification dataset"
     GTC:
-      value: false
-      usage: ""
+      value: true
+      usage: "Global Terrain Classification dataset"
     Data_Split:
       value: 1.0
       usage: ""
