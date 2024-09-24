@@ -1,7 +1,9 @@
 import torch
 import torch.nn         as nn
+import os
 
 from torch.utils.data   import random_split
+
 
 def get_device(should_print=False):
     if torch.cuda.is_available():
@@ -15,3 +17,8 @@ def get_device(should_print=False):
         print(f"Setting device to {device}")
 
     return torch.device(device)
+
+
+def make_path(path_string):
+    path_arr = path_string.split("/")
+    return os.path.join(*path_arr)

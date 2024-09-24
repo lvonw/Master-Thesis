@@ -1,0 +1,52 @@
+Main:
+  description: |-
+    Main Menu of the program, here you can define the behaviour
+    @author Leopold von Wendt
+  
+  train: ""
+  validate: ""
+  test: ""
+  generate: ""
+
+Debug:
+  description: ""
+  train: ""
+
+Data:
+  description: Here you can configure everything regarding the used data
+  GLiM:
+    description: Global Lithography dataset
+    use_as_label: ""
+    use_as_channel: ""
+    cache: ""
+  climate:
+    description: Global Climate Classification dataset
+    use_as_label: ""
+    use_as_channel: ""
+    cache: ""
+  DSMW:
+    description: Global Soil Classification dataset
+    use_as_label: ""
+    use_as_channel: ""
+    cache: ""
+  GTC:
+    description: Global Terrain Classification dataset
+    use_as_label: ""
+    use_as_channel: ""
+    cache: ""
+  Data_Split: ""
+
+PTG_Model: 
+  description: ""
+  Configurations:
+    train:
+      value: true
+      usage: ""
+
+Hyperparameters:
+  description: ""
+  train: ""
+
+Auto_Encoder:
+  description: ""
+  train: ""

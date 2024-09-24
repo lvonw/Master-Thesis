@@ -1,7 +1,7 @@
 import constants
 import torch
-import torch.nn             as nn
-import torch.nn.functional  as f
+import torch.nn                 as nn
+import torch.nn.functional      as f
 
 from configuration              import Section
 from generation.modules.encoder import Encoder, Decoder
@@ -62,21 +62,26 @@ class VariationalAutoEncoder(nn.Module):
                  decoder, 
                  data_shape, 
                  latent_shape):
-        self.encoder = encoder
-        self.decoder = decoder
+        super().__init__()
 
-    def training(self):
+        self.encoder        = encoder
+        self.decoder        = decoder
+        self.data_shape     = data_shape
+        self.latent_shape   = latent_shape
+
+    def training_step(self):
         pass
 
-    def encode(self, x, noise):
-        self.encoder(x)
-
+    def encode(self, x):
+        x = self.encoder(x)
         mu, log_variance = torch.chunk(x, 2, dim=1) 
-        sigma = torch.clamp(log_variance, -30, 20).exp().sqrt()
+        
+        sigma   = torch.clamp(log_variance, -30, 20).exp().sqrt()
         # Reparameterization where noise ~ N(0,I)
-        x = mu + sigma * noise
+        noise   = torch.randn(mu.shape).to(mu.device)
+        x       = mu + sigma * noise
         # SD constant, idk why this is here, can try removing it
-        x = x * 0.18215
+        x       = x * 0.18215
         
         return (mu, x)
 

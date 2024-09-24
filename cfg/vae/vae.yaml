@@ -1,6 +1,6 @@
 VAE_1x32x32_4x8x8:
-  name: VAE_1x32x32_4x8x8
-  description: "Test VAE for sanity checks"
+  name: "VAE_1x32x32_4x8x8"
+  description: Test VAE for sanity checks
   
   data_num_channels: 1
   data_resolution_x: 32
@@ -25,8 +25,7 @@ VAE_1x32x32_4x8x8:
     - 4
 
     # resolution blocks at which we should use attention
-    attention_resolutions:
-    - 4
+    attention_resolutions: []
 
   # Training parameters
   training:

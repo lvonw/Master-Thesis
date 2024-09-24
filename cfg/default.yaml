@@ -1,0 +1,49 @@
+Main:
+  train:
+    value: true
+  validate:
+    value: false
+  test:
+    value: false
+  generate:
+    value: false
+
+Debug:
+  train:
+    value: true
+
+Data:
+  GLiM:
+    use_as_label:   false
+    use_as_channel: false
+    cache:          false
+  climate: 
+    use_as_label:   false
+    use_as_channel: false
+    cache:          false
+  DSMW: 
+    use_as_label:   false
+    use_as_channel: false
+    cache:          false
+  GTC:
+    use_as_label:   false
+    use_as_channel: false
+    cache:          false
+  Data_Split: 1.0
+
+PTG_Model: 
+  train:
+    value: true
+
+Hyperparameters:
+  train:
+    value: true
+
+Variational_Auto_Encoder:
+  external: cfg/vae/vae.yaml
+  selection: VAE_1x32x32_4x8x8
+  only_load_selection: true
+  read_only: true
+
+
+

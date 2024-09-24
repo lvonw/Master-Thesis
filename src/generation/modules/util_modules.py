@@ -56,7 +56,6 @@ class Upsample(nn.Module):
 
         return x
 
-
 class ResNetBlock(nn.Module):
     def __init__(self, 
                  in_channels, 

@@ -5,9 +5,6 @@ import torch.nn             as nn
 import torch.nn.functional  as f
 
 from util_modules import Normalize, NonLinearity
-
-
-
     
 class _Attention(nn.Module):
     def __init__(self, 
@@ -26,13 +23,17 @@ class _Attention(nn.Module):
             context_dimension = query_dimension
 
         self.query_matrix   = nn.Linear(query_dimension,    
-                                        query_dimension, bias=in_projetion_bias)
+                                        query_dimension, 
+                                        bias=in_projetion_bias)
         self.key_matrix     = nn.Linear(context_dimension,  
-                                        query_dimension, bias=in_projetion_bias)
+                                        query_dimension, 
+                                        bias=in_projetion_bias)
         self.value_matrix   = nn.Linear(context_dimension,  
-                                        query_dimension, bias=in_projetion_bias)
+                                        query_dimension, 
+                                        bias=in_projetion_bias)
         self.out_projection = nn.Linear(query_dimension,    
-                                        query_dimension, bias=out_projetion_bias)
+                                        query_dimension, 
+                                        bias=out_projetion_bias)
 
     def compute_attention(self, query, context):
         batch_size, num_channels, dimension = query.shape
@@ -122,19 +123,28 @@ class ContextualAttentionBlock(nn.Module):
         channels = n_heads * n_embed
  
         self.group_norm     = Normalize(channels, 32)
-        self.conv_input     = nn.Conv2d(channels, channels, kernel_size=1, padding=0)
+        self.conv_input     = nn.Conv2d(channels, 
+                                        channels, 
+                                        kernel_size=1, 
+                                        padding=0)
 
         self.layernorm_1    = nn.LayerNorm(channels)
         self.attention_1    = SelfAttention(channels, n_heads)
         
         self.layernorm_2    = nn.LayerNorm(channels)
-        self.attention_2    = CrossAttention(channels, d_context, n_heads, in_proj_bias=False)
+        self.attention_2    = CrossAttention(channels, 
+                                             d_context, 
+                                             n_heads, 
+                                             in_proj_bias=False)
 
         self.layernorm_3    = nn.LayerNorm(channels)
         self.linear_geglu_1 = nn.Linear(channels, 4 * channels * 2)
         self.linear_geglu_2 = nn.Linear(4 * channels, channels)
 
-        self.conv_output    = nn.Conv2d(channels, channels, kernel_size=1, padding=0)
+        self.conv_output    = nn.Conv2d(channels, 
+                                        channels, 
+                                        kernel_size=1, 
+                                        padding=0)
 
     def forward(self, x, context):
         residual_x_long = x

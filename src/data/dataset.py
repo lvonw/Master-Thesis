@@ -10,6 +10,120 @@ from osgeo                  import gdal
 from torchvision            import transforms
 from torch.utils.data       import Dataset, random_split
 
+class DatasetFactory():
+    def create_dataset(data_configuration: Section):
+        DEM_List = DataAccessor.open_DEM_list()
+
+        channel_cache   = []
+        label_cache     = []
+        transform_list  = []
+
+        # TODO make it so that the preprocess happens immediately after every load
+        # or parallelize it
+        if data_configuration["GLiM"]["cache"]:
+            if data_configuration["GLiM"]["use_as_channel"]:
+                channel_cache.append(DataAccessor.open_gdal_dataset(
+                    constants.DATA_PATH_GLIM))
+            elif data_configuration["GLiM"]["use_as_label"]:
+                pass
+            else:
+                pass
+        
+        if data_configuration["climate"]["cache"]:
+            if data_configuration["climate"]["use_as_channel"]:
+                channel_cache.append(DataAccessor.open_gdal_dataset(
+                    constants.DATA_PATH_CLIMATE))
+            elif data_configuration["climate"]["use_as_label"]:
+                pass
+            else:
+                pass
+        
+        if data_configuration["DSMW"]["cache"]:
+            if data_configuration["DSMW"]["use_as_channel"]:
+                channel_cache.append(DataAccessor.open_gdal_dataset(
+                    constants.DATA_PATH_DSMW))
+            elif data_configuration["DSMW"]["use_as_label"]:
+                pass
+            else:
+                pass
+        
+        if data_configuration["GTC"]["cache"]:
+            if data_configuration["GTC"]["use_as_channel"]:
+                channel_cache.append(DataAccessor.open_gdal_dataset(
+                    constants.DATA_PATH_GTC))
+            elif data_configuration["GTC"]["use_as_label"]:
+                e = DataAccessor.open_gdal_dataset(
+                    constants.DATA_PATH_GTC)
+                
+                geo_transform = e.GetGeoTransform()
+                asd = e.GetRasterBand(1).ReadAsArray()
+
+                label_cache.append((geo_transform, asd))
+            else:
+                pass
+  
+        channel_cache = DatasetFactory.__pre_process_data_cache(channel_cache)
+            
+        # This probably needs to be the very first operation
+        if data_configuration["RandomRotation"]:
+            transform_list.append(transforms.RandomRotation(
+                degrees=data_configuration["RandomRotation"]))
+
+        if data_configuration["RandomCrop"]:
+            transform_list.append(transforms.RandomCrop(
+                size=data_configuration["Size"]))
+            
+        if data_configuration["FiveCrop"]:
+            transform_list.append(transforms.FiveCrop(
+                size=data_configuration["Size"]))
+            
+        if data_configuration["TenCrop"]:
+            transform_list.append(transforms.TenCrop(
+                size=data_configuration["Size"]))
+            
+        if data_configuration["RandomHorizontalFlip"]:
+            transform_list.append(transforms.RandomHorizontalFlip(
+                p=data_configuration["RandomHorizontalFlip"]))
+            
+        if data_configuration["RandomVerticalFlip"]:
+            transform_list.append(transforms.RandomHorizontalFlip(
+                p=data_configuration["RandomVerticalFlip"]))
+        
+        transform = transforms.Compose(transform_list)
+
+        return DatasetFactory.__get_data_splits(
+            TerrainDataset(DEM_List, 
+                           channel_cache,
+                           label_cache, 
+                           transform),
+            data_configuration["Data_Split"])
+    
+    def __get_data_splits(dataset, training_data_split):
+        total_data      = len(dataset)
+        training_split  = math.ceil( total_data * training_data_split)
+        
+        return random_split(dataset, 
+                            [training_split, total_data - training_split],
+                            generator=torch.Generator()
+                                .manual_seed(constants.DATALOADER_SEED))
+
+    
+    def __pre_process_data_cache(data_cache):
+        processed_cache = []
+
+        for i, cache in enumerate(data_cache, 0):
+            if cache.RasterCount == 0:
+                    continue
+
+            geo_transform = cache.GetGeoTransform()
+
+            processed_cache.append(
+                (geo_transform, 
+                 GeoUtil.get_normalized_raster_band(cache.GetRasterBand(1)))
+            )
+
+        return processed_cache
+
 class TerrainDataset(Dataset): 
     def __init__(self, 
                  DEM_list, 
@@ -92,100 +206,3 @@ class TerrainDataset(Dataset):
 
         return data_entry, label
     
-class DatasetFactory():
-    def create_dataset(data_configuration: Section) -> tuple[TerrainDataset, 
-                                                             TerrainDataset]:
-        DEM_List = DataAccessor.open_DEM_list()
-
-        channel_cache   = []
-        label_cache     = []
-        transform_list  = []
-
-        # TODO make it so that the preprocess happens immediately after every load
-        # or parallelize it
-        # TODO make it so you can configure what becomes a label and what a 
-        # channel
-        if data_configuration["GLiM"]:
-            channel_cache.append(DataAccessor.open_gdal_dataset(
-                constants.DATA_PATH_GLIM))
-        
-        if data_configuration["climate"]:
-            channel_cache.append(DataAccessor.open_gdal_dataset(
-                constants.DATA_PATH_CLIMATE))
-        
-        if data_configuration["DSMW"]:
-            channel_cache.append(DataAccessor.open_gdal_dataset(
-                constants.DATA_PATH_DSMW))
-        
-        if data_configuration["GTC"]:
-            # channel_cache.append(DataAccessor.open_gdal_dataset(
-            #     constants.DATA_PATH_GTC))
-            e = DataAccessor.open_gdal_dataset(
-                constants.DATA_PATH_GTC)
-            
-            geo_transform = e.GetGeoTransform()
-            asd = e.GetRasterBand(1).ReadAsArray()
-
-            label_cache.append((geo_transform, asd))
-  
-        channel_cache = DatasetFactory.__pre_process_data_cache(channel_cache)
-            
-        # This probably needs to be the very first operation
-        if data_configuration["RandomRotation"]:
-            transform_list.append(transforms.RandomRotation(
-                degrees=data_configuration["RandomRotation"]))
-
-        if data_configuration["RandomCrop"]:
-            transform_list.append(transforms.RandomCrop(
-                size=data_configuration["Size"]))
-            
-        if data_configuration["FiveCrop"]:
-            transform_list.append(transforms.FiveCrop(
-                size=data_configuration["Size"]))
-            
-        if data_configuration["TenCrop"]:
-            transform_list.append(transforms.TenCrop(
-                size=data_configuration["Size"]))
-            
-        if data_configuration["RandomHorizontalFlip"]:
-            transform_list.append(transforms.RandomHorizontalFlip(
-                p=data_configuration["RandomHorizontalFlip"]))
-            
-        if data_configuration["RandomVerticalFlip"]:
-            transform_list.append(transforms.RandomHorizontalFlip(
-                p=data_configuration["RandomVerticalFlip"]))
-        
-        transform = transforms.Compose(transform_list)
-
-        return DatasetFactory.__get_data_splits(
-            TerrainDataset(DEM_List, 
-                           channel_cache,
-                           label_cache, 
-                           transform),
-            data_configuration["Data_Split"])
-    
-    def __get_data_splits(dataset, training_data_split):
-        total_data      = len(dataset)
-        training_split  = math.ceil( total_data * training_data_split)
-        
-        return random_split(dataset, 
-                            [training_split, total_data - training_split],
-                            generator=torch.Generator()
-                                .manual_seed(constants.DATALOADER_SEED))
-
-    
-    def __pre_process_data_cache(data_cache):
-        processed_cache = []
-
-        for i, cache in enumerate(data_cache, 0):
-            if cache.RasterCount == 0:
-                    continue
-
-            geo_transform = cache.GetGeoTransform()
-
-            processed_cache.append(
-                (geo_transform, 
-                 GeoUtil.get_normalized_raster_band(cache.GetRasterBand(1)))
-            )
-
-        return processed_cache

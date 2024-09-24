@@ -8,7 +8,9 @@ PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Config Paths
 CONFIG_PATH         = os.path.join(PROJECT_PATH, "cfg")
-CONFIG_DEFAULT_FILE = "default.yml"
+CONFIG_FILE_FORMAT  = ".yaml"
+CONFIG_DEFAULT_FILE = "default" + CONFIG_FILE_FORMAT
+USAGES_FILE         = os.path.join(CONFIG_PATH, "usages" + CONFIG_FILE_FORMAT)
 
 # Data Paths
 DATA_PATH_MASTER    = os.path.join(PROJECT_PATH,        "data")

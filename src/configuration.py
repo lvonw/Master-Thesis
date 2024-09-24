@@ -2,14 +2,17 @@ import constants
 import json
 import os
 import yaml
+import util
 
-from debug import Printer
+from debug  import Printer
 
 class Configuration():
     def __init__(self):
         self.name = "Default"
-        self.sections = {}
         self.directory = constants.CONFIG_PATH
+        
+        self.sections       = {}
+        self.section_paths  = {}
 
     def __getitem__(self, section_name):
         if section_name in self.sections:
@@ -18,21 +21,57 @@ class Configuration():
             Printer().print_log(f"{section_name} is not a valid section",
                                 log_level=constants.LogLevel.ERROR) 
             return _InvalidSection()
-    
-    def add_section(self, section_name, section):
-        self.sections[section_name] = Section(section_name, section)
+        
+    def __prepare_sections(self, sections, config_path):
+        for section_name, section in sections.items(): 
+            if "external" in section:
+                self.__add_external_section(section_name, section)
+            else:
+                self.__add_section(section_name, config_path, section)
 
-    def get_configuration(self, section_name, configuration_name):
-        return self.sections[section_name][configuration_name]
-    
-    def get_section(self, section_name):
-        return self[section_name]
+    def __add_external_section(self, section_name, section):
+            external_path = util.make_path(section["external"])
+            external_sections = self.__load_config_file(external_path)
+            if not external_sections:
+                return
+            
+            if ("only_load_selection" in section 
+                and "selection" in section
+                and section["selection"] in external_sections):
 
-    def find_configuration(self, configuration_name):
-        for _, section in self.sections.items():
-            for name, configuration in section.items():
-                if name == configuration_name:
-                    return configuration
+                external_section = external_sections[section["selection"]]
+
+                self.__add_section(section_name, 
+                                   external_path, 
+                                   external_section,
+                                   read_only=True)
+                return
+            
+            #self.__add_section(section_name, external_path, external_sections)
+            
+    def __add_section(self, 
+                      section_name, 
+                      section_path, 
+                      section, 
+                      read_only = False):
+
+        self.sections[section_name] = Section(section_name, 
+                                              section, 
+                                              read_only=read_only)
+        
+        self.add_section_path(section_path, section_name)
+
+    def __load_config_file(self, config_path):
+        loaded_data = {}
+        
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as file:
+                loaded_data = yaml.safe_load(file)
+        
+        return loaded_data
+            
+    def add_section_path(self, section_path, section_name):
+        self.section_paths.setdefault(section_path, []).append(section_name) 
 
     def print_load_options(self):
         files = []
@@ -43,48 +82,59 @@ class Configuration():
                 
                 files.append(file)
         
-        print (files)
+        Printer().print(files)
 
     def load_defaults(self):
-        self.load(constants.CONFIG_DEFAULT_FILE)
+        self.load_configuration(constants.CONFIG_DEFAULT_FILE)
 
-    def load(self, config_file):
+    def load_configuration(self, config_file):
         """Loads configuration data from the specified file."""
         config_path = os.path.join(self.directory, config_file)
-    
-        if os.path.exists(config_path):
-            loaded_data = {}
-            with open(config_path, 'r') as file:
-                # loaded_data = json.load(file)
-                loaded_data = yaml.safe_load(file)
+        loaded_data = self.__load_config_file(config_path)
 
-            for section_name, section in loaded_data.items():  
-                self.add_section(section_name, section)
-
+        if loaded_data:
+            self.__prepare_sections(loaded_data, config_path)
         elif config_file is not constants.CONFIG_DEFAULT_FILE:
-            print(f"No config file found at {config_path}, loading defaults.")
-
+            Printer().print(
+                f"No config file found at {config_path}, loading defaults.")
+            self.load_defaults()
         else:
-            print("Default file could not be loaded.")
+            Printer().print("Default file could not be loaded.")
             self.print_load_options()
-            return
+     
+    def load_usages(self):
+        usages = self.__load_config_file(constants.USAGES_FILE)
+
+        if not usages:
+            return 
+
+        # distribute usage to items
         
     def save(self, config_file=constants.CONFIG_DEFAULT_FILE):
         """Saves the current configuration data to the specified file."""
         config_path = os.path.join(self.directory, config_file)
 
         with open(config_path, 'w') as file:
-            # json.dump(self.config_data, file, indent=4)
             yaml.dump(self.config_data, file, indent=4)   
 
+    def print(self):
+        pass
+
 class Section():
-    def __init__(self, section_name, section):
+    def __init__(self, 
+                 section_name, 
+                 section,
+                 read_only=False):
+        
         self.name           = section_name
-        self.description    = section["description"]
-        self.configurations = self.__prepare_items(section["Configurations"])
+        self.description    = "Description not set yet"
+        self.configurations = self.__prepare_items(section)
+        self.read_only      = read_only
 
     def __getitem__(self, configuration_name):
         if configuration_name in self.configurations:
+            if isinstance(self.configurations[configuration_name], Section):
+                return self.configurations[configuration_name]
             return self.configurations[configuration_name].value
         else:
             Printer().print_log(f"{configuration_name} is not a valid item",
@@ -92,6 +142,11 @@ class Section():
         return None
     
     def __setitem__(self, configuration_name, configuration):
+        if self.read_only:
+            Printer().print_log(f"{self.name} is read-only",
+                                log_level=constants.LogLevel.WARNING) 
+            return
+
         if configuration_name in self.configurations:
             self.configurations[configuration_name].value = configuration
         else:
@@ -101,10 +156,16 @@ class Section():
     def __contains__(self, configuration_name):
         return configuration_name in self.configurations
     
-    def __prepare_items(self, configuration_items):
+    def __prepare_items(self, section):
         configurations = {}
-        for name, item in configuration_items.items():
-            configurations[name] = Item(item["value"], item["usage"])
+        for item_name, item in section.items():
+            if not isinstance(item, dict):
+                configurations[item_name] = Item(item)
+            elif "value" in item:
+                configurations[item_name] = Item(item["value"])
+            else:
+                configurations[item_name] = Section(item_name, item)
+
         return configurations
 
     def get_usage(self, configuration_name):
@@ -123,13 +184,19 @@ class Section():
         for name, config in self.configurations.items():
             values.append((name, config.value))
         return values
-    
+
+
 class Item():
-    def __init__(self, value, usage):
+    def __init__(self, value):
         self.value  = value
-        self.usage  = usage   
+        self.usage  = "No usage set yet"
         self.type   = type(value) 
-    
+
+    def set_usage(self, usage):
+        self.usage  = usage   
+
+
+
 class _InvalidSection(Section):
     _singleton = None
     

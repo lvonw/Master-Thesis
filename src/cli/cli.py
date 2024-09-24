@@ -70,7 +70,7 @@ class CLI():
             elif parser.get_and_set_false("back") and len(self.nav_stack) > 1 :
                 self.nav_stack.pop()
             elif parser["load"]:
-                self.configuration.load(parser.get_and_set_false("load"))
+                self.configuration.load_configuration(parser.get_and_set_false("load"))
             elif parser["save"]:
                 self.configuration.save(parser.get_and_set_false("save"))
             elif parser.get_and_set_false("options"):
