@@ -1,5 +1,5 @@
-model:
-  name: VAE_1x32x32_4x4x4
+VAE_1x32x32_4x8x8:
+  name: VAE_1x32x32_4x8x8
   description: "Test VAE for sanity checks"
   
   data_num_channels: 1

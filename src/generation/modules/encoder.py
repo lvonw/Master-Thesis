@@ -1,68 +1,14 @@
-import constants
-import torch
 import torch.nn             as nn
 import torch.nn.functional  as f
 
-from configuration  import Section
-from util_modules   import (ResNetBlock, 
-                            Downsample, 
-                            Upsample, 
-                            Normalize)
-from attention      import AttentionBlock
+from generation.modules.util_modules    import (ResNetBlock, 
+                                                Downsample, 
+                                                Upsample, 
+                                                Normalize)
+from generation.modules.attention       import AttentionBlock
 
-class AutoEncoderFactory():
-    def __init__(self):
-        pass
 
-    def create_auto_encoder(vae_configuration: Section):
-        starting_channels   = vae_configuration["starting_channels"]
-        
-        data_shape      = (vae_configuration["data_num_channels"], 
-                           vae_configuration["data_resolution_x"],
-                           vae_configuration["data_resolution_y"])
-        
-        latent_shape    = (vae_configuration["latent_num_channels"], 
-                           vae_configuration["latent_resolution_x"],
-                           vae_configuration["latent_resolution_y"]) 
-        
-        
-        channel_multipliers_encoder = vae_configuration["channel_multipliers"]
-        channel_multipliers_decoder = reversed(channel_multipliers_encoder)
-        
-        amount_resolutions  = len(channel_multipliers_encoder)
-        
-        attention_resolutions_encoder = vae_configuration[
-            "attention_resolutions"]
-        
-        attention_resolutions_decoder = attention_resolutions_encoder
-
-        resNet_per_layer_encoder = vae_configuration["ResNet_blocks_per_layer"]
-        resNet_per_layer_decoder = resNet_per_layer_encoder + 1
-
-        encoder = VAEEncoder(data_shape,
-                             latent_shape,
-                             starting_channels,
-                             amount_resolutions,
-                             channel_multipliers_encoder,
-                             resNet_per_layer_encoder,
-                             attention_resolutions_encoder)
-
-        decoder = VAEDecoder(latent_shape,
-                             data_shape,
-                             starting_channels,
-                             amount_resolutions,
-                             channel_multipliers_decoder,
-                             resNet_per_layer_decoder,
-                             attention_resolutions_decoder)
-
-        return VariationalAutoEncoder(encoder, decoder)
-
-class VariationalAutoEncoder(nn.Module):
-    def __init__(self, encoder, decoder):
-        self.encoder = encoder
-        self.decoder = decoder
-
-class VAEEncoder(nn.Module):
+class Encoder(nn.Module):
     def __init__(self,
                  data_shape,
                  latent_shape,
@@ -116,6 +62,7 @@ class VAEEncoder(nn.Module):
         self.norm = Normalize(current_channel_amount, 32)
         self.non_linearity = nn.SiLU()
 
+        # TODO this probably makes more sense in the VAE 
         self.output_conv_1 = nn.Conv2d(current_channel_amount, 
                                        latent_channel_amount * 2, 
                                        kernel_size=3, 
@@ -128,7 +75,7 @@ class VAEEncoder(nn.Module):
                                        stride=1,
                                        padding=0)
 
-    def forward(self, x, noise):
+    def forward(self, x):
         for module in self.encoder:
             x = module(x)
 
@@ -142,18 +89,9 @@ class VAEEncoder(nn.Module):
         x = self.output_conv_1(x)
         x = self.output_conv_2(x)
 
-        mu, log_variance = torch.chunk(x, 2, dim=1) 
-        sigma = torch.clamp(log_variance, -30, 20).exp().sqrt()
-
-        # Reparameterization where noise ~ N(0,I)
-        x = mu + sigma * noise
-        
-        # SD constant, idk why this is here, can try removing it
-        x = x * 0.18215
-
         return x
 
-class VAEDecoder(nn.Module):
+class Decoder(nn.Module):
     def __init__(self,
                  latent_shape,
                  data_shape,
@@ -224,10 +162,7 @@ class VAEDecoder(nn.Module):
                                      stride=1,
                                      padding=1)
 
-
     def forward(self, z):
-        z = z / 0.18215
-
         z = self.input_conv_1(z)
         z = self.input_conv_2(z)
 
