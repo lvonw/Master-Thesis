@@ -1,6 +1,7 @@
 import argparse
 import constants
 import torch
+import os
 
 from cli.cli                import CLI
 from configuration          import Configuration
@@ -71,39 +72,44 @@ def main():
     printer.print_log(f"Total amount of parameters: {total_params}")
     printer.print_log(f"Using device: {get_device()}")
 
-    printer.print_log("Loading state dict...")
 
-    torch.serialization.add_safe_globals([getattr,
-                                          VariationalAutoEncoder,
-                                          set,
-                                          Encoder,
-                                          Decoder,
-                                          nn.Conv2d,
-                                          nn.ModuleList,
-                                          ResNetBlock, 
-                                          Upsample, 
-                                          Downsample,
-                                          Normalize,
-                                          nn.GroupNorm,
-                                          nn.Linear,
-                                          nn.Identity,
-                                          AttentionBlock,
-                                          SelfAttention,
-                                          nn.SiLU])
-    asd = torch.load(constants.MODEL_PATH_TEST, 
-                                   weights_only=True)
+    cpu_core_num = os.cpu_count()
+    printer.print_log(f"Core count: {cpu_core_num}")
+
+
+    # printer.print_log("Loading state dict...")
+
+    # torch.serialization.add_safe_globals([getattr,
+    #                                       VariationalAutoEncoder,
+    #                                       set,
+    #                                       Encoder,
+    #                                       Decoder,
+    #                                       nn.Conv2d,
+    #                                       nn.ModuleList,
+    #                                       ResNetBlock, 
+    #                                       Upsample, 
+    #                                       Downsample,
+    #                                       Normalize,
+    #                                       nn.GroupNorm,
+    #                                       nn.Linear,
+    #                                       nn.Identity,
+    #                                       AttentionBlock,
+    #                                       SelfAttention,
+    #                                       nn.SiLU])
+    # asd = torch.load(constants.MODEL_PATH_TEST, 
+    #                                weights_only=False)
     
-    VAE.load_state_dict(asd())
-    printer.print_log("Finished.")
+    # VAE.load_state_dict(asd)
+    # printer.print_log("Finished.")
+    
     
     # TODO just for testing 
     if config["Main"]["generate"]:
         VAE.eval()
         with torch.no_grad():
             sample = VAE.generate()
+
             
-
-
     if config["Main"]["train"]:
         printer.print_log("Creating Dataset...")
         training_set, test_set = DatasetFactory.create_dataset(config["Data"])
@@ -113,10 +119,12 @@ def main():
         data_loader_generator.manual_seed(constants.DATALOADER_SEED)
 
         training_dataloader  = DataLoader(training_set, 
-                                    batch_size=128, 
-                                    #batch_size=1,
+                                    batch_size=32, 
                                     shuffle=True,
-                                    generator=data_loader_generator)
+                                    generator=data_loader_generator,
+                                    num_workers=cpu_core_num // 2,
+                                    pin_memory=True, 
+                                    pin_memory_device=str(get_device()))
         
         training.train(VAE, training_dataloader, config["Training"])
 

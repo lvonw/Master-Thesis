@@ -5,8 +5,9 @@ import torch
 import torch.optim          as optim
 import util
 
-from tqdm   import tqdm
-from debug  import Printer
+from tqdm               import tqdm
+from data.data_util     import DataVisualizer
+from debug              import Printer
 
 
 def print_loss_graph(losses):
@@ -16,29 +17,28 @@ def print_loss_graph(losses):
     plt.title("Training Loss Plot")
     plt.show()
 
+def show_log_loss():
+    with open(constants.LOG_PATH_LOSS, 'r') as file:
+        numbers = [float(line.strip()) for line in file if line.strip()]
+    
+    print_loss_graph(numbers)
 
 def log_loss(loss):
     with open(constants.LOG_PATH_LOSS, 'a') as file:
         file.write(f"{loss}\n")
 
-def show_tensors(dataloader):
+def show_tensors(dataloader, num_tensors=1):
     printer = Printer()
     printer.print_log("Preparing to show first image...")
     for images, _ in dataloader:
         image_tensor = images[0]
-        break
+        
+        DataVisualizer.show_image_tensor(image_tensor)
+        num_tensors -= 1
+        if num_tensors == 0:
+            break
+        
     printer.print_log("Finished.")
-
-    
-    image_tensor = image_tensor.permute(1, 2, 0)
-
-    image_numpy = image_tensor.numpy()
-    
-    # Plot the image using matplotlib
-    plt.imshow(image_numpy)
-    plt.title(f"Label")
-    plt.axis('off')
-    plt.show()
 
 
 def train(model, dataloader, configuration):
@@ -46,7 +46,7 @@ def train(model, dataloader, configuration):
     losses = []
     num_epochs = 10
 
-    #show_first_tensor(dataloader)
+    #show_tensors(dataloader, 1)
     
     model.to(util.get_device())
     model.train()
@@ -62,7 +62,8 @@ def train(model, dataloader, configuration):
             
             inputs, labels  = data
             inputs          = inputs.to(util.get_device())
-            #labels          = labels.to(util.get_device())
+            if labels:
+                labels          = labels.to(util.get_device())
 
             loss = model.training_step(inputs, labels)
             
@@ -75,8 +76,23 @@ def train(model, dataloader, configuration):
 
 
             if ((i+1) % 10) == 0:
-                log_loss(running_loss/i)
+                log_loss(running_loss/((i+1) * 32))
 
         torch.save(model.state_dict(), constants.MODEL_PATH_TEST)
 
     print_loss_graph(losses)
+
+    model.eval()
+    with torch.no_grad():
+        printer = Printer()
+        printer.print_log("Preparing to show first image...")
+        for images, _ in dataloader:
+            image_tensor = images[0]
+            
+            DataVisualizer.show_image_tensor(image_tensor)
+            images          = images.to(util.get_device())
+            reconstruction = model(images)[0]
+            reconstruction          = reconstruction.to("cpu")
+            DataVisualizer.show_image_tensor(reconstruction)
+            break
+        

@@ -70,7 +70,7 @@ class DatasetFactory():
         if data_configuration["Resize"]["active"]:
             printer.print_log("Activating Resize transform")
             transform_list.append(transforms.Resize(
-                size=64))
+                size=data_configuration["Resize"]["size"]))
 
         if data_configuration["RandomRotation"]["active"]:
             printer.print_log("Activating RandomRotation transform")
@@ -79,27 +79,27 @@ class DatasetFactory():
         if data_configuration["RandomCrop"]["active"]:
             printer.print_log("Activating RandomCrop transform")
             transform_list.append(transforms.RandomCrop(
-                size=64))
+                size=data_configuration["RandomCrop"]["size"]))
             
         if data_configuration["FiveCrop"]["active"]:
             printer.print_log("Activating FiveCrop transform")
             transform_list.append(transforms.FiveCrop(
-                size=data_configuration["Size"]))
+                size=data_configuration["FiveCrop"]["Size"]))
             
         if data_configuration["TenCrop"]["active"]:
             printer.print_log("Activating TenCrop transform")
             transform_list.append(transforms.TenCrop(
-                size=data_configuration["Size"]))
+                size=data_configuration["TenCrop"]["Size"]))
             
         if data_configuration["RandomHorizontalFlip"]["active"]:
             printer.print_log("Activating RandomHorizontalFlip transform")
             transform_list.append(transforms.RandomHorizontalFlip(
-                p=data_configuration["probability"]))
+                p=data_configuration["RandomHorizontalFlip"]["probability"]))
             
         if data_configuration["RandomVerticalFlip"]["active"]:
             printer.print_log("Activating RandomVerticalFlip transform")
             transform_list.append(transforms.RandomHorizontalFlip(
-                p=data_configuration["probability"]))
+                p=data_configuration["RandomVerticalFlip"]["probability"]))
         
         transform = transforms.Compose(transform_list)
 

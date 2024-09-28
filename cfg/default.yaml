@@ -1,12 +1,12 @@
 Main:
   train:
-    value: false
+    value: true
   validate:
     value: false
   test:
     value: false
   generate:
-    value: true
+    value: false
 
 Debug:
   train:
@@ -41,8 +41,8 @@ Data:
   RandomRotation:
     active:         false 
   RandomCrop:
-    active:         false
-    size:           32 
+    active:         true
+    size:           16 
   FiveCrop:
     active:         false 
   TenCrop:
@@ -69,7 +69,7 @@ Training:
 
 Variational_Auto_Encoder:
   external: cfg/vae/vae.yaml
-  selection: VAE_1x32x32_4x8x8
+  selection: VAE_1x16x16_4x8x8
   only_load_selection: true
   read_only: true
 

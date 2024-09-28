@@ -91,7 +91,10 @@ class VariationalAutoEncoder(nn.Module):
         # ensures that our latent space is as close as possible to a gaussian
         kl_divergence = torch.sum(1 + log_var - mean.pow(2) - log_var.exp())/-2
 
-        return reconstruction_loss + kl_divergence
+        # print(kl_divergence.item()/32, reconstruction_loss.item()/32)
+        # TODO beta schedule?
+        beta = 0.000001
+        return reconstruction_loss + beta * kl_divergence
 
     def encode(self, x):
         x = self.encoder(x)
@@ -102,12 +105,12 @@ class VariationalAutoEncoder(nn.Module):
         noise   = torch.randn(mu.shape).to(mu.device)
         x       = mu + sigma * noise
         # SD constant, idk why this is here, can try removing it
-        x       = x * 0.18215
+        #x       = x * 0.18215
         
         return (mu, x, log_variance)
 
     def decode(self, z):
-        z = z / 0.18215
+       # z = z / 0.18215
         x = self.decoder(z)
         # make sure that the values are in image space
         x = f.sigmoid(x)
