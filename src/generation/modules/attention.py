@@ -4,7 +4,7 @@ import torch
 import torch.nn             as nn
 import torch.nn.functional  as f
 
-from util_modules import Normalize, NonLinearity
+from generation.modules.util_modules    import Normalize, NonLinearity
     
 class _Attention(nn.Module):
     def __init__(self, 
@@ -45,8 +45,8 @@ class _Attention(nn.Module):
                            self.head_dimension)
 
         query   = self.query_matrix(query).view(interim_shape).transpose(1, 2)
-        key     = self.key(context).view(interim_shape).transpose(1, 2)
-        value   = self.value(context).view(interim_shape).transpose(1, 2)
+        key     = self.key_matrix(context).view(interim_shape).transpose(1, 2)
+        value   = self.value_matrix(context).view(interim_shape).transpose(1, 2)
 
         weight  = query @ key.transpose(-1, -2) 
         weight  = weight / math.sqrt(self.head_dimension)
@@ -106,12 +106,12 @@ class AttentionBlock(nn.Module):
 
         x = self.norm(x)
 
-        batch_size, num_channels, height, width = x.shape()
+        batch_size, num_channels, height, width = x.shape
         x = x.view(batch_size, num_channels, height * width)
         
-        x = x.permute(0,2,1)
+        x = x.transpose(-1, -2)
         x = self.attention(x)
-        x = x.permute(0,2,1)
+        x = x.transpose(-1, -2)
 
         x = x.view(batch_size, num_channels, height, width)
 
@@ -155,7 +155,7 @@ class ContextualAttentionBlock(nn.Module):
         batch_size, num_channels, height, width = x.shape()
         x = x.view(batch_size, num_channels, height * width)
         
-        x = x.permute(0,2,1)
+        x = x.transpose(-1, -2)
         residual_x_short = x  
 
         # self attention block
@@ -177,6 +177,6 @@ class ContextualAttentionBlock(nn.Module):
         x= self.linear_geglu_2(x)
         x = x + residual_x_short
 
-        x = x.permute(0,2,1)
+        x = x.transpose(-1, -2)
         x = x.view(batch_size, num_channels, height, width)
         return self.conv_output(x) + residual_x_long

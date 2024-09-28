@@ -124,45 +124,59 @@ class GeoUtil():
 
         return data_frame
         
-    
-def show_dataset_2D(dataset):
-    dataset_array = dataset.GetRasterBand(1).ReadAsArray()
 
-    plt.figure(figsize=(10, 10))
-    plt.imshow(dataset_array)
-    
-    plt.title('Raster Image')
-    plt.xlabel('Column (x)')
-    plt.ylabel('Row (y)')
-    plt.colorbar(label='Pixel Values')
-    plt.show()
+class DataVisualizer():
+    def show_geo_dataset_2D(dataset):
+        dataset_array = dataset.GetRasterBand(1).ReadAsArray()
 
-def show_array(array):
-    plt.figure(figsize=(10, 10))
-    plt.imshow(array)
-    
-    plt.title('Raster Image')
-    plt.xlabel('Column (x)')
-    plt.ylabel('Row (y)')
-    plt.colorbar(label='Pixel Values')
-    plt.show()
+        plt.figure(figsize=(10, 10))
+        plt.imshow(dataset_array)
+        
+        plt.title('Raster Image')
+        plt.xlabel('Column (x)')
+        plt.ylabel('Row (y)')
+        plt.colorbar(label='Pixel Values')
+        plt.show()
+
+    def show_array(array):
+        plt.figure(figsize=(10, 10))
+        plt.imshow(array)
+        
+        plt.title('Raster Image')
+        plt.xlabel('Column (x)')
+        plt.ylabel('Row (y)')
+        plt.colorbar(label='Pixel Values')
+        plt.show()
 
 
-def show_dataset_3D(dataset):
-    dataset_array = dataset.GetRasterBand(1).ReadAsArray()
+    def show_dataset_3D(dataset):
+        dataset_array = dataset.GetRasterBand(1).ReadAsArray()
 
-    x = np.arange(dataset_array.shape[1])
-    y = np.arange(dataset_array.shape[0])
-    x, y = np.meshgrid(x, y)
+        x = np.arange(dataset_array.shape[1])
+        y = np.arange(dataset_array.shape[0])
+        x, y = np.meshgrid(x, y)
 
-    fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(111, projection="3d")
-    ax.plot_surface(x, y, dataset_array, cmap='viridis')
+        fig = plt.figure(figsize=(10, 10))
+        ax = fig.add_subplot(111, projection="3d")
+        ax.plot_surface(x, y, dataset_array, cmap='viridis')
 
-    plt.title('Raster Image')
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    #plt.colorbar(label='Pixel Values')
-    ax.set_zlim(-1000, +1000)
-    plt.show()
+        plt.title('Raster Image')
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        #plt.colorbar(label='Pixel Values')
+        ax.set_zlim(-1000, +1000)
+        plt.show()
+
+    def show_image_tensor(tensor):
+        if len(tensor.shape) == 4:
+            image_tensor = tensor[0].permute(1, 2, 0)
+        else:
+            image_tensor = tensor.permute(1, 2, 0)
+
+        image = image_tensor.numpy()
+        
+        plt.imshow(image)
+        plt.title(f"Label")
+        plt.axis('off')
+        plt.show()

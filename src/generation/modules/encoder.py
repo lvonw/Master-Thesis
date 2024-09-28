@@ -76,6 +76,8 @@ class Encoder(nn.Module):
                                        padding=0)
 
     def forward(self, x):
+        x = self.input_conv(x)
+
         for module in self.encoder:
             x = module(x)
 
@@ -175,7 +177,6 @@ class Decoder(nn.Module):
 
         z = self.norm(z)
         z = self.non_linearity(z)
-
         z = self.output_conv(z)
 
         return z

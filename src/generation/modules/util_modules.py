@@ -14,9 +14,12 @@ class NonLinearity(nn.Module):
         return self.non_linearity(x)
 
 class Normalize(nn.Module):
-    def __init__(self, channels, num_groups=32):
+    def __init__(self, num_channels, num_groups=32):
         super().__init__()
-        self.norm = nn.GroupNorm(num_groups, num_channels=channels, eps=1e-6, affine=True)
+        self.norm = nn.GroupNorm(num_groups=num_groups, 
+                                 num_channels=num_channels, 
+                                 eps=1e-6, 
+                                 affine=True)
 
     def forward(self, x):
         return self.norm(x)
@@ -39,8 +42,8 @@ class Downsample(nn.Module):
 class Upsample(nn.Module):
     def __init__(self, channels, with_conv = False, scale_factor=2):
         super().__init__()
-        self.with_conv = with_conv
-        self.scale_factor = 0
+        self.with_conv      = with_conv
+        self.scale_factor   = scale_factor
 
         if self.with_conv:
             self.conv = torch.nn.Conv2d(channels,
@@ -92,16 +95,16 @@ class ResNetBlock(nn.Module):
         
         x = self.norm_1(x)
         x = f.silu(x)
-        x = self.conv_1
+        x = self.conv_1(x)
 
         if time_embedding is not None: 
             time_embedding = f.silu(time_embedding)
             time_embedding = self.time_linear(time_embedding)
             x = x + time_embedding.unsqueeze(-1).unsqueeze(-1)
 
-        x = self.norm_2
+        x = self.norm_2(x)
         x = f.silu(x)
-        x = self.conv_2
+        x = self.conv_2(x)
 
         return x + self.residual(residual_x) 
 

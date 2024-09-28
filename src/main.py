@@ -1,4 +1,6 @@
 import argparse
+import constants
+import torch
 
 from cli.cli                import CLI
 from configuration          import Configuration
@@ -8,6 +10,20 @@ from tqdm                   import tqdm
 
 from pipeline               import generate, training
 from debug                  import Printer
+from generation.models.vae  import AutoEncoderFactory, VariationalAutoEncoder
+from util                   import get_device
+
+import matplotlib.pyplot    as plt
+import numpy                as np
+import torch.nn             as nn
+
+from generation.modules.encoder import Encoder, Decoder
+from generation.modules.util_modules import (ResNetBlock, 
+                                             Upsample, 
+                                             Downsample,
+                                             Normalize)
+from generation.modules.attention   import AttentionBlock, SelfAttention
+
 
 def prepare_arg_parser():
     parser = argparse.ArgumentParser(prog="Diffusion",
@@ -47,19 +63,63 @@ def main():
         if should_quit:
             quit()
 
+    printer.print_log("Creating VAE...")
+    VAE = AutoEncoderFactory.create_auto_encoder(
+        config["Variational_Auto_Encoder"])
+    printer.print_log("Finished.")
+    total_params = sum(p.numel() for p in VAE.parameters())
+    printer.print_log(f"Total amount of parameters: {total_params}")
+    printer.print_log(f"Using device: {get_device()}")
+
+    printer.print_log("Loading state dict...")
+
+    torch.serialization.add_safe_globals([getattr,
+                                          VariationalAutoEncoder,
+                                          set,
+                                          Encoder,
+                                          Decoder,
+                                          nn.Conv2d,
+                                          nn.ModuleList,
+                                          ResNetBlock, 
+                                          Upsample, 
+                                          Downsample,
+                                          Normalize,
+                                          nn.GroupNorm,
+                                          nn.Linear,
+                                          nn.Identity,
+                                          AttentionBlock,
+                                          SelfAttention,
+                                          nn.SiLU])
+    asd = torch.load(constants.MODEL_PATH_TEST, 
+                                   weights_only=True)
+    
+    VAE.load_state_dict(asd())
+    printer.print_log("Finished.")
+    
+    # TODO just for testing 
+    if config["Main"]["generate"]:
+        VAE.eval()
+        with torch.no_grad():
+            sample = VAE.generate()
+            
+
+
     if config["Main"]["train"]:
         printer.print_log("Creating Dataset...")
         training_set, test_set = DatasetFactory.create_dataset(config["Data"])
         printer.print_log("Finished.")
 
-        print(len(training_set))
+        data_loader_generator = torch.Generator()
+        data_loader_generator.manual_seed(constants.DATALOADER_SEED)
 
-        dataloader  = DataLoader(training_set, 
-                                    batch_size=1, 
-                                    shuffle=False)
+        training_dataloader  = DataLoader(training_set, 
+                                    batch_size=128, 
+                                    #batch_size=1,
+                                    shuffle=True,
+                                    generator=data_loader_generator)
         
-        for i, data in tqdm(enumerate(dataloader, 0), total=len(dataloader)):
-            if i == 25: break
+        training.train(VAE, training_dataloader, config["Training"])
+
 
 
 

@@ -5,6 +5,7 @@ import torch
 from configuration          import Section
 from data.data_access       import DataAccessor
 from data.data_util         import GeoUtil
+from debug                  import Printer
 from mpl_toolkits.mplot3d   import Axes3D
 from osgeo                  import gdal
 from torchvision            import transforms
@@ -13,6 +14,7 @@ from torch.utils.data       import Dataset, random_split
 class DatasetFactory():
     def create_dataset(data_configuration: Section):
         DEM_List = DataAccessor.open_DEM_list()
+        printer = Printer()
 
         channel_cache   = []
         label_cache     = []
@@ -65,29 +67,39 @@ class DatasetFactory():
         channel_cache = DatasetFactory.__pre_process_data_cache(channel_cache)
             
         # This probably needs to be the very first operation
-        if data_configuration["RandomRotation"]:
-            transform_list.append(transforms.RandomRotation(
-                degrees=data_configuration["RandomRotation"]))
+        if data_configuration["Resize"]["active"]:
+            printer.print_log("Activating Resize transform")
+            transform_list.append(transforms.Resize(
+                size=64))
 
-        if data_configuration["RandomCrop"]:
+        if data_configuration["RandomRotation"]["active"]:
+            printer.print_log("Activating RandomRotation transform")
+            transform_list.append(transforms.RandomRotation())
+
+        if data_configuration["RandomCrop"]["active"]:
+            printer.print_log("Activating RandomCrop transform")
             transform_list.append(transforms.RandomCrop(
-                size=data_configuration["Size"]))
+                size=64))
             
-        if data_configuration["FiveCrop"]:
+        if data_configuration["FiveCrop"]["active"]:
+            printer.print_log("Activating FiveCrop transform")
             transform_list.append(transforms.FiveCrop(
                 size=data_configuration["Size"]))
             
-        if data_configuration["TenCrop"]:
+        if data_configuration["TenCrop"]["active"]:
+            printer.print_log("Activating TenCrop transform")
             transform_list.append(transforms.TenCrop(
                 size=data_configuration["Size"]))
             
-        if data_configuration["RandomHorizontalFlip"]:
+        if data_configuration["RandomHorizontalFlip"]["active"]:
+            printer.print_log("Activating RandomHorizontalFlip transform")
             transform_list.append(transforms.RandomHorizontalFlip(
-                p=data_configuration["RandomHorizontalFlip"]))
+                p=data_configuration["probability"]))
             
-        if data_configuration["RandomVerticalFlip"]:
+        if data_configuration["RandomVerticalFlip"]["active"]:
+            printer.print_log("Activating RandomVerticalFlip transform")
             transform_list.append(transforms.RandomHorizontalFlip(
-                p=data_configuration["RandomVerticalFlip"]))
+                p=data_configuration["probability"]))
         
         transform = transforms.Compose(transform_list)
 

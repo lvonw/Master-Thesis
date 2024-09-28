@@ -1,18 +1,21 @@
 Main:
   train:
-    value: true
+    value: false
   validate:
     value: false
   test:
     value: false
   generate:
-    value: false
+    value: true
 
 Debug:
   train:
     value: true
 
 Data:
+  Data_Split: 1.0
+
+  # Datasets
   GLiM:
     use_as_label:   false
     use_as_channel: false
@@ -29,13 +32,38 @@ Data:
     use_as_label:   false
     use_as_channel: false
     cache:          false
-  Data_Split: 1.0
+  
+  # Data transforms
+  Resize:
+    active:         true
+    size:           64
+    interpolation:  bilinear 
+  RandomRotation:
+    active:         false 
+  RandomCrop:
+    active:         false
+    size:           32 
+  FiveCrop:
+    active:         false 
+  TenCrop:
+    active:         false 
+  RandomHorizontalFlip:
+    active:         true 
+    probability:    0.5
+  RandomVerticalFlip:
+    active:         true 
+    probability:    0.5
+
 
 PTG_Model: 
   train:
     value: true
 
 Hyperparameters:
+  train:
+    value: true
+
+Training:
   train:
     value: true
 

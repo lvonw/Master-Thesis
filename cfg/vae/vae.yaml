@@ -13,7 +13,7 @@ VAE_1x32x32_4x8x8:
   # Defines the structure of the vae
   architecture:
     ResNet_blocks_per_layer: 2
-    starting_channels: 128
+    starting_channels: 32
     dropout: 0.0
     non_linearity: SiLU
     # Each channel multiplier denotes a resolution block

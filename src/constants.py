@@ -6,6 +6,10 @@ import enum
 # =============================================================================
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Log Paths
+LOG_PATH            = os.path.join(PROJECT_PATH, "log")
+LOG_PATH_LOSS       = os.path.join(LOG_PATH, "loss.txt")
+
 # Config Paths
 CONFIG_PATH         = os.path.join(PROJECT_PATH, "cfg")
 CONFIG_FILE_FORMAT  = ".yaml"
@@ -36,6 +40,7 @@ DATA_PATH_GTC       = os.path.join(DATA_PATH_MASTER,
 
 # Model Paths
 MODEL_PATH_MASTER   = os.path.join(PROJECT_PATH, "models")
+MODEL_PATH_TEST     = os.path.join(MODEL_PATH_MASTER, "test.pth")
 
 
 # =============================================================================

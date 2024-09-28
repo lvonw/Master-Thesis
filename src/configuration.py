@@ -209,3 +209,4 @@ class _InvalidSection(Section):
         self.name           = "Invalid Section"
         self.description    = "Invalid Section, add this section to the config"
         self.configurations = {}
+
