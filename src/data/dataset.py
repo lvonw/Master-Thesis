@@ -1,13 +1,12 @@
 import constants
 import math
+import os
 import torch
 
 from configuration          import Section
 from data.data_access       import DataAccessor
 from data.data_util         import GeoUtil
 from debug                  import Printer
-from mpl_toolkits.mplot3d   import Axes3D
-from osgeo                  import gdal
 from torchvision            import transforms
 from torch.utils.data       import Dataset, random_split
 
@@ -15,6 +14,12 @@ class DatasetFactory():
     def create_dataset(data_configuration: Section):
         DEM_List = DataAccessor.open_DEM_list()
         printer = Printer()
+
+        if data_configuration["DEM_Dataset"]:
+            source_dataset = os.path.join(constants.DATA_PATH_DEM,
+                                          data_configuration["DEM_Dataset"])
+        else:
+            source_dataset = constants.DATA_PATH_DEMS
 
         channel_cache   = []
         label_cache     = []
@@ -107,7 +112,8 @@ class DatasetFactory():
             TerrainDataset(DEM_List, 
                            channel_cache,
                            label_cache, 
-                           transform),
+                           transform,
+                           source_dataset),
             data_configuration["Data_Split"])
     
     def __get_data_splits(dataset, training_data_split):
@@ -141,18 +147,21 @@ class TerrainDataset(Dataset):
                  DEM_list, 
                  channel_data_cache,
                  label_data_cache, 
-                 transform=None):
+                 transform=None,
+                 source_dataset=constants.DATA_PATH_DEMS):
         self.transform              = transform
         self.DEM_list               = DEM_list
         self.channel_data_cache     = channel_data_cache
         self.label_data_cache       = label_data_cache
+        self.source_dataset         = source_dataset
 
     def __len__(self):
         return len(self.DEM_list)
     
     def __getitem__(self, index):
         metadata    = {}
-        DEM_dataset = DataAccessor.open_DEM(self.DEM_list[index])
+        DEM_dataset = DataAccessor.open_DEM(self.DEM_list[index], 
+                                            self.source_dataset)
 
         # TODO make own object
         metadata["filename"] = self.DEM_list[index]

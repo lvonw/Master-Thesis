@@ -41,6 +41,7 @@ DATA_PATH_GTC       = os.path.join(DATA_PATH_MASTER,
 
 # Model Paths
 MODEL_PATH_MASTER   = os.path.join(PROJECT_PATH, "models")
+MODEL_FILE_TYPE     = ".pth"
 MODEL_PATH_TEST     = os.path.join(MODEL_PATH_MASTER, "test.pth")
 
 

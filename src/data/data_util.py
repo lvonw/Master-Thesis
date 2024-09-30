@@ -180,3 +180,7 @@ class DataVisualizer():
         plt.title(f"Label")
         plt.axis('off')
         plt.show()
+
+    def show_image_tensors(tensors):
+        for tensor in tensors:
+            DataVisualizer.show_image_tensor(tensor)

@@ -5,7 +5,7 @@ from osgeo import gdal
 
 
 class DataAccessor():
-    def open_gdal_dataset(dataset_path):
+    def open_gdal_dataset(dataset_path, dataset=constants.DATA_PATH_DEMS):
         dataset = gdal.Open(dataset_path) 
 
         if not dataset:
@@ -13,9 +13,9 @@ class DataAccessor():
         
         return dataset
     
-    def open_DEM(name):
+    def open_DEM(name, dataset=constants.DATA_PATH_DEMS):
         return DataAccessor.open_gdal_dataset(
-             os.path.join(constants.DATA_PATH_DEMS, name))
+             os.path.join(dataset, name))
     
     def compile_DEM_list():
         files = []          

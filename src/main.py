@@ -12,6 +12,7 @@ from pipeline               import generate, training
 from debug                  import Printer
 from generation.models.vae  import AutoEncoderFactory, VariationalAutoEncoder
 from util                   import get_device
+from data.data_util         import DataVisualizer
 
 import matplotlib.pyplot    as plt
 import numpy                as np
@@ -38,6 +39,21 @@ def prepare_arg_parser():
                         help="")
     
     return parser
+
+# Helper to see if my models work
+def get_mnist():
+    training_set = MNIST(root=constants.DATA_PATH_MASTER, 
+                         train=True, 
+                         download=False, 
+                         transform=transforms.ToTensor())
+
+    validation_set = MNIST(root=constants.DATA_PATH_MASTER, 
+                           train=False, 
+                           download=False, 
+                           transform=transforms.ToTensor())
+    
+
+    return training_set, validation_set
 
 
 def main():
@@ -73,36 +89,27 @@ def main():
 
 
     printer.print_log("Loading state dict...")
-    model.load_state_dict(torch.load(constants.MODEL_PATH_TEST, 
-                                   weights_only=False))
+    
     printer.print_log("Finished.")
     
     # TODO just for testing 
     if config["Main"]["generate"]:
         model.eval()
         with torch.no_grad():
-            sample = model.generate()
+            for i in range(10):
+                sample = model.generate()
+                DataVisualizer.show_image_tensor(sample)
 
-            
     if config["Main"]["train"]:
-        # DATA_PATH_CLIMATE   = os.path.join(constants.DATA_PATH_MASTER)
-        mnist_path = constants.DATA_PATH_MASTER
-        training_set = MNIST(root=mnist_path, 
-                              train=True, 
-                              download=False, 
-                              transform=transforms.ToTensor())
-
-        validation_set = MNIST(root=mnist_path, 
-                             train=False, 
-                             download=False, 
-                             transform=transforms.ToTensor())
-
-
-
-        # printer.print_log("Creating Dataset...")
-        # training_set, validation_set = DatasetFactory.create_dataset(
-        #     config["Data"])
-        # printer.print_log("Finished.")
+        printer.print_log("Creating Dataset...")
+        if config["Main"]["use_MNIST"]:
+            printer.print_log("Using MNIST")
+            training_set, validation_set = get_mnist()
+        else:
+            printer.print_log("Using DEMs")
+            training_set, validation_set = DatasetFactory.create_dataset(
+                config["Data"])
+        printer.print_log("Finished.")
         
         training.train(model, training_set, validation_set, config["Training"])
 

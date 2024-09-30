@@ -1,8 +1,7 @@
-import torch
-import torch.nn         as nn
+import constants
 import os
-
-from torch.utils.data   import random_split
+import torch
+import torch.nn         as nns
 
 
 def get_device():
@@ -19,3 +18,28 @@ def get_device():
 def make_path(path_string):
     path_arr = path_string.split("/")
     return os.path.join(*path_arr)
+
+# from torch.utils.data   import random_split
+# from generation.models  import vae, ddpm
+
+def get_model_family(model):
+    # if isinstance(model, vae.VariationalAutoEncoder):
+    #     return "vae"
+    # elif isinstance(model, ddpm.DDPM):
+    #     return "ddpm"
+    
+    return "vae"
+
+def get_model_file_path(model):
+    model_family = get_model_family(model)
+    return os.path.join(constants.MODEL_PATH_MASTER,
+                        model_family,
+                        model.name,
+                        constants.MODEL_FILE_TYPE)
+    
+def save_model(model):
+    torch.save(model.state_dict(), get_model_file_path(model))
+
+def load_model(model):
+    model.load_state_dict(torch.load(get_model_file_path(model), 
+                                   weights_only=False))

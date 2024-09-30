@@ -42,7 +42,7 @@ def show_tensors(dataloader, num_tensors=1):
 def train(model, training_dataset, validation_dataset, configuration):
     printer = Printer()
     
-    batch_size = 128
+    batch_size = 32
     data_loader_generator = torch.Generator()
     data_loader_generator.manual_seed(constants.DATALOADER_SEED)
 
@@ -66,7 +66,7 @@ def train(model, training_dataset, validation_dataset, configuration):
     validation_losses   = []
     
     optimizer       = optim.Adam(model.parameters(), lr=4.5e-6)
-    num_epochs      = 0 # 100
+    num_epochs      = 10
     logging_steps   = 10
 
     #show_tensors(dataloader, 1)
@@ -109,7 +109,7 @@ def train(model, training_dataset, validation_dataset, configuration):
                 print_to_log_file(running_loss/(i+1), 
                                   constants.TRAINING_LOSS_LOG)
 
-        torch.save(model.state_dict(), constants.MODEL_PATH_TEST)
+        util.save_model(model)
 
         validation_loss = __validate(model,
                                      validation_dataloader, 
@@ -117,8 +117,6 @@ def train(model, training_dataset, validation_dataset, configuration):
                                      batch_size)
         validation_losses.append(validation_loss)
         printer.print_log(f"Validation Loss: {validation_loss:.4f}")
-
-    # print_loss_graph(training_losses)
 
     model.eval()
     with torch.no_grad():
