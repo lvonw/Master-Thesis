@@ -1,0 +1,13 @@
+test_diffusion:
+  name: test_diffusion
+  
+  latent: true
+
+  latent_encoding:
+    external: cfg/vae/vae.yaml
+    selection: VAE_1x16x16_4x4x4_5
+    only_load_selection: true
+    read_only: true
+
+  unet_architecture:
+    

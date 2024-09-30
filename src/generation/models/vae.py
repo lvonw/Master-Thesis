@@ -6,6 +6,7 @@ import torch.nn.functional      as f
 from configuration              import Section
 from generation.modules.encoder import Encoder, Decoder
 from util                       import get_device
+from debug                      import Printer
 
 class AutoEncoderFactory():
     def __init__(self):
@@ -29,6 +30,7 @@ class AutoEncoderFactory():
         
         amount_resolutions  = len(channel_multipliers_encoder)
         
+        use_attention = architecture["use_attention"]
         attention_resolutions_encoder = architecture[
             "attention_resolutions"]
         
@@ -43,7 +45,8 @@ class AutoEncoderFactory():
                           amount_resolutions,
                           channel_multipliers_encoder,
                           resNet_per_layer_encoder,
-                          attention_resolutions_encoder)
+                          attention_resolutions_encoder,
+                          use_attention)
 
         decoder = Decoder(latent_shape,
                           data_shape,
@@ -51,25 +54,29 @@ class AutoEncoderFactory():
                           amount_resolutions,
                           channel_multipliers_decoder,
                           resNet_per_layer_decoder,
-                          attention_resolutions_decoder)
+                          attention_resolutions_decoder,
+                          use_attention)
 
         return VariationalAutoEncoder(encoder, 
                                       decoder,
                                       data_shape,
-                                      latent_shape)
+                                      latent_shape,
+                                      vae_configuration["name"])
 
 class VariationalAutoEncoder(nn.Module):
     def __init__(self, 
                  encoder, 
                  decoder, 
                  data_shape, 
-                 latent_shape):
+                 latent_shape,
+                 name):
         super().__init__()
 
         self.encoder        = encoder
         self.decoder        = decoder
         self.data_shape     = data_shape
         self.latent_shape   = latent_shape
+        self.name           = name
 
 
     def ELBO_loss(a, b, c):
@@ -85,16 +92,29 @@ class VariationalAutoEncoder(nn.Module):
         # good reconstructions
         reconstruction_loss = f.binary_cross_entropy(input  = reconstructions, 
                                                      target = inputs,
-                                                     reduction="sum")
+                                                     reduction="none")
+        reconstruction_loss = torch.sum(reconstruction_loss, dim=(1, 2, 3))
+        reconstruction_loss_reduced = torch.sum(reconstruction_loss)
+
+        # reconstruction_loss = f.mse_loss(input  = reconstructions, 
+        #                                  target = inputs,
+        #                                  reduction="none")
         
         # KL-Divergence between a standard gaussian and our posterior
         # ensures that our latent space is as close as possible to a gaussian
-        kl_divergence = torch.sum(1 + log_var - mean.pow(2) - log_var.exp())/-2
+        kl_divergence = -0.5 * (1 + log_var - mean.pow(2) - log_var.exp())
+        kl_divergence = torch.sum(kl_divergence, dim=(1, 2, 3))
+        kl_divergence_reduced = torch.sum(kl_divergence)
+        
+        # Printer().print_log(
+        #     f"rec loss {reconstruction_loss_reduced:.4f}, KL {kl_divergence_reduced:.4f}")
 
-        # print(kl_divergence.item()/32, reconstruction_loss.item()/32)
-        # TODO beta schedule?
         beta = 0.000001
-        return reconstruction_loss + beta * kl_divergence
+
+        individual_losses   = reconstruction_loss + beta * kl_divergence
+        reduced_loss        = torch.sum(individual_losses)        
+
+        return reduced_loss, individual_losses
 
     def encode(self, x):
         x = self.encoder(x)
@@ -104,24 +124,23 @@ class VariationalAutoEncoder(nn.Module):
         # Reparameterization where noise ~ N(0,I)
         noise   = torch.randn(mu.shape).to(mu.device)
         x       = mu + sigma * noise
-        # SD constant, idk why this is here, can try removing it
-        #x       = x * 0.18215
         
         return (mu, x, log_variance)
 
     def decode(self, z):
-       # z = z / 0.18215
         x = self.decoder(z)
         # make sure that the values are in image space
         x = f.sigmoid(x)
         return x
-    
 
     def generate(self):
         noise   = torch.randn((1,) + self.latent_shape)
         return self.decode(noise)
     
     def forward(self, x, sample_posterior=True):
+        if x[0].shape != self.data_shape:
+            Printer().print_log("Data shape does not match specified shape!",
+                                constants.LogLevel.WARNING)
         posterior = self.encode(x)
 
         if sample_posterior:

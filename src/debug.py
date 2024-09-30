@@ -1,11 +1,19 @@
 import constants
 import sys
+import os
 
 from datetime import datetime
 
+
+def print_to_log_file(data, filename):
+    file_path = os.path.join(constants.LOG_PATH, filename)
+    with open(file_path, 'a') as file:
+        file.write(f"{data}\n")
+    
+
 class Printer():
     _singleton = None
-    
+
     def __new__(cls, *args, **kwargs):
         if cls._singleton is None:
             cls._singleton = super().__new__(cls)
@@ -58,5 +66,7 @@ class Printer():
 
     def print_headline(self, message):
         self.print(f"{constants.STYLE_BOLD}{message}{constants.STYLE_RESET}")
+
+
 
 

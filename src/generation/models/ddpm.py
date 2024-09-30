@@ -1,8 +1,11 @@
 import torch
 import numpy as np
 
+from generation.models.vae  import VariationalAutoEncoder, AutoEncoderFactory
+
 class DDPM():
     def __init__(self, 
+                 configuration,
                  generator=torch.Generator(), 
                  num_training_steps=1000, 
                  beta_start=0.00085,
@@ -14,15 +17,18 @@ class DDPM():
                                     num_training_steps, 
                                     dtype=torch.float32) ** 2
         
+        self.vae = AutoEncoderFactory.create_auto_encoder(configuration["latent_encoding"])
+
         self.alphas = 1.0 - self.betas
-        self.alpha_bar = torch(self.alphas, 0)
+        self.alpha_bar = torch.cumprod(self.alphas, 0)
         self.one = torch.tensor(1.0)
         self.generator = generator
         self.num_training_steps = num_training_steps
 
     def set_inference_timesteps():
         pass
-
+    
+    # Do i really need to noise all images at the same step
     def add_noise(self, original_samples, alpha_bar, timesteps):
         alpha_cumprod = self.alpha_cumprod.to(device=original_samples.device,
                                               dtype=original_samples.dtype)
@@ -88,7 +94,7 @@ class DDPM():
 
         pred_x_t_minus_1 = pred_mean_t + pred_sigma_t * noise
 
-    def train():
+    def training_step():
         pass
 
     def compute_loss():

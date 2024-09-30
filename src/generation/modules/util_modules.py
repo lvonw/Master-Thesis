@@ -28,10 +28,10 @@ class Downsample(nn.Module):
     def __init__(self, channels):
         super().__init__()
         self.conv = nn.Conv2d(channels,
-                                    channels,
-                                    kernel_size=3,
-                                    stride=2,
-                                    padding=0)
+                              channels,
+                              kernel_size=3,
+                              stride=2,
+                              padding=0)
 
     def forward(self, x):
         # Asymmetric padding so that we exactly half the dimensions

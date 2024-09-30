@@ -16,10 +16,12 @@ class Encoder(nn.Module):
                  amount_blocks,
                  channel_multipliers,
                  resNet_per_layer,
-                 attention_blocks):
+                 attention_blocks,
+                 use_attention=True):
         super().__init__()
         self.data_shape = data_shape
         self.latent_shape = latent_shape
+        self.use_attention = use_attention
         
         data_channel_amount = data_shape[0]
         latent_channel_amount = latent_shape[0]
@@ -82,7 +84,8 @@ class Encoder(nn.Module):
             x = module(x)
 
         x = self.bottleneck_resNet_1(x)
-        x = self.bottleneck_attention(x)
+        if self.use_attention:
+            x = self.bottleneck_attention(x)
         x = self.bottleneck_resNet_2(x)
 
         x = self.norm(x)
@@ -101,12 +104,14 @@ class Decoder(nn.Module):
                  amount_blocks,
                  channel_multipliers,
                  resNet_per_layer,
-                 attention_blocks):
+                 attention_blocks,
+                 use_attention=True):
         super().__init__()
 
         self.latent_shape = latent_shape
         self.data_shape = data_shape
-        
+        self.use_attention = use_attention
+
         latent_channel_amount = latent_shape[0]
         data_channel_amount = data_shape[0]
 
@@ -169,7 +174,8 @@ class Decoder(nn.Module):
         z = self.input_conv_2(z)
 
         z = self.bottleneck_resNet_1(z)
-        z = self.bottleneck_attention(z)
+        if self.use_attention:
+            z = self.bottleneck_attention(z)
         z = self.bottleneck_resNet_2(z)
 
         for module in self.decoder:

@@ -151,11 +151,12 @@ class TerrainDataset(Dataset):
         return len(self.DEM_list)
     
     def __getitem__(self, index):
+        metadata    = {}
         DEM_dataset = DataAccessor.open_DEM(self.DEM_list[index])
-       
-        # band = gds.GetRasterBand(1)
-        # p = gds.GetProjection()
-        # show_dataset_2D(DEM_dataset)
+
+        # TODO make own object
+        metadata["filename"] = self.DEM_list[index]
+
         label = []
 
         if DEM_dataset.RasterCount == 0:
@@ -216,5 +217,5 @@ class TerrainDataset(Dataset):
         if self.transform:
             data_entry = self.transform(data_entry)
 
-        return data_entry, label
+        return data_entry, label, metadata
     

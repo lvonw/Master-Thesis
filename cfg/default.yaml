@@ -36,7 +36,7 @@ Data:
   # Data transforms
   Resize:
     active:         true
-    size:           64
+    size:           32
     interpolation:  bilinear 
   RandomRotation:
     active:         false 
@@ -67,9 +67,9 @@ Training:
   train:
     value: true
 
-Variational_Auto_Encoder:
+Model:
   external: cfg/vae/vae.yaml
-  selection: VAE_1x16x16_4x8x8
+  selection: VAE_MNIST
   only_load_selection: true
   read_only: true
 

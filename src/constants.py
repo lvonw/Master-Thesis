@@ -8,7 +8,8 @@ PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Log Paths
 LOG_PATH            = os.path.join(PROJECT_PATH, "log")
-LOG_PATH_LOSS       = os.path.join(LOG_PATH, "loss.txt")
+TRAINING_LOSS_LOG   = "training_loss.txt"
+VALIDATION_LOSS_LOG = "validation_loss.txt"
 
 # Config Paths
 CONFIG_PATH         = os.path.join(PROJECT_PATH, "cfg")

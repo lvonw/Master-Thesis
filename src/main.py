@@ -6,7 +6,6 @@ import os
 from cli.cli                import CLI
 from configuration          import Configuration
 from data.dataset           import DatasetFactory
-from torch.utils.data       import DataLoader
 from tqdm                   import tqdm
 
 from pipeline               import generate, training
@@ -18,12 +17,9 @@ import matplotlib.pyplot    as plt
 import numpy                as np
 import torch.nn             as nn
 
-from generation.modules.encoder import Encoder, Decoder
-from generation.modules.util_modules import (ResNetBlock, 
-                                             Upsample, 
-                                             Downsample,
-                                             Normalize)
-from generation.modules.attention   import AttentionBlock, SelfAttention
+from torchvision.datasets   import MNIST
+from torchvision            import transforms
+
 
 
 def prepare_arg_parser():
@@ -64,69 +60,51 @@ def main():
         if should_quit:
             quit()
 
-    printer.print_log("Creating VAE...")
-    VAE = AutoEncoderFactory.create_auto_encoder(
-        config["Variational_Auto_Encoder"])
+    printer.print_log("Creating Model...")
+    model = AutoEncoderFactory.create_auto_encoder(
+        config["Model"])
     printer.print_log("Finished.")
-    total_params = sum(p.numel() for p in VAE.parameters())
+
+    total_params = sum(p.numel() for p in model.parameters())
     printer.print_log(f"Total amount of parameters: {total_params}")
     printer.print_log(f"Using device: {get_device()}")
-
-
     cpu_core_num = os.cpu_count()
     printer.print_log(f"Core count: {cpu_core_num}")
 
 
-    # printer.print_log("Loading state dict...")
-
-    # torch.serialization.add_safe_globals([getattr,
-    #                                       VariationalAutoEncoder,
-    #                                       set,
-    #                                       Encoder,
-    #                                       Decoder,
-    #                                       nn.Conv2d,
-    #                                       nn.ModuleList,
-    #                                       ResNetBlock, 
-    #                                       Upsample, 
-    #                                       Downsample,
-    #                                       Normalize,
-    #                                       nn.GroupNorm,
-    #                                       nn.Linear,
-    #                                       nn.Identity,
-    #                                       AttentionBlock,
-    #                                       SelfAttention,
-    #                                       nn.SiLU])
-    # asd = torch.load(constants.MODEL_PATH_TEST, 
-    #                                weights_only=False)
-    
-    # VAE.load_state_dict(asd)
-    # printer.print_log("Finished.")
-    
+    printer.print_log("Loading state dict...")
+    model.load_state_dict(torch.load(constants.MODEL_PATH_TEST, 
+                                   weights_only=False))
+    printer.print_log("Finished.")
     
     # TODO just for testing 
     if config["Main"]["generate"]:
-        VAE.eval()
+        model.eval()
         with torch.no_grad():
-            sample = VAE.generate()
+            sample = model.generate()
 
             
     if config["Main"]["train"]:
-        printer.print_log("Creating Dataset...")
-        training_set, test_set = DatasetFactory.create_dataset(config["Data"])
-        printer.print_log("Finished.")
+        # DATA_PATH_CLIMATE   = os.path.join(constants.DATA_PATH_MASTER)
+        mnist_path = constants.DATA_PATH_MASTER
+        training_set = MNIST(root=mnist_path, 
+                              train=True, 
+                              download=False, 
+                              transform=transforms.ToTensor())
 
-        data_loader_generator = torch.Generator()
-        data_loader_generator.manual_seed(constants.DATALOADER_SEED)
+        validation_set = MNIST(root=mnist_path, 
+                             train=False, 
+                             download=False, 
+                             transform=transforms.ToTensor())
 
-        training_dataloader  = DataLoader(training_set, 
-                                    batch_size=32, 
-                                    shuffle=True,
-                                    generator=data_loader_generator,
-                                    num_workers=cpu_core_num // 2,
-                                    pin_memory=True, 
-                                    pin_memory_device=str(get_device()))
+
+
+        # printer.print_log("Creating Dataset...")
+        # training_set, validation_set = DatasetFactory.create_dataset(
+        #     config["Data"])
+        # printer.print_log("Finished.")
         
-        training.train(VAE, training_dataloader, config["Training"])
+        training.train(model, training_set, validation_set, config["Training"])
 
 
 

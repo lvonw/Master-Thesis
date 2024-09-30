@@ -1,5 +1,7 @@
 .env
-data/*/*
 *__pycache__
 *.pth
+
 log/*
+resources/*/*
+data/*/*

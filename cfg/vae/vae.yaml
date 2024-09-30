@@ -109,7 +109,7 @@ VAE_1x16x16_4x4x4:
     - 1
     - 2
     - 4
-
+    use_attention: True
     attention_resolutions: []
 
   training:
@@ -144,4 +144,143 @@ VAE_1x16x16_4x8x8:
 
 
 
+VAE_1x16x16_4x4x4_2:
+  name: "VAE_1x16x16_4x4x4_2"
+  description: Test VAE for sanity checks
+  
+  data_num_channels: 1
+  data_resolution_x: 16
+  data_resolution_y: 16
 
+  latent_num_channels: 4
+  latent_resolution_x: 4
+  latent_resolution_y: 4
+  
+  architecture:
+    ResNet_blocks_per_layer: 1
+    starting_channels: 32
+    dropout: 0.0
+    non_linearity: SiLU
+    channel_multipliers:
+    - 1
+    - 2
+    - 4
+    use_attention: False
+    attention_resolutions: []
+
+  training:
+    learning_rate: 0.0001
+
+VAE_1x16x16_4x4x4_3:
+  name: "VAE_1x16x16_4x4x4_3"
+  description: Test VAE for sanity checks
+  
+  data_num_channels: 1
+  data_resolution_x: 16
+  data_resolution_y: 16
+
+  latent_num_channels: 4
+  latent_resolution_x: 4
+  latent_resolution_y: 4
+  
+  architecture:
+    ResNet_blocks_per_layer: 2
+    starting_channels: 64
+    dropout: 0.0
+    non_linearity: SiLU
+    channel_multipliers:
+    - 1
+    - 2
+    - 4
+    use_attention: True
+    attention_resolutions: []
+
+  training:
+    learning_rate: 0.0001
+
+VAE_1x16x16_4x4x4_4:
+  name: "VAE_1x16x16_4x4x4_4"
+  description: Test VAE for sanity checks
+  
+  data_num_channels: 1
+  data_resolution_x: 16
+  data_resolution_y: 16
+
+  latent_num_channels: 4
+  latent_resolution_x: 4
+  latent_resolution_y: 4
+  
+  architecture:
+    ResNet_blocks_per_layer: 2
+    starting_channels: 64
+    dropout: 0.0
+    non_linearity: SiLU
+    channel_multipliers:
+    - 1
+    - 2
+    - 4
+    use_attention: True
+    attention_resolutions: []
+
+  training:
+    learning_rate: 0.0001
+
+VAE_1x16x16_4x4x4_5:
+  name: "VAE_1x16x16_4x4x4_5"
+  description: Test VAE for sanity checks
+  
+  data_num_channels: 1
+  data_resolution_x: 16
+  data_resolution_y: 16
+
+  latent_num_channels: 16
+  latent_resolution_x: 4
+  latent_resolution_y: 4
+  
+  architecture:
+    ResNet_blocks_per_layer: 2
+    starting_channels: 64
+    dropout: 0.0
+    non_linearity: SiLU
+    channel_multipliers:
+    - 1
+    - 2
+    - 2
+    - 4
+    use_attention: True
+    attention_resolutions: []
+
+  training:
+    learning_rate: 0.0001
+
+
+
+
+
+VAE_MNIST:
+  name: "VAE_MNIST"
+  description: Test VAE for sanity checks
+  
+  data_num_channels: 1
+  data_resolution_x: 28
+  data_resolution_y: 28
+
+  latent_num_channels: 4
+  latent_resolution_x: 7
+  latent_resolution_y: 7
+  
+  architecture:
+    ResNet_blocks_per_layer: 2
+    starting_channels: 64
+    dropout: 0.0
+    non_linearity: SiLU
+    channel_multipliers:
+    - 1
+    - 2
+    use_attention: True
+    attention_resolutions: []
+
+  training:
+    learning_rate: 0.0001
+
+VAE_1x16x16_4x4x4_5:
