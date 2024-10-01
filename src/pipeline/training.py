@@ -38,11 +38,30 @@ def show_tensors(dataloader, num_tensors=1):
         
     printer.print_log("Finished.")
 
+def __prepare_data(data):
+    if len(data) == 2:
+        inputs, labels = data
+        metadata = []
+    else:
+        inputs, labels, metadata = data
+
+    inputs = inputs.to(util.get_device())
+    if len(labels):
+        labels = labels.to(util.get_device())
+
+    return inputs, labels, metadata
+
 
 def train(model, training_dataset, validation_dataset, configuration):
     printer = Printer()
     
-    batch_size = 32
+    batch_size      = configuration["batch_size"]
+    cpu_count       = configuration["cpu_count"]
+    cpu_count = cpu_count if cpu_count > 0 else os.cpu_count() + cpu_count
+    num_epochs      = configuration["epochs"]
+    logging_steps   = configuration["logging_steps"]
+    learning_rate   = configuration["learning_rate"]
+
     data_loader_generator = torch.Generator()
     data_loader_generator.manual_seed(constants.DATALOADER_SEED)
 
@@ -50,7 +69,7 @@ def train(model, training_dataset, validation_dataset, configuration):
                                      batch_size=batch_size, 
                                      shuffle=True,
                                      generator=data_loader_generator,
-                                     num_workers=os.cpu_count() -2,
+                                     num_workers=cpu_count,
                                      pin_memory=True, 
                                      pin_memory_device=str(util.get_device()))
     
@@ -58,16 +77,15 @@ def train(model, training_dataset, validation_dataset, configuration):
                                        batch_size=batch_size, 
                                        shuffle=False,
                                        generator=data_loader_generator,
-                                       num_workers=os.cpu_count() - 2,
+                                       num_workers=cpu_count,
                                        pin_memory=True, 
                                        pin_memory_device=str(util.get_device()))
             
     training_losses     = []
     validation_losses   = []
     
-    optimizer       = optim.Adam(model.parameters(), lr=4.5e-6)
-    num_epochs      = 10
-    logging_steps   = 10
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    
 
     #show_tensors(dataloader, 1)
     
@@ -86,16 +104,7 @@ def train(model, training_dataset, validation_dataset, configuration):
                             disable=False):
             optimizer.zero_grad()
             
-            if len(data) == 2:
-                inputs, labels = data
-            else:
-                inputs, labels, _ = data
-
-            inputs          = inputs.to(util.get_device())
-
-            if len(labels):
-                labels          = labels.to(util.get_device())
-
+            inputs, labels, _ = __prepare_data(data)
             loss, _ = model.training_step(inputs, labels)
             
             loss.backward()
@@ -105,15 +114,16 @@ def train(model, training_dataset, validation_dataset, configuration):
             running_loss += loss.item()
 
             if ((i+1) % logging_steps) == 0:
-                printer.clear_all()
+                #printer.clear_all()
                 print_to_log_file(running_loss/(i+1), 
                                   constants.TRAINING_LOSS_LOG)
+            
 
         util.save_model(model)
 
         validation_loss = __validate(model,
                                      validation_dataloader, 
-                                     configuration,
+                                     configuration["Validation"],
                                      batch_size)
         validation_losses.append(validation_loss)
         printer.print_log(f"Validation Loss: {validation_loss:.4f}")
@@ -134,6 +144,9 @@ def train(model, training_dataset, validation_dataset, configuration):
     print_to_log_file("\n", constants.TRAINING_LOSS_LOG)
 
 def __validate(model, dataloader, configuration, batch_size):
+    if not len(dataloader):
+        return 0
+    
     model.eval()
 
     running_loss = 0.0
@@ -151,9 +164,9 @@ def __validate(model, dataloader, configuration, batch_size):
             else:
                 inputs, labels, metadata = data
 
-            inputs                      = inputs.to(util.get_device())
+            inputs = inputs.to(util.get_device())
             if len(labels):
-                labels                  = labels.to(util.get_device())
+                labels = labels.to(util.get_device())
 
             loss, individual_losses = model.training_step(inputs, labels)
             
@@ -167,8 +180,9 @@ def __validate(model, dataloader, configuration, batch_size):
     if metadatas:
         z_scores        = __compute_z_score(losses)
         outliers        = []
+        outlier_score   = configuration["z_score"]
         for i, z_score in enumerate(z_scores, 0):
-            if z_score >= 3:
+            if z_score >= outlier_score:
                 outliers.append(metadatas[i])
 
     print_to_log_file(validation_loss, constants.VALIDATION_LOSS_LOG)

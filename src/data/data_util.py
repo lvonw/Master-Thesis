@@ -6,6 +6,7 @@ import numpy                as np
 from data.data_access       import DataAccessor
 from mpl_toolkits.mplot3d   import Axes3D
 from osgeo                  import gdal
+from debug                  import Printer
 
 
 class GeoUtil():
@@ -41,28 +42,33 @@ class GeoUtil():
 
     def get_normalized_raster_band(raster_band,
                                    nodata_behaviour = constants.NoDataBehaviour.LOCAL_MINIMUM, 
+                                   nodata_val = None,
                                    global_min = None, 
                                    global_max = None):
         
-        band_array      = raster_band.ReadAsArray()
-        nodata_value    = raster_band.GetNoDataValue()
-        
-        local_min = np.min(band_array)
-        local_max = np.max(band_array)
+        band_array = raster_band.ReadAsArray()
+        nodata_value = (raster_band.GetNoDataValue() if nodata_val is None 
+                        else nodata_val)
 
-        global_min = local_min if global_min is None else global_min
-        global_max = local_max if global_max is None else global_max
+        local_min = np.min(band_array)
+
+        global_min = local_min          if global_min is None else global_min
+        global_max = np.max(band_array) if global_max is None else global_max
+
 
         if nodata_value is not None:
-            match nodata_behaviour:
-                case constants.NoDataBehaviour.LOCAL_MINIMUM:
-                    band_array[band_array == nodata_value] = local_min 
-                case constants.NoDataBehaviour.GLOBAL_MINIMUM:
-                    band_array[band_array == nodata_value] = global_min
+            if nodata_behaviour == constants.NoDataBehaviour.LOCAL_MINIMUM:
+                np.copyto(band_array, 
+                          local_min, 
+                          where=(band_array == nodata_value))
+            elif nodata_behaviour == constants.NoDataBehaviour.GLOBAL_MINIMUM:
+                np.copyto(band_array, 
+                          global_min, 
+                          where=(band_array == nodata_value))
 
-        band_array = band_array - global_min
-        band_array = band_array.astype(np.float32) 
-        band_array = band_array / np.float32(global_max - global_min)
+        band_array = (band_array - global_min).astype(np.float32) 
+        band_array /= global_max - global_min
+
 
         return band_array
     

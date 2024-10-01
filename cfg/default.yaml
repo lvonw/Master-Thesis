@@ -1,18 +1,25 @@
 Main:
-  train:
-    value: true
-  validate:
-    value: false
-  test:
-    value: false
-  generate:
-    value: false
+  train: true
+  validate: false
+  test: false
+  generate: false
 
   use_MNIST: false
 
 Debug:
   train:
     value: true
+
+Training:  
+  epochs:         200
+  batch_size:     128
+  learning_rate:  4.5e-6
+  logging_steps:  10
+  cpu_count:      -2
+
+  Validation:
+    z_score: 3
+
 
 Data:
   Data_Split: 1.0
@@ -63,10 +70,6 @@ PTG_Model:
     value: true
 
 Hyperparameters:
-  train:
-    value: true
-
-Training:
   train:
     value: true
 

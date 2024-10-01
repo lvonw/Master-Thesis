@@ -34,8 +34,7 @@ def get_model_file_path(model):
     model_family = get_model_family(model)
     return os.path.join(constants.MODEL_PATH_MASTER,
                         model_family,
-                        model.name,
-                        constants.MODEL_FILE_TYPE)
+                        model.name + constants.MODEL_FILE_TYPE)
     
 def save_model(model):
     torch.save(model.state_dict(), get_model_file_path(model))

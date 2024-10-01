@@ -20,13 +20,15 @@ class DatasetFactory():
                                           data_configuration["DEM_Dataset"])
         else:
             source_dataset = constants.DATA_PATH_DEMS
+        
+        printer.print_log(f"Using dataset: {source_dataset}")
 
         channel_cache   = []
         label_cache     = []
         transform_list  = []
 
-        # TODO make it so that the preprocess happens immediately after every load
-        # or parallelize it
+        # TODO make it so that the preprocess happens immediately 
+        # after every load or parallelize it
         if data_configuration["GLiM"]["cache"]:
             if data_configuration["GLiM"]["use_as_channel"]:
                 channel_cache.append(DataAccessor.open_gdal_dataset(
@@ -160,19 +162,20 @@ class TerrainDataset(Dataset):
     
     def __getitem__(self, index):
         metadata    = {}
-        DEM_dataset = DataAccessor.open_DEM(self.DEM_list[index], 
-                                            self.source_dataset)
+        label       = []
+        filename    = self.DEM_list[index]
 
         # TODO make own object
-        metadata["filename"] = self.DEM_list[index]
+        metadata["filename"] = filename
 
-        label = []
-
+        DEM_dataset = DataAccessor.open_DEM(filename, self.source_dataset)
+        
         if DEM_dataset.RasterCount == 0:
             return None, None
         
         DEM_array   = GeoUtil.get_normalized_raster_band(
             DEM_dataset.GetRasterBand(1),
+            nodata_val = constants.DEM_NODATA_VAL,
             global_min = constants.DEM_GLOBAL_MIN,
             global_max = constants.DEM_GLOBAL_MAX
         )
