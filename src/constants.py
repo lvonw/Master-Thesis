@@ -39,6 +39,8 @@ DATA_PATH_GTC       = os.path.join(DATA_PATH_MASTER,
                                    "Iwahashi_etal_2018",
                                    "GlobalTerrainClassification_Iwahashi_etal_2018.tif")
 
+DEFAULT_DEM_LIST    = "SRTM_GL1_list.txt"
+
 # Model Paths
 MODEL_PATH_MASTER   = os.path.join(PROJECT_PATH, "models")
 MODEL_FILE_TYPE     = ".pth"

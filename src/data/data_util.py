@@ -72,30 +72,6 @@ class GeoUtil():
 
         return band_array
     
-    def get_min_max(DEM_list):
-        min = np.iinfo(np.int64).max
-        max = np.iinfo(np.int64).min
-
-        for dem in DEM_list:
-            d = DataAccessor.open_DEM(dem)
-
-            a = d.GetRasterBand(1).ReadAsArray()
-            n = d.GetRasterBand(1).GetNoDataValue()
-
-            max_v = np.max(a)
-
-            if n is not None:
-                a[a == n] = max_v
-            
-            min_v = np.min(a)
-           
-            if min > min_v:
-                min = min_v
-            if max < max_v:
-                max = max_v
-        
-        return min, max
-    
     def get_geo_frame_coordinates(geo_transform, top_left, bottom_right):
         """ Expecting the coordinates in x,y """
         top_left_geo    = GeoUtil.cell_to_geo_coordinates(

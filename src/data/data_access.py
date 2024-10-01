@@ -30,12 +30,13 @@ class DataAccessor():
 
         return files
 
-    def open_DEM_list(compile_list=False):
+    def open_DEM_list(list=constants.DEFAULT_DEM_LIST, compile_list=False):
         if compile_list or not os.path.exists(constants.DATA_PATH_DEM_LIST):
             return DataAccessor.compile_DEM_list()
 
+        dem_list_path = os.path.join(constants.DATA_PATH_DEM, list)
         dem_list = []
-        with open(constants.DATA_PATH_DEM_LIST, 'r') as file:
+        with open(dem_list_path, 'r') as file:
             for line in file:
                 dem_list.append(line.strip())
         

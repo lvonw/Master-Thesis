@@ -12,8 +12,11 @@ from torch.utils.data       import Dataset, random_split
 
 class DatasetFactory():
     def create_dataset(data_configuration: Section):
-        DEM_List = DataAccessor.open_DEM_list()
         printer = Printer()
+        
+        DEM_List_path = data_configuration["DEM_List"]
+        printer.print_log(f"Using DEM-list: {DEM_List_path}")
+        DEM_List = DataAccessor.open_DEM_list(DEM_List_path)
 
         if data_configuration["DEM_Dataset"]:
             source_dataset = os.path.join(constants.DATA_PATH_DEM,

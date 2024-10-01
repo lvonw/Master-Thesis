@@ -23,6 +23,7 @@ Training:
 
 Data:
   Data_Split: 1.0
+  DEM_List: SRTM_GL1_50_list.txt
   DEM_Dataset: SRTM_GL1_64x64
 
   # Datasets
@@ -46,13 +47,13 @@ Data:
   # Data transforms
   Resize:
     active:         false
-    size:           32
+    size:           64
     interpolation:  bilinear 
   RandomRotation:
     active:         false 
   RandomCrop:
     active:         true
-    size:           16 
+    size:           32 
   FiveCrop:
     active:         false 
   TenCrop:

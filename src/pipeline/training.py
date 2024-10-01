@@ -113,9 +113,9 @@ def train(model, training_dataset, validation_dataset, configuration):
             training_losses.append(loss.item())
             running_loss += loss.item()
 
-            if ((i+1) % logging_steps) == 0:
+            if ((i + 1) % logging_steps) == 0:
                 #printer.clear_all()
-                print_to_log_file(running_loss/(i+1), 
+                print_to_log_file(running_loss / (i + 1), 
                                   constants.TRAINING_LOSS_LOG)
             
 
@@ -131,12 +131,14 @@ def train(model, training_dataset, validation_dataset, configuration):
     model.eval()
     with torch.no_grad():
         printer.print_log("Preparing to show first image...")
-        for images, _ in training_dataloader:
-            image_tensor = images[0]
+        for data in training_dataloader:
+            inputs, _, _ = __prepare_data(data)
+
+            image_tensor = inputs[0]
             
             DataVisualizer.show_image_tensor(image_tensor)
-            images          = images.to(util.get_device())
-            reconstruction = model(images)[0]
+            inputs          = inputs.to(util.get_device())
+            reconstruction = model(inputs)[0]
             reconstruction          = reconstruction.to("cpu")
             DataVisualizer.show_image_tensor(reconstruction)
             break
