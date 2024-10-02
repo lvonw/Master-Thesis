@@ -24,7 +24,7 @@ class DatasetFactory():
         else:
             source_dataset = constants.DATA_PATH_DEMS
         
-        printer.print_log(f"Using dataset: {source_dataset}")
+        printer.print_log(f"Using dataset: {os.path.basename(source_dataset)}")
 
         channel_cache   = []
         label_cache     = []
@@ -188,6 +188,7 @@ class TerrainDataset(Dataset):
 
         # Extract all the specified additional channel data from other maps
         if self.channel_data_cache or self.label_data_cache: 
+            
             # Get the reference coordinates for the respective data frame
             top_left_geo, bot_right_geo = GeoUtil.get_geo_frame_coordinates(
                 DEM_dataset.GetGeoTransform(), 

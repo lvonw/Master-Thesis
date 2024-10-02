@@ -8,18 +8,24 @@ from tqdm                   import tqdm
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH_MASTER        = os.path.join(PROJECT_PATH, "data")
 DATA_PATH_DEM           = os.path.join(DATA_PATH_MASTER, "DEMs")
-DATA_PATH_DEM_LIST      = os.path.join(DATA_PATH_DEM, "SRTM_GL1_list.txt")
 DEM_LIST_PREFIX         = "SRTM_GL1_"
 DEM_LIST_POSTFIX         = "_list.txt" 
 
 # Determines which dataset we are analysing
 DATA_PATH_SOURCE_DEMs   = os.path.join(DATA_PATH_DEM, "SRTM_GL1_64x64")
+DATA_PATH_DEM_LIST      = os.path.join(DATA_PATH_DEM, "SRTM_GL1_list.txt")
 
-PRINT_DEM_LIST          = True
 PLOT_SIGMA              = False
+PLOT_RANGES             = False
+
+PRINT_SIGMA_LIST        = False
+PRINT_RANGE_LIST        = True
 
 SEA_LEVEL               = 5
-SIGMA_THRESHOLD         = 50
+SIGMA_THRESHOLD         = 90
+
+RANGE_MIN               = 0 #-2
+RANGE_MAX               = 3213 #4993 
 
 def analyze_DEM(dem_path):
     dataset = gdal.Open(dem_path)
@@ -39,9 +45,9 @@ def analyze_DEM(dem_path):
     analysis["max"]             = stats[1]
     analysis["mean"]            = stats[2]
     analysis["std_dev"]         = stats[3]
+    analysis["range"]           = analysis["max"] - analysis["min"]
     analysis["nodata_value"]    = nodata_value
     analysis["median"]          = np.median(band_array)
-
 
     nodata_count = 0
     if nodata_value is not None:
@@ -52,29 +58,35 @@ def analyze_DEM(dem_path):
     return analysis
 
 def analyze_DEMs(dems):
-    individual_metrics      = []
     global_min              = np.iinfo(np.int64).max
     global_max              = np.iinfo(np.int64).min
+
+    individual_metrics      = []
     all_nodata_percentages  = []
     all_means               = []
     all_medians             = []
     all_mins                = []
     all_maxs                = []
     all_stds                = []
+    all_ranges              = []
+    all_files_within_range  = []
+    all_affected_by_range   = []
+    all_unaffected_by_range = []
+    all_excluded_by_range   = []
 
-    negative_mean   = 0
-    negative_median = 0
-    point3_sigma_negative = 0
-    one_sigma_negative = 0
-    sigma_over_threshold = 0
+    negative_mean           = 0
+    negative_median         = 0
+    point3_sigma_negative   = 0
+    one_sigma_negative      = 0
+    sigma_over_threshold    = 0
     
-    all_negative_mean_means = []
-    all_negative_mean_median_mean = []
-    all_negative_mean_stds  = []
+    all_negative_mean_means         = []
+    all_negative_mean_median_mean   = []
+    all_negative_mean_stds          = []
 
-    min_sigma_over_threshold = float("inf")
-    min_sigma_file = ""
-    all_min_sigma_files = []
+    min_sigma_over_threshold        = float("inf")
+    min_sigma_file                  = ""
+    all_min_sigma_files             = []
 
 
     for dem_name in tqdm(dems,
@@ -98,6 +110,7 @@ def analyze_DEMs(dems):
         all_mins.append(metric["min"])
         all_maxs.append(metric["max"])
         all_stds.append(metric["std_dev"])
+        all_ranges.append(metric["range"])
 
         if metric["median"] < SEA_LEVEL: 
             negative_median += 1
@@ -119,6 +132,17 @@ def analyze_DEMs(dems):
             if min_sigma_over_threshold > metric["std_dev"]:
                 min_sigma_over_threshold = metric["std_dev"]
                 min_sigma_file = metric["file"]
+
+        if metric["max"] >= RANGE_MIN and metric["min"] <= RANGE_MAX:
+            all_files_within_range.append(metric["file"])
+        else:
+            all_excluded_by_range.append(metric["file"])
+        
+        # if (metric["max"] > RANGE_MAX) != (metric["min"] < RANGE_MIN):
+        #     all_affected_by_range.append(metric["file"])
+        if metric["max"] <= RANGE_MAX and metric["min"] >= RANGE_MIN:
+            all_unaffected_by_range.append(metric["file"])
+        
 
 
     mean_min    = np.mean(all_mins)
@@ -153,16 +177,30 @@ def analyze_DEMs(dems):
         "sigma_over_threshold": sigma_over_threshold,
         "min_sigma_file": min_sigma_file,
         "min_sigma_over_threshold": min_sigma_over_threshold,
+        "mean_range": np.mean(all_ranges),
+        "min_range": np.min(all_ranges),
+        "max_range": np.max(all_ranges),
+        "amount_in_range": len(all_files_within_range),
+        #"all_affected_by_range": len(all_affected_by_range),
+        "all_unaffected_by_range": len(all_unaffected_by_range),
+        "all_excluded_by_range": len(all_excluded_by_range),
     }
 
     if PLOT_SIGMA:
         plt.plot(all_stds)
-        plt.title("Histogram of Pixel Values")
-        plt.xlabel("Pixel Value")
-        plt.ylabel("Frequency")    
+        plt.title("Sigma of each DEM")
+        plt.xlabel("Image IDX")
+        plt.ylabel("Sigma")    
         plt.show()
 
-    if PRINT_DEM_LIST:
+    if PLOT_RANGES:
+        plt.plot(all_ranges)
+        plt.title("Ranges of each DEM")
+        plt.xlabel("Image IDX")
+        plt.ylabel("Range")    
+        plt.show()    
+
+    if PRINT_SIGMA_LIST:
         dem_list_path = os.path.join(DATA_PATH_DEM, 
                                     (DEM_LIST_PREFIX 
                                      + str(SIGMA_THRESHOLD) 
@@ -170,6 +208,18 @@ def analyze_DEMs(dems):
         
         with open(dem_list_path, 'w') as file:
             for name in all_min_sigma_files:
+                file.write(f"{name}\n")
+
+    if PRINT_RANGE_LIST:
+        dem_list_path = os.path.join(DATA_PATH_DEM, 
+                                    (DEM_LIST_PREFIX 
+                                     + str(RANGE_MIN)
+                                     + "-"
+                                     + str(RANGE_MAX)
+                                     + DEM_LIST_POSTFIX))
+        
+        with open(dem_list_path, 'w') as file:
+            for name in all_files_within_range:
                 file.write(f"{name}\n")
     
     return individual_metrics, aggregate_metrics
@@ -187,7 +237,8 @@ if __name__ == "__main__":
     
     individual_metrics, aggregate_metrics = analyze_DEMs(dems)
 
-    print(
-        f"Aggregate Metrics for {os.path.basename(DATA_PATH_SOURCE_DEMs)}")
+    print(f"Aggregate Metrics for {os.path.basename(DATA_PATH_SOURCE_DEMs)}")
+    print(f"List: {os.path.basename(DATA_PATH_DEM_LIST)}")
+
     for key, value in aggregate_metrics.items():
         print(f"{key}: {value}")

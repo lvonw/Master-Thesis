@@ -90,15 +90,15 @@ class VariationalAutoEncoder(nn.Module):
 
         # Reconstruction loss ensures that we learn meaningful latents, and
         # good reconstructions
-        reconstruction_loss = f.binary_cross_entropy(input  = reconstructions, 
-                                                     target = inputs,
-                                                     reduction="none")
+        # reconstruction_loss = f.binary_cross_entropy(input  = reconstructions, 
+        #                                              target = inputs,
+        #                                              reduction="none")
+        
+        reconstruction_loss = f.mse_loss(input  = reconstructions, 
+                                         target = inputs,
+                                         reduction="none")
         reconstruction_loss = torch.sum(reconstruction_loss, dim=(1, 2, 3))
         reconstruction_loss_reduced = torch.sum(reconstruction_loss)
-
-        # reconstruction_loss = f.mse_loss(input  = reconstructions, 
-        #                                  target = inputs,
-        #                                  reduction="none")
         
         # KL-Divergence between a standard gaussian and our posterior
         # ensures that our latent space is as close as possible to a gaussian

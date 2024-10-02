@@ -40,5 +40,10 @@ def save_model(model):
     torch.save(model.state_dict(), get_model_file_path(model))
 
 def load_model(model):
-    model.load_state_dict(torch.load(get_model_file_path(model), 
-                                   weights_only=False))
+    model_path = get_model_file_path(model)
+    if not os.path.exists(model_path):
+        return False
+
+    model.load_state_dict(torch.load(model_path, 
+                                     weights_only=False))
+    return True

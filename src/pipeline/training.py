@@ -26,8 +26,6 @@ def show_log_loss():
     print_loss_graph(numbers)
 
 def show_tensors(dataloader, num_tensors=1):
-    printer = Printer()
-    printer.print_log("Preparing to show first image...")
     for images, _ in dataloader:
         image_tensor = images[0]
         
@@ -36,7 +34,6 @@ def show_tensors(dataloader, num_tensors=1):
         if num_tensors == 0:
             break
         
-    printer.print_log("Finished.")
 
 def __prepare_data(data):
     if len(data) == 2:
@@ -56,11 +53,13 @@ def train(model, training_dataset, validation_dataset, configuration):
     printer = Printer()
     
     batch_size      = configuration["batch_size"]
-    cpu_count       = configuration["cpu_count"]
-    cpu_count = cpu_count if cpu_count > 0 else os.cpu_count() + cpu_count
     num_epochs      = configuration["epochs"]
     logging_steps   = configuration["logging_steps"]
     learning_rate   = configuration["learning_rate"]
+
+    cpu_count       = configuration["cpu_count"]
+    cpu_count       = (cpu_count if cpu_count > 0 
+                       else os.cpu_count() + cpu_count)
 
     data_loader_generator = torch.Generator()
     data_loader_generator.manual_seed(constants.DATALOADER_SEED)
@@ -102,6 +101,7 @@ def train(model, training_dataset, validation_dataset, configuration):
                             total=len(training_dataloader),
                             desc="Training Steps",
                             disable=False):
+            
             optimizer.zero_grad()
             
             inputs, labels, _ = __prepare_data(data)
@@ -114,41 +114,45 @@ def train(model, training_dataset, validation_dataset, configuration):
             running_loss += loss.item()
 
             if ((i + 1) % logging_steps) == 0:
-                #printer.clear_all()
                 print_to_log_file(running_loss / (i + 1), 
                                   constants.TRAINING_LOSS_LOG)
-            
+        
+        if configuration["Save_after_epoch"]:
+            util.save_model(model)
+        
+        if len(validation_dataloader):
+            validation_loss = __validate(model,
+                                            validation_dataloader, 
+                                            configuration["Validation"],
+                                            batch_size)
+            validation_losses.append(validation_loss)
+            printer.print_log(f"Validation Loss: {validation_loss:.4f}")
 
-        util.save_model(model)
-
-        validation_loss = __validate(model,
-                                     validation_dataloader, 
-                                     configuration["Validation"],
-                                     batch_size)
-        validation_losses.append(validation_loss)
-        printer.print_log(f"Validation Loss: {validation_loss:.4f}")
-
+    print_to_log_file("\n", constants.TRAINING_LOSS_LOG)
+    
+    # Post training evaluations
     model.eval()
+
+    figures = []
     with torch.no_grad():
-        printer.print_log("Preparing to show first image...")
         for data in training_dataloader:
             inputs, _, _ = __prepare_data(data)
 
-            image_tensor = inputs[0]
+            reconstruction  = model(inputs)[0]
             
-            DataVisualizer.show_image_tensor(image_tensor)
-            inputs          = inputs.to(util.get_device())
-            reconstruction = model(inputs)[0]
-            reconstruction          = reconstruction.to("cpu")
-            DataVisualizer.show_image_tensor(reconstruction)
-            break
-    
-    print_to_log_file("\n", constants.TRAINING_LOSS_LOG)
+            for image_idx in range(min(len(inputs), 6)):
+                image_tensor = inputs[image_idx]
+                DataVisualizer.create_image_tensor_figure(image_tensor)
 
-def __validate(model, dataloader, configuration, batch_size):
-    if not len(dataloader):
-        return 0
+                inputs  = inputs.to(util.get_device())
+                x_hat   = reconstruction[image_idx]
+                DataVisualizer.create_image_tensor_figure(x_hat)
+
+            break
+
     
+
+def __validate(model, dataloader, configuration, batch_size):    
     model.eval()
 
     running_loss = 0.0

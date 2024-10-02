@@ -108,5 +108,6 @@ DATALOADER_SEED = 42
 # =============================================================================
 # Pre gathered these values as they are distributed across multiple DEMs
 DEM_NODATA_VAL = -32768
-DEM_GLOBAL_MIN = -12269
-DEM_GLOBAL_MAX =  22894
+
+DEM_GLOBAL_MIN = -2      # 0      #   # -12269
+DEM_GLOBAL_MAX = 4993    # 3213   #   # 22894

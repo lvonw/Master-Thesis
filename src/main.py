@@ -1,7 +1,8 @@
 import argparse
 import constants
-import torch
 import os
+import torch
+import util                   
 
 from cli.cli                import CLI
 from configuration          import Configuration
@@ -10,8 +11,7 @@ from tqdm                   import tqdm
 
 from pipeline               import generate, training
 from debug                  import Printer
-from generation.models.vae  import AutoEncoderFactory, VariationalAutoEncoder
-from util                   import get_device
+from generation.models.vae  import AutoEncoderFactory
 from data.data_util         import DataVisualizer
 
 import matplotlib.pyplot    as plt
@@ -77,20 +77,21 @@ def main():
             quit()
 
     printer.print_log("Creating Model...")
-    model = AutoEncoderFactory.create_auto_encoder(
-        config["Model"])
+    model = AutoEncoderFactory.create_auto_encoder(config["Model"])
     printer.print_log("Finished.")
 
     total_params = sum(p.numel() for p in model.parameters())
     printer.print_log(f"Total amount of parameters: {total_params}")
-    printer.print_log(f"Using device: {get_device()}")
-    cpu_core_num = os.cpu_count()
-    printer.print_log(f"Core count: {cpu_core_num}")
-
+    printer.print_log(f"Using device: {util.get_device()}")
+    printer.print_log(f"Core count: { os.cpu_count()}")
 
     printer.print_log("Loading state dict...")
-    
-    printer.print_log("Finished.")
+    if config["Main"]["load_model"]:
+        if not util.load_model(model):
+            printer.print_log(f"Model {model.name} could not be loaded",
+                              constants.LogLevel.WARNING)
+        else:    
+            printer.print_log("Finished.")
     
     # TODO just for testing 
     if config["Main"]["generate"]:
@@ -98,7 +99,7 @@ def main():
         with torch.no_grad():
             for i in range(10):
                 sample = model.generate()
-                DataVisualizer.show_image_tensor(sample)
+                DataVisualizer.create_image_tensor_figure(sample)
 
     if config["Main"]["train"]:
         printer.print_log("Creating Dataset...")
