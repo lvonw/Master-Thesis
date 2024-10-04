@@ -57,8 +57,8 @@ def train(model, training_dataset, validation_dataset, configuration):
     logging_steps   = configuration["logging_steps"]
     learning_rate   = configuration["learning_rate"]
 
-    cpu_count       = configuration["cpu_count"]
-    cpu_count       = (cpu_count if cpu_count > 0 
+    cpu_count       = configuration["num_workers"]
+    cpu_count       = (cpu_count if cpu_count >= 0 
                        else os.cpu_count() + cpu_count)
 
     data_loader_generator = torch.Generator()
@@ -82,12 +82,8 @@ def train(model, training_dataset, validation_dataset, configuration):
             
     training_losses     = []
     validation_losses   = []
-    
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    
-
-    #show_tensors(dataloader, 1)
-    
+    optimizer           = optim.Adam(model.parameters(), lr=learning_rate)
+        
     print_to_log_file(f"\nModel: {model.name}", constants.TRAINING_LOSS_LOG)
 
     model.to(util.get_device())
@@ -136,13 +132,14 @@ def train(model, training_dataset, validation_dataset, configuration):
     figures = []
     with torch.no_grad():
         for data in training_dataloader:
-            inputs, _, _ = __prepare_data(data)
+            inputs, _, metadata = __prepare_data(data)
 
             reconstruction  = model(inputs)[0]
             
             for image_idx in range(min(len(inputs), 6)):
                 image_tensor = inputs[image_idx]
-                DataVisualizer.create_image_tensor_figure(image_tensor)
+                DataVisualizer.create_image_tensor_figure(image_tensor,
+                                                          metadata["filename"][image_idx])
 
                 inputs  = inputs.to(util.get_device())
                 x_hat   = reconstruction[image_idx]

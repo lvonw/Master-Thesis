@@ -20,7 +20,7 @@ MIN_RANGE = 0
 MAX_RANGE = 7879
 
 SIGMA = 4
-PERCENTILE = 0.97
+PERCENTILE = 0.50
 SHOW_HIST = False
 
 def plot_histogram_from_dems(dem_names, min_value, max_value):

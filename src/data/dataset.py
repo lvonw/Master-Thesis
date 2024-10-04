@@ -1,5 +1,6 @@
 import constants
 import math
+import multiprocessing
 import os
 import torch
 
@@ -118,7 +119,8 @@ class DatasetFactory():
                            channel_cache,
                            label_cache, 
                            transform,
-                           source_dataset),
+                           source_dataset,
+                           cache_dems=data_configuration["Cache_DEMs"]),
             data_configuration["Data_Split"])
     
     def __get_data_splits(dataset, training_data_split):
@@ -148,17 +150,27 @@ class DatasetFactory():
         return processed_cache
 
 class TerrainDataset(Dataset): 
+    def __create_shared_cache():
+        manager = multiprocessing.Manager()
+        shared_cache = manager.dict()
+        return shared_cache
+
     def __init__(self, 
                  DEM_list, 
                  channel_data_cache,
                  label_data_cache, 
                  transform=None,
-                 source_dataset=constants.DATA_PATH_DEMS):
+                 source_dataset=constants.DATA_PATH_DEMS,
+                 cache_dems = True):
         self.transform              = transform
         self.DEM_list               = DEM_list
         self.channel_data_cache     = channel_data_cache
         self.label_data_cache       = label_data_cache
         self.source_dataset         = source_dataset
+        
+        manager                     = multiprocessing.Manager()
+        self.dem_cache              = manager.list([None] * len(DEM_list))
+        self.cache_dems             = cache_dems
 
     def __len__(self):
         return len(self.DEM_list)
@@ -168,33 +180,46 @@ class TerrainDataset(Dataset):
         label       = []
         filename    = self.DEM_list[index]
 
-        # TODO make own object
         metadata["filename"] = filename
 
-        DEM_dataset = DataAccessor.open_DEM(filename, self.source_dataset)
-        
-        if DEM_dataset.RasterCount == 0:
-            return None, None
-        
-        DEM_array   = GeoUtil.get_normalized_raster_band(
-            DEM_dataset.GetRasterBand(1),
-            nodata_val = constants.DEM_NODATA_VAL,
-            global_min = constants.DEM_GLOBAL_MIN,
-            global_max = constants.DEM_GLOBAL_MAX
-        )
+        if self.cache_dems and self.dem_cache[index]:
+            DEM_geo_transform, DEM_tensor = self.dem_cache[index]   
+        else:   
+            DEM_dataset = DataAccessor.open_DEM(filename, self.source_dataset)
+            DEM_geo_transform = None
 
-        DEM_tensor  = torch.tensor(DEM_array, dtype=torch.float32).unsqueeze(0)
+            if DEM_dataset.RasterCount == 0:
+                return None, None    
+
+            DEM_tensor = GeoUtil.get_normalized_raster_band(
+                DEM_dataset.GetRasterBand(1),
+                nodata_val = None, #constants.DEM_NODATA_VAL,
+                global_min = constants.DEM_GLOBAL_MIN,
+                global_max = constants.DEM_GLOBAL_MAX
+            )
+            
+            if self.cache_dems:
+                self.dem_cache[index] = (DEM_dataset.GetGeoTransform(), 
+                                         DEM_tensor)
+
+    
+        DEM_shape   = DEM_tensor.shape
+        DEM_tensor  = DEM_tensor.unsqueeze(0)
+        
+        
         channels    = [DEM_tensor]
 
         # Extract all the specified additional channel data from other maps
         if self.channel_data_cache or self.label_data_cache: 
+            if DEM_geo_transform is None: 
+                DEM_geo_transform = DEM_dataset.GetGeoTransform()
             
             # Get the reference coordinates for the respective data frame
             top_left_geo, bot_right_geo = GeoUtil.get_geo_frame_coordinates(
-                DEM_dataset.GetGeoTransform(), 
+                DEM_geo_transform, 
                 (0, 0),
-                (DEM_array.shape[1], DEM_array.shape[0]))
-            resize = transforms.Resize(DEM_array.shape)
+                (DEM_shape[1], DEM_shape[0]))
+            resize = transforms.Resize(DEM_shape)
             
             for cache in self.channel_data_cache:
                 # Extract the data frame

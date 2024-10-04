@@ -4,35 +4,30 @@ Main:
   test:     false
   generate: false
 
-  load_model: false 
+  use_MNIST: true
+  load_model: false
 
-  use_MNIST: false
 
+Debug:
+  train:
+    value: false
 
 Training:  
   epochs:           200
   batch_size:       128
   learning_rate:    4.5e-6
   logging_steps:    10
-  num_workers:      2
+  cpu_count:        2
   Save_after_epoch: true
 
   Validation:
     z_score: 3
 
 
-Model:
-  external: cfg/vae/vae.yaml
-  selection: VAE_1x16x16_4x4x4_funkmoid2_mse
-  only_load_selection: true
-  read_only: true
-
-
 Data:
   Data_Split: 1.0
-  DEM_List: SRTM_GL1_10_list.txt
+  DEM_List: SRTM_GL1_0-3213_list.txt
   DEM_Dataset: SRTM_GL1_64x64
-  Cache_DEMs: true
 
   # Datasets
   GLiM:
@@ -82,7 +77,11 @@ Hyperparameters:
   train:
     value: true
 
-Debug:
-  train:
-    value: false
+Model:
+  external: cfg/vae/vae.yaml
+  selection: VAE_1x16x16_4x4x4_biggerbeta
+  only_load_selection: true
+  read_only: true
+
+
 

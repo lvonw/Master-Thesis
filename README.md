@@ -25,3 +25,15 @@ Guidance on implementing Diffusion Models:
 - https://www.youtube.com/watch?v=ZBKpAp_6TGI
 - https://www.youtube.com/watch?v=TBCRlnwJtZU
 - https://github.com/Stability-AI/stablediffusion
+
+
+## Dependancies
+
+Should installing the dependancies via the provided `environment.yaml` not work
+you can install the following packages manually:
+
+- Python 3.11
+- Pytorch 2.4.1+
+- GDAL
+- MatPlotLib
+- tqdm

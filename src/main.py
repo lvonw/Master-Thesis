@@ -85,22 +85,14 @@ def main():
     printer.print_log(f"Using device: {util.get_device()}")
     printer.print_log(f"Core count: { os.cpu_count()}")
 
-    printer.print_log("Loading state dict...")
     if config["Main"]["load_model"]:
+        printer.print_log("Loading state dict...")
         if not util.load_model(model):
             printer.print_log(f"Model {model.name} could not be loaded",
                               constants.LogLevel.WARNING)
         else:    
             printer.print_log("Finished.")
     
-    # TODO just for testing 
-    if config["Main"]["generate"]:
-        model.eval()
-        with torch.no_grad():
-            for i in range(10):
-                sample = model.generate()
-                DataVisualizer.create_image_tensor_figure(sample)
-
     if config["Main"]["train"]:
         printer.print_log("Creating Dataset...")
         if config["Main"]["use_MNIST"]:
@@ -113,6 +105,14 @@ def main():
         printer.print_log("Finished.")
         
         training.train(model, training_set, validation_set, config["Training"])
+    
+    # TODO just for testing 
+    if config["Main"]["generate"]:
+        model.eval()
+        with torch.no_grad():
+            for i in range(10):
+                sample = model.generate()
+                DataVisualizer.create_image_tensor_figure(sample)
 
 
 

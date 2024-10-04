@@ -15,6 +15,11 @@ class AutoEncoderFactory():
     def create_auto_encoder(vae_configuration: Section):
         architecture = vae_configuration["architecture"]
 
+        beta = 0.000001
+
+        if "beta" in vae_configuration:
+            beta        = vae_configuration["beta"]
+
         data_shape      = (vae_configuration["data_num_channels"], 
                            vae_configuration["data_resolution_x"],
                            vae_configuration["data_resolution_y"])
@@ -69,7 +74,8 @@ class VariationalAutoEncoder(nn.Module):
                  decoder, 
                  data_shape, 
                  latent_shape,
-                 name):
+                 name,
+                 beta = 0.000001):
         super().__init__()
 
         self.encoder        = encoder
@@ -77,6 +83,7 @@ class VariationalAutoEncoder(nn.Module):
         self.data_shape     = data_shape
         self.latent_shape   = latent_shape
         self.name           = name
+        self.beta           = beta
 
 
     def ELBO_loss(a, b, c):
@@ -109,9 +116,7 @@ class VariationalAutoEncoder(nn.Module):
         # Printer().print_log(
         #     f"rec loss {reconstruction_loss_reduced:.4f}, KL {kl_divergence_reduced:.4f}")
 
-        beta = 0.000001
-
-        individual_losses   = reconstruction_loss + beta * kl_divergence
+        individual_losses   = reconstruction_loss + self.beta * kl_divergence
         reduced_loss        = torch.sum(individual_losses)        
 
         return reduced_loss, individual_losses

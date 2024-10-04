@@ -18,11 +18,11 @@ DATA_PATH_DEM_LIST      = os.path.join(DATA_PATH_DEM, "SRTM_GL1_list.txt")
 PLOT_SIGMA              = False
 PLOT_RANGES             = False
 
-PRINT_SIGMA_LIST        = False
-PRINT_RANGE_LIST        = True
+PRINT_SIGMA_LIST        = True
+PRINT_RANGE_LIST        = False
 
 SEA_LEVEL               = 5
-SIGMA_THRESHOLD         = 90
+SIGMA_THRESHOLD         = 10
 
 RANGE_MIN               = 0 #-2
 RANGE_MAX               = 3213 #4993 
