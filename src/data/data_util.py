@@ -1,4 +1,5 @@
 import constants
+import enum
 
 import torch
 import matplotlib.pyplot    as plt
@@ -8,6 +9,19 @@ from data.data_access       import DataAccessor
 from mpl_toolkits.mplot3d   import Axes3D
 from osgeo                  import gdal
 from debug                  import Printer
+
+class NormalizationMethod(enum.Enum):
+    NONE                = 0
+    LINEAR              = 1
+    CLIPPED_LINEAR      = 2
+    SIGMOID             = 3
+    SIGMOID_COMBINATION = 4
+    ASYMMETRIC_SIGMOID  = 5
+
+class NoDataBehaviour(enum.Enum):
+    NONE            = "None" 
+    GLOBAL_MINIMUM  = "Global_Minimum"
+    LOCAL_MINIMUM   = "Local_Minimum"
 
 
 class GeoUtil():
@@ -40,131 +54,6 @@ class GeoUtil():
         y = (longitude - y_origin) / pixel_height
         
         return int(x), int(y)
-    
-    def rescale_sigmoid_image(image):
-        image = torch.logit(image)
-        image *= 1300
-        image += 562
-        return image
-    
-    def sigmoid_image(image_tensor):
-        image_tensor -= 2500
-        image_tensor /= 1300
-        # image_tensor -= 1000
-        # image_tensor /= 780
-        # image_tensor -= 0.8
-        return torch.sigmoid(image_tensor)
-    
-    # Im too bad to calculate this maybe the conditional works too 
-    def inverse_funkmoid(x):
-        return torch.logit(x)
-    
-    def funkmoid_image(x):
-        # a = 0.09
-        # b = 0.0012
-        # c = 0.02
-        # d = -50
-
-        a = 0.04
-        b = 0.0012
-        c = 0.06
-        d = -50
-
-        x = (d - torch.exp(-c * x)) * a + b * x
-
-        return torch.sigmoid(x) 
-    
-
-    def p1 (x, phi):
-        y = x - phi
-        y /= 350.0
-        y += GeoUtil.p2(phi)
-
-        return y
-
-    def p2 (x):
-        y = x - 1000.0
-        y /= 780.0
-        y -= 0.8
-        return y
-
-    def p3 (x, lam):
-        y = x - lam
-        y /= 1800.0
-        y += GeoUtil.p2(lam)
-        return y    
-
-    def funkmoid_approx2(x):
-        phi = 600.0
-        lam = 3213.0
-
-        x = torch.where(x < phi, 
-                        GeoUtil.p1(x, phi),
-                        torch.where(x < lam, 
-                                    GeoUtil.p2(x), 
-                                    GeoUtil.p3(x, lam))) 
-
-        return torch.sigmoid(x) 
-
-    def funkmoid_approx(x):
-        j = 3
-        x = torch.where(x < 0, x/50 - j, x /900 - j)
-
-        return torch.sigmoid(x) 
-    
-
-    def get_normalized_raster_band(raster_band,
-                                   nodata_behaviour = constants.NoDataBehaviour.LOCAL_MINIMUM, 
-                                   nodata_val = None,
-                                   global_min = None, 
-                                   global_max = None):
-        local_min = None
-
-        band_array = raster_band.ReadAsArray()
-        band_tensor = torch.tensor(band_array, dtype=torch.float32)
-
-        # band_tensor = GeoUtil.sigmoid_image(band_tensor)
-        band_tensor = GeoUtil.sigmoid_image(band_tensor)
-
-        
-        # nodata_value = (raster_band.GetNoDataValue() if nodata_val is None 
-        #                 else nodata_val)
-
-        # if global_min is not None:
-        #     band_array = np.clip(band_array, global_min, None)
-            
-        #     if np.min(band_array) < global_min:
-        #         print(np.min(band_array))
-        # else:
-        #     local_min = np.min(band_array)
-        #     global_min = local_min
-
-        # if global_max is not None:
-        #     band_array = np.clip(band_array, None, global_max)
-        # else:
-        #     global_max = np.max(band_array)
-        
-
-        # if nodata_value is not None:
-        #     if nodata_behaviour == constants.NoDataBehaviour.LOCAL_MINIMUM:
-        #         np.copyto(band_array, 
-        #                   np.min(band_array) if local_min is None else local_min, 
-        #                   where=(band_array == nodata_value))
-        #     elif nodata_behaviour == constants.NoDataBehaviour.GLOBAL_MINIMUM:
-        #         np.copyto(band_array, 
-        #                   global_min, 
-        #                   where=(band_array == nodata_value))
-
-        # band_array = (band_array - global_min).astype(np.float32) 
-        # band_array /= global_max - global_min
-
-        # if np.min(band_array) < 0.0:
-        #     print(np.min(band_array))
-
-        # if np.max(band_array) > 1.0:
-        #     print(np.max(band_array))
-
-        return band_tensor
     
     def get_geo_frame_coordinates(geo_transform, top_left, bottom_right):
         """ Expecting the coordinates in x,y """
@@ -199,6 +88,127 @@ class GeoUtil():
                                top_left_cell[0] : bot_right_cell[0] + 1]
 
         return data_frame
+    
+    def __rescale_sigmoid_image(image):
+        image   = torch.logit(image)
+        image   *= 1300
+        image   += 2500
+        return image
+    
+    def __sigmoid_image(image_tensor):
+        image_tensor -= 2500
+        image_tensor /= 1300
+        return torch.sigmoid(image_tensor)
+    
+    def __asymmetric_sigmoid(x):
+        a = 0.04
+        b = 0.0012
+        c = 0.06
+        d = -50
+
+        x = (d - torch.exp(-c * x)) * a + b * x
+
+        return torch.sigmoid(x) 
+    
+    def __section_1 (x, phi):
+        y = x - phi
+        y /= 350.0
+        y += GeoUtil.p2(phi)
+
+        return y
+
+    def __section_2 (x):
+        y = x - 1000.0
+        y /= 780.0
+        y -= 0.8
+        return y
+
+    def __section_3 (x, lam):
+        y = x - lam
+        y /= 1800.0
+        y += GeoUtil.p2(lam)
+        return y    
+
+    def __sigmoid_combination_2_sections(x):
+        j = 3
+        x = torch.where(x < 0, x/50 - j, x /900 - j)
+
+        return torch.sigmoid(x) 
+    
+    def __sigmoid_combination_3_sections(x):
+        phi = 600.0
+        lam = 3213.0
+
+        x = torch.where(x < phi, 
+                        GeoUtil.__section_1(x, phi),
+                        torch.where(x < lam, 
+                                    GeoUtil.__section_2(x), 
+                                    GeoUtil.__section_3(x, lam))) 
+        return torch.sigmoid(x) 
+
+    def __linear(x, min_value, max_value, clip=False):
+        if min_value is None:
+            min_value = np.min(x)
+
+        if max_value is None:
+            max_value = np.max(x)
+
+        if clip:
+            x = np.clip(x, min_value, max_value)
+
+        x = (x - min_value).astype(np.float32) 
+        x /= max_value - min_value
+        return x
+    
+
+    def get_normalized_raster_band(
+            raster_band,
+            normalization_method    = NormalizationMethod.SIGMOID,
+            nodata_behaviour        = NoDataBehaviour.NONE, 
+            nodata_val = None,
+            global_min = None, 
+            global_max = None):
+
+        band_array = raster_band.ReadAsArray()
+
+        if NoDataBehaviour != NoDataBehaviour.NONE:
+            nodata_value = (raster_band.GetNoDataValue() if nodata_val is None 
+                            else nodata_val)
+            
+            if nodata_behaviour == constants.NoDataBehaviour.LOCAL_MINIMUM:
+                global_min = np.min(band_array)
+                np.copyto(band_array, 
+                          global_min, 
+                          where=(band_array == nodata_value))
+            elif nodata_behaviour == constants.NoDataBehaviour.GLOBAL_MINIMUM:
+                np.copyto(band_array, 
+                          global_min, 
+                          where=(band_array == nodata_value))
+                
+        band_tensor = torch.tensor(band_array, dtype=torch.float32)
+
+        match normalization_method:
+            case NormalizationMethod.NONE:
+                pass 
+            case NormalizationMethod.LINEAR:
+                band_tensor = GeoUtil.__linear(band_tensor,
+                                               global_min,
+                                               global_max,
+                                               False)
+            case NormalizationMethod.CLIPPED_LINEAR:
+                band_tensor = GeoUtil.__linear(band_tensor,
+                                               global_min,
+                                               global_max,
+                                               True)
+            case NormalizationMethod.SIGMOID:
+                band_tensor = GeoUtil.__sigmoid_image(band_tensor)
+            case NormalizationMethod.SIGMOID_COMBINATION:
+                band_tensor = GeoUtil.__sigmoid_combination_3_sections(
+                    band_tensor)
+            case NormalizationMethod.ASYMMETRIC_SIGMOID:
+                band_tensor = GeoUtil.__asymmetric_sigmoid(band_tensor)
+
+        return band_tensor
         
 
 class DataVisualizer():
@@ -289,8 +299,7 @@ class DataVisualizer():
                             ax.plot(line.get_xdata(), line.get_ydata())
                         
                     ax.set_title(figure_ax.get_title())
-        
-        
+          
         for row in range(rows):
             for col in range(len(figure_tuples[row]), cols):
                 axes[row, col].axis("off")

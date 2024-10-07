@@ -7,16 +7,11 @@ import util
 from cli.cli                import CLI
 from configuration          import Configuration
 from data.dataset           import DatasetFactory
-from tqdm                   import tqdm
 
 from pipeline               import generate, training
 from debug                  import Printer
 from generation.models.vae  import AutoEncoderFactory
 from data.data_util         import DataVisualizer
-
-import matplotlib.pyplot    as plt
-import numpy                as np
-import torch.nn             as nn
 
 from torchvision.datasets   import MNIST
 from torchvision            import transforms
@@ -110,7 +105,7 @@ def main():
     if config["Main"]["generate"]:
         model.eval()
         with torch.no_grad():
-            for i in range(10):
+            for _ in range(10):
                 sample = model.generate()
                 DataVisualizer.create_image_tensor_figure(sample)
 

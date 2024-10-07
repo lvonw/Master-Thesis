@@ -94,10 +94,6 @@ class LogLevel(enum.Enum):
     WARNING = ("WARNING",   COLOUR_YELLOW)
     ERROR   = ("ERROR",     COLOUR_RED) 
 
-class NoDataBehaviour(enum.Enum):
-    GLOBAL_MINIMUM    = "Global_Minimum"
-    LOCAL_MINIMUM     = "Local_Minimum"
-
 # =============================================================================
 # Seeds
 # =============================================================================

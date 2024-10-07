@@ -6,7 +6,7 @@ import torch
 
 from configuration          import Section
 from data.data_access       import DataAccessor
-from data.data_util         import GeoUtil
+from data.data_util         import GeoUtil, NoDataBehaviour, NormalizationMethod
 from debug                  import Printer
 from torchvision            import transforms
 from torch.utils.data       import Dataset, random_split
@@ -193,19 +193,19 @@ class TerrainDataset(Dataset):
 
             DEM_tensor = GeoUtil.get_normalized_raster_band(
                 DEM_dataset.GetRasterBand(1),
-                nodata_val = None, #constants.DEM_NODATA_VAL,
-                global_min = constants.DEM_GLOBAL_MIN,
-                global_max = constants.DEM_GLOBAL_MAX
+                nodata_behaviour        = NoDataBehaviour.NONE,
+                normalization_method    = NormalizationMethod.SIGMOID,
+                nodata_val              = constants.DEM_NODATA_VAL,
+                global_min              = constants.DEM_GLOBAL_MIN,
+                global_max              = constants.DEM_GLOBAL_MAX
             )
             
             if self.cache_dems:
                 self.dem_cache[index] = (DEM_dataset.GetGeoTransform(), 
                                          DEM_tensor)
 
-    
         DEM_shape   = DEM_tensor.shape
         DEM_tensor  = DEM_tensor.unsqueeze(0)
-        
         
         channels    = [DEM_tensor]
 

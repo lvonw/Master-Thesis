@@ -4,13 +4,13 @@ Main:
   test:     false
   generate: false
 
-  load_model: false 
+  load_model: true 
 
   use_MNIST: false
 
 
 Training:  
-  epochs:           200
+  epochs:           0
   batch_size:       128
   learning_rate:    4.5e-6
   logging_steps:    10
@@ -23,7 +23,7 @@ Training:
 
 Model:
   external: cfg/vae/vae.yaml
-  selection: VAE_1x16x16_4x4x4_funkmoid2_mse
+  selection: VAE_full_test
   only_load_selection: true
   read_only: true
 
@@ -60,8 +60,8 @@ Data:
   RandomRotation:
     active:         false 
   RandomCrop:
-    active:         true
-    size:           32 
+    active:         false
+    size:           64 
   FiveCrop:
     active:         false 
   TenCrop:
