@@ -3,12 +3,12 @@ import torch
 import torch.nn             as nn
 import torch.nn.functional  as f
 
-from configuration  import Section
-from util_modules   import (ResNetBlock, 
-                            Downsample, 
-                            Upsample, 
-                            Normalize)
-from attention      import AttentionBlock, ContextualAttentionBlock
+from configuration                      import Section
+from generation.modules.util_modules    import (ResNetBlock, 
+                                                Downsample, 
+                                                Upsample, 
+                                                Normalize)
+from generation.modules.attention       import ContextualAttentionBlock
 
 
 class Diffusion(nn.Module):
@@ -17,13 +17,11 @@ class Diffusion(nn.Module):
 
         self.time_embedding = TimeEmbedding(320)
         self.unet = UNET()
-        self.final = UNET_Outputlayer(320, 4)
 
     def forward(self, x, control_signal, time):
         time = self.time_embedding(time)
 
         x = self.unet(x, control_signal, time)
-        x = self.final(x)
 
         return x
     
@@ -57,98 +55,109 @@ class SwitchSequential(nn.Sequential):
 class UNET(nn.Module):
     def __init__(self, num_embedding):
         super().__init__()
+        self.name = "UNET"
+        latent_channel_amount = 4
+        starting_channels = 320
+        num_heads = 8
+        channel_multipliers_encoder = [1,2,4,4]
+        channel_multipliers_decoder = channel_multipliers_encoder[::-1]
+        amount_blocks = len(channel_multipliers_encoder)
+        resNet_per_level_encoder = 2
+        resNet_per_level_decoder = resNet_per_level_encoder + 1
+        embedding_channels = 40
+        skip_channels = [] 
+        attention_levels = [0,1,2]
 
         self.encoder = nn.ModuleList()
+        self.decoder = nn.ModuleList()
 
-        #input conv
-        self.encoder.append(SwitchSequential(
-            nn.Conv2d(4, 320, kernel_size=3, padding=1)))
-
-        # 2 res 2 attention
-        self.encoder.append(SwitchSequential(ResNetBlock(320, 320), 
-                                             ContextualAttentionBlock(8, 40)))
-        self.encoder.append(SwitchSequential(ResNetBlock(320, 320), 
-                                             ContextualAttentionBlock(8, 40)))
-
-        # Downsample 1
-        self.encoder.append(SwitchSequential(
-            nn.Conv2d(320, 320, kernel_size=3, stride=2, padding=1)))
-
-        # 2 res 2 attention
-        self.encoder.append(SwitchSequential(ResNetBlock(320, 640), 
-                                             ContextualAttentionBlock(8, 80)))
-        self.encoder.append(SwitchSequential(ResNetBlock(640, 640), 
-                                             ContextualAttentionBlock(8, 80)))
-
-        # Downsample 1
-        self.encoder.append(SwitchSequential(
-            nn.Conv2d(640, 640, kernel_size=3, stride=2, padding=1)))
-
-        # 3 res 3 attention
-        self.encoder.append(SwitchSequential(ResNetBlock(640, 1280), 
-                                             ContextualAttentionBlock(8, 160)))
-        self.encoder.append(SwitchSequential(ResNetBlock(1280, 1280), 
-                                             ContextualAttentionBlock(8, 160)))
-        self.encoder.append(SwitchSequential(ResNetBlock(1280, 1280), 
-                                             ContextualAttentionBlock(8, 160)))
-
-        # Downsample 1
-        self.encoder.append(SwitchSequential(
-            nn.Conv2d(1280, 1280, kernel_size=3, stride=2, padding=1)))
+        # Encoder
+        # TODO Do this for the autoencoder too
+        self.input_conv = nn.Conv2d(latent_channel_amount, 
+                                    starting_channels, 
+                                    kernel_size=3,
+                                    stride=1, 
+                                    padding=1)
+        skip_channels.append(starting_channels)
         
-        # 2 Res
-        self.encoder.append(SwitchSequential(ResNetBlock(1280, 1280)))
-        self.encoder.append(SwitchSequential(ResNetBlock(1280, 1280)))
+        previous_channel_amount = starting_channels
 
+        for level, multiplier in enumerate(channel_multipliers_encoder):
+            current_channel_amount  = starting_channels * multiplier
+            current_embed           = embedding_channels * multiplier
+            
+            for layer in range(resNet_per_level_encoder):
+                current_block           = []
 
-        # Res Cross Res
+                current_block.append(
+                    ResNetBlock(previous_channel_amount, 
+                                current_channel_amount)
+                )
+
+                if level in attention_levels:
+                    current_block.append(
+                        ContextualAttentionBlock(num_heads, current_embed)  
+                    )
+                
+                self.encoder.append(SwitchSequential(*current_block))
+                skip_channels.append(current_channel_amount)
+                previous_channel_amount = current_channel_amount
+
+            if level + 1 < len(channel_multipliers_encoder):
+                self.encoder.append(Downsample(current_channel_amount,
+                                               asymmetric_padding=False))
+                skip_channels.append(current_channel_amount)
+        
+        # Bottleneck
         self.bottleneck = SwitchSequential(
-            ResNetBlock(1280, 1280),
-            ContextualAttentionBlock(8, 160),
-            ResNetBlock(1280, 1280)
+            ResNetBlock(current_channel_amount, current_channel_amount),
+            ContextualAttentionBlock(num_heads, current_embed),
+            ResNetBlock(current_channel_amount, current_channel_amount)
         )
 
-        self.decoder = nn.ModuleList()
-        
-        # 2 Res
-        self.decoder.append(SwitchSequential(ResNetBlock(2560, 1280)))
-        self.decoder.append(SwitchSequential(ResNetBlock(2560, 1280)))
+        # Decoder 
+        for level_idx, multiplier in enumerate(channel_multipliers_decoder):
+            # Reverse levels, because we are ascending
+            level = len(channel_multipliers_decoder) - (level_idx + 1)
 
-        # upsample 1
-        self.decoder.append(SwitchSequential(ResNetBlock(2560), 
-                                             Upsample(1280)))
+            current_channel_amount  = starting_channels * multiplier
+            current_embed           = embedding_channels * multiplier
 
-        # 3 res 3 attention 
-        # upsample 1
-        self.decoder.append(SwitchSequential(ResNetBlock(2560, 1280), 
-                                             ContextualAttentionBlock(8, 160)))
-        self.decoder.append(SwitchSequential(ResNetBlock(2560, 1280), 
-                                             ContextualAttentionBlock(8, 160)))
-        self.decoder.append(SwitchSequential(ResNetBlock(1920, 1280), 
-                                             ContextualAttentionBlock(8, 160), 
-                                             Upsample(1280, True)))
+            for layer in range(resNet_per_level_decoder):
+                current_block           = []
+                current_skip_channel    = skip_channels.pop()
+                
+                # ResNet
+                current_block.append(
+                    ResNetBlock(current_skip_channel + previous_channel_amount, 
+                                current_channel_amount)
+                )
+                # Attention
+                if level in attention_levels:
+                    current_block.append(
+                        ContextualAttentionBlock(num_heads, current_embed)  
+                    )
+                # Upsampling
+                if (layer + 1 == resNet_per_level_decoder and level):
+                    current_block.append(
+                        Upsample(current_channel_amount, True)
+                    )
 
-        # 3 Res 3 attention
-        # upsample 1
-        self.decoder.append(SwitchSequential(ResNetBlock(1920, 640), 
-                                             ContextualAttentionBlock(8, 80)))
-        self.decoder.append(SwitchSequential(ResNetBlock(1280, 640), 
-                                             ContextualAttentionBlock(8, 80)))
+                self.decoder.append(SwitchSequential(*current_block))
+                previous_channel_amount = current_channel_amount
         
-        self.decoder.append(SwitchSequential(ResNetBlock(960, 640), 
-                                             ContextualAttentionBlock(8, 80), 
-                                             Upsample(640, True)))
-        
-        # 3 Res 3 attention
-        self.decoder.append(SwitchSequential(ResNetBlock(960, 320), 
-                                             ContextualAttentionBlock(8, 40)))
-        self.decoder.append(SwitchSequential(ResNetBlock(640, 320), 
-                                             ContextualAttentionBlock(8, 40)))
-        self.decoder.append(SwitchSequential(ResNetBlock(640, 320), 
-                                             AttentionBlock(8, 40)))
+        # Output
+        self.norm           = Normalize(current_channel_amount, 32)                           
+        self.output_conv    = nn.Conv2d(current_channel_amount, 
+                                        latent_channel_amount, 
+                                        kernel_size=3, 
+                                        padding=1)
 
     def forward(self, x, context, time):
         skip_connections = []
+
+        x = self.input_conv(x)
+        skip_connections.append(x)
         
         for layers in self.encoders:
             x = layers(x, context, time)
@@ -160,19 +169,8 @@ class UNET(nn.Module):
             x = torch.cat((x, skip_connections.pop()), dim=1) 
             x = layers(x, context, time)
         
-        return x
-    
-
-class UNET_Outputlayer(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-
-        self.norm = Normalize(in_channels, 32)                           
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-
-    def forward(self, x):
         x = self.norm(x)
         x = f.silu(x)
-        x = self.conv(x)
+        x = self.output_conv(x)
 
         return x

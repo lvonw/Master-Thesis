@@ -66,7 +66,8 @@ class AutoEncoderFactory():
                                       decoder,
                                       data_shape,
                                       latent_shape,
-                                      vae_configuration["name"])
+                                      vae_configuration["name"],
+                                      beta=beta)
 
 class VariationalAutoEncoder(nn.Module):
     def __init__(self, 

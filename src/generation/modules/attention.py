@@ -12,8 +12,8 @@ class _Attention(nn.Module):
                  num_heads=1, 
                  cross_attention = False,
                  context_dimension=-1,
-                 in_projetion_bias=True, 
-                 out_projetion_bias=True):
+                 in_projection_bias=True, 
+                 out_projection_bias=True):
         super().__init__()
 
         self.num_heads      = num_heads
@@ -24,16 +24,16 @@ class _Attention(nn.Module):
 
         self.query_matrix   = nn.Linear(query_dimension,    
                                         query_dimension, 
-                                        bias=in_projetion_bias)
+                                        bias=in_projection_bias)
         self.key_matrix     = nn.Linear(context_dimension,  
                                         query_dimension, 
-                                        bias=in_projetion_bias)
+                                        bias=in_projection_bias)
         self.value_matrix   = nn.Linear(context_dimension,  
                                         query_dimension, 
-                                        bias=in_projetion_bias)
+                                        bias=in_projection_bias)
         self.out_projection = nn.Linear(query_dimension,    
                                         query_dimension, 
-                                        bias=out_projetion_bias)
+                                        bias=out_projection_bias)
 
     def compute_attention(self, query, context):
         batch_size, num_channels, dimension = query.shape
@@ -64,15 +64,15 @@ class CrossAttention(_Attention):
                  query_dimension, 
                  context_dimension, 
                  num_heads, 
-                 in_projetion_bias=True, 
-                 out_projetion_bias=True):
+                 in_projection_bias=True, 
+                 out_projection_bias=True):
         
         super().__init__(query_dimension,
                          context_dimension=context_dimension,
                          cross_attention=True, 
                          num_heads=num_heads,
-                         in_projetion_bias=in_projetion_bias,
-                         out_projetion_bias=out_projetion_bias)
+                         in_projection_bias=in_projection_bias,
+                         out_projection_bias=out_projection_bias)
 
     def forward(self, x, y):
         return self.compute_attention(x, y)
@@ -82,13 +82,13 @@ class SelfAttention(_Attention):
     def __init__(self, 
                  query_dimension, 
                  num_heads=1, 
-                 in_projetion_bias=True, 
-                 out_projetion_bias=True):
+                 in_projection_bias=True, 
+                 out_projection_bias=True):
         
         super().__init__(query_dimension,
                          num_heads=num_heads,
-                         in_projetion_bias=in_projetion_bias,
-                         out_projetion_bias=out_projetion_bias)
+                         in_projection_bias=in_projection_bias,
+                         out_projection_bias=out_projection_bias)
 
     def forward(self, x):
         return self.compute_attention(x, x)
@@ -118,9 +118,9 @@ class AttentionBlock(nn.Module):
         return x + residual_x
     
 class ContextualAttentionBlock(nn.Module):
-    def __init__(self, n_heads, n_embed, d_context=768):
+    def __init__(self, num_heads, n_embed, d_context=768):
         super().__init__()
-        channels = n_heads * n_embed
+        channels = num_heads * n_embed
  
         self.group_norm     = Normalize(channels, 32)
         self.conv_input     = nn.Conv2d(channels, 
@@ -129,17 +129,17 @@ class ContextualAttentionBlock(nn.Module):
                                         padding=0)
 
         self.layernorm_1    = nn.LayerNorm(channels)
-        self.attention_1    = SelfAttention(channels, n_heads)
+        self.attention_1    = SelfAttention(channels, num_heads)
         
         self.layernorm_2    = nn.LayerNorm(channels)
         self.attention_2    = CrossAttention(channels, 
                                              d_context, 
-                                             n_heads, 
-                                             in_proj_bias=False)
+                                             num_heads, 
+                                             in_projection_bias=False)
 
         self.layernorm_3    = nn.LayerNorm(channels)
-        self.linear_geglu_1 = nn.Linear(channels, 4 * channels * 2)
-        self.linear_geglu_2 = nn.Linear(4 * channels, channels)
+        self.linear_1       = nn.Linear(channels, 4 * channels * 2)
+        self.linear_2       = nn.Linear(4 * channels, channels)
 
         self.conv_output    = nn.Conv2d(channels, 
                                         channels, 
@@ -161,22 +161,23 @@ class ContextualAttentionBlock(nn.Module):
         # self attention block
         x = self.layernorm_1(x)
         x = self.attention_1(x)
-        x = x + residual_x_short
+        x += residual_x_short
         residual_x_short = x
 
         # cross attention block
         x = self.layernorm_2(x)
         x = self.attention_2(x, context)
-        x = x + residual_x_short
+        x += residual_x_short
         residual_x_short = x
 
         # feed forward
         x = self.layernorm_3(x)
-        x, gate = self.linear_geglu_1(x).chunk(2, dim=1)
-        x = x * f.gelu(gate)
-        x= self.linear_geglu_2(x)
-        x = x + residual_x_short
+        x, gate = self.linear_1(x).chunk(2, dim=1)
+        x *= f.gelu(gate)
+        x = self.linear_2(x)
+        x += residual_x_short
 
         x = x.transpose(-1, -2)
         x = x.view(batch_size, num_channels, height, width)
+        
         return self.conv_output(x) + residual_x_long

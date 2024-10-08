@@ -1,13 +1,31 @@
 test_diffusion:
   name: test_diffusion
+  description: Test DDPM To see if the code works
   
   latent: true
 
-  latent_encoding:
+  latent_model:
     external: cfg/vae/vae.yaml
     selection: VAE_1x16x16_4x4x4_5
     only_load_selection: true
     read_only: true
 
+  input_num_channels: 4
+  input_resolution_x: 8
+  input_resolution_y: 8
+
   unet_architecture:
+    ResNet_blocks_per_level: 2
+    starting_channels: 320
+
+    channel_multipliers:
+      - 1
+      - 2
+      - 4
+
+    attention_levels:
+      - 0
+      - 1
+      - 2
     
+

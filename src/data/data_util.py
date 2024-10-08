@@ -23,7 +23,6 @@ class NoDataBehaviour(enum.Enum):
     GLOBAL_MINIMUM  = "Global_Minimum"
     LOCAL_MINIMUM   = "Local_Minimum"
 
-
 class GeoUtil():
     def cell_to_geo_coordinates(geo_transform, x, y):
         x_origin        = geo_transform[0]
@@ -163,17 +162,17 @@ class GeoUtil():
 
     def get_normalized_raster_band(
             raster_band,
-            normalization_method    = NormalizationMethod.SIGMOID,
-            nodata_behaviour        = NoDataBehaviour.NONE, 
-            nodata_val = None,
-            global_min = None, 
-            global_max = None):
+            normalization_method    = NormalizationMethod.LINEAR,
+            nodata_behaviour        = NoDataBehaviour.LOCAL_MINIMUM, 
+            nodata_value            = None,
+            global_min              = None, 
+            global_max              = None):
 
         band_array = raster_band.ReadAsArray()
 
         if NoDataBehaviour != NoDataBehaviour.NONE:
-            nodata_value = (raster_band.GetNoDataValue() if nodata_val is None 
-                            else nodata_val)
+            if nodata_value is None:  
+                nodata_value = raster_band.GetNoDataValue()
             
             if nodata_behaviour == constants.NoDataBehaviour.LOCAL_MINIMUM:
                 global_min = np.min(band_array)

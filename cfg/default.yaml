@@ -1,14 +1,19 @@
+# =============================================================================
+# MAIN
+# =============================================================================
 Main:
-  train:    true
-  validate: false
-  test:     false
-  generate: false
+  train:      false
+  validate:   false
+  test:       false
+  generate:   false
 
-  load_model: true 
+  load_model: false 
 
-  use_MNIST: false
+  use_MNIST:  false
 
-
+# =============================================================================
+# TRAINING
+# =============================================================================
 Training:  
   epochs:           0
   batch_size:       128
@@ -20,14 +25,24 @@ Training:
   Validation:
     z_score: 3
 
-
+# =============================================================================
+# MODEL
+# =============================================================================
 Model:
   external: cfg/vae/vae.yaml
   selection: VAE_full_test
   only_load_selection: true
   read_only: true
 
+Model2:
+  external: cfg/diffusion/ddpm.yaml
+  selection: test_diffusion
+  only_load_selection: true
+  read_only: true
 
+# =============================================================================
+# DATA
+# =============================================================================
 Data:
   Data_Split: 1.0
   DEM_List: SRTM_GL1_10_list.txt

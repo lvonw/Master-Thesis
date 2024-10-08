@@ -16,6 +16,8 @@ from data.data_util         import DataVisualizer
 from torchvision.datasets   import MNIST
 from torchvision            import transforms
 
+from generation.modules.diffusion    import UNET
+
 
 
 def prepare_arg_parser():
@@ -72,11 +74,13 @@ def main():
             quit()
 
     printer.print_log("Creating Model...")
-    model = AutoEncoderFactory.create_auto_encoder(config["Model"])
+    # model = AutoEncoderFactory.create_auto_encoder(config["Model"])
+    model = UNET(2)
     printer.print_log("Finished.")
 
+
     total_params = sum(p.numel() for p in model.parameters())
-    printer.print_log(f"Total amount of parameters: {total_params}")
+    printer.print_log(f"Total amount of parameters: {total_params:,}")
     printer.print_log(f"Using device: {util.get_device()}")
     printer.print_log(f"Core count: { os.cpu_count()}")
 
