@@ -36,7 +36,7 @@ Model:
 
 Model2:
   external: cfg/diffusion/ddpm.yaml
-  selection: test_diffusion
+  selection: light_diffusion
   only_load_selection: true
   read_only: true
 

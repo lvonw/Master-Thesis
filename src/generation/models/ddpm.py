@@ -1,5 +1,6 @@
 import enum
 import torch
+import torch.nn                 as nn
 import torch.nn.functional      as f
 
 from generation.models.vae      import AutoEncoderFactory
@@ -11,22 +12,25 @@ class BetaSchedules(enum.Enum):
 
 class PredictionType(enum.Enum):
     MEAN_VARIANCE   = "Mean_Variance"
-    EPSILON         = "Epsilon"
+    EPSILON_SIMPLE  = "Epsilon_Simple"
 
-class DDPM():
+class DDPM(nn.Module):
     def __init__(self, 
                  configuration,
                  generator=torch.Generator(), 
                  num_training_steps=1000, 
                  beta_start=0.00085,
                  beta_end = 0.0120):
+        super().__init__()
         
         self.input_shape    = (configuration["input_num_channels"], 
                                configuration["input_resolution_x"],
                                configuration["input_resolution_y"])
+        self.latent         = configuration["latent"]
 
-        # self.latent_model   = AutoEncoderFactory.create_auto_encoder(
-        #     configuration["latent_encoding"])
+        if self.latent:
+            self.latent_model   = AutoEncoderFactory.create_auto_encoder(
+                configuration["latent_model"])
         self.model          = UNETFactory.create_unet(configuration)
             
         self.betas = self.__create_beta_schedule(num_training_steps, 
@@ -46,7 +50,7 @@ class DDPM():
         self.x_t_coefs      = mean_variance_coefficients[1] 
         self.variance_t     = mean_variance_coefficients[2]
 
-        epsilon_coefficients    = self.__compute_epsilon_coefficients()
+        epsilon_coefficients        = self.__compute_epsilon_coefficients()
         self.one_over_sqrt_alphas   = epsilon_coefficients[0]
         self.epsilon_coefficient    = epsilon_coefficients[1]
         
@@ -59,7 +63,7 @@ class DDPM():
         """ Algorithm 2 DDPM """
         x = torch.randn(amount_samples + self.input_shape).to(self.device)
         control_signal = 1
-        prediction_type = PredictionType.EPSILON
+        prediction_type = PredictionType.EPSILON_SIMPLE
 
         # TODO Timestep encoding
         for timestep in reversed(range(self.num_training_steps)):
@@ -67,15 +71,25 @@ class DDPM():
 
             match prediction_type:
                 # As proposed by algorithm 2
-                case PredictionType.EPSILON:
-                    x = self.__predict_epsilon()
+                case PredictionType.EPSILON_SIMPLE:
+                    x = self.__predict_epsilon_simple(timestep, x, model_output)
                 # Without the simplification, this is what SD does
                 case PredictionType.MEAN_VARIANCE:
                     x = self.__predict_mean_variance(timestep, x, model_output)
         
         return x
     
-    def __predict_epsilon(self, timestep, x_t, model_output):
+    def training_step(self, inputs, labels):
+        timesteps = self.__sample_timesteps(10, 10)
+        noised_images, noise = self.__add_noise(inputs)
+
+        predicted_noise = self.model(noised_images, timesteps)
+
+        loss = f.mse_loss(noise, predicted_noise)
+
+        return loss
+    
+    def __predict_epsilon_simple(self, timestep, x_t, model_output):
         """ Algorithm 2 DDPM """
         noise = 0
         if timestep > 0:
@@ -90,8 +104,8 @@ class DDPM():
 
 
     def __predict_mean_variance(self, timestep, x_t, model_output):
-        alpha_bar_t         = self.alpha_bars[timestep]
-        beta_prod_t         = 1 - alpha_bar_t 
+        alpha_bar_t = self.alpha_bars[timestep]
+        beta_prod_t = 1 - alpha_bar_t 
 
         # Formula 15
         pred_x_zero = ((x_t - torch.sqrt(beta_prod_t) * model_output) 
@@ -188,18 +202,6 @@ class DDPM():
         return torch.randint(low=1, 
                              high=amount_steps,
                              size=(amount_samples,))
-
-
-
-    def training_step(self, inputs, labels):
-        timesteps = self.__sample_timesteps(10, 10)
-        noised_images, noise = self.__add_noise(inputs)
-
-        predicted_noise = self.model(noised_images, timesteps)
-
-        loss = f.mse_loss(noise, predicted_noise)
-
-        return loss
 
     def compute_loss():
         pass

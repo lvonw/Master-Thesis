@@ -81,7 +81,7 @@ def main():
     printer.print_log("Finished.")
 
 
-    total_params = 2 # sum(p.numel() for p in model.parameters())
+    total_params = sum(p.numel() for p in model.parameters())
     printer.print_log(f"Total amount of parameters: {total_params:,}")
     printer.print_log(f"Using device: {util.get_device()}")
     printer.print_log(f"Core count: { os.cpu_count()}")

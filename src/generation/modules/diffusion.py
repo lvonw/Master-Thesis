@@ -21,10 +21,13 @@ class Diffusion(nn.Module):
 
         return x
     
-    def get_time_embedding(timestep):
+    def get_time_embedding(timestep, embedding_size=160):
         freqs = torch.pow(10000, 
-                            -torch.arange(start=0, end=160, dtype=torch.float32)/160)
-        x  = torch.tensor([timestep], dtype=torch.float32)[:, None] * freqs[None]
+                          -torch.arange(start=0, 
+                                        end=embedding_size, 
+                                        dtype=torch.float32) / embedding_size)
+        x  = torch.tensor([timestep], 
+                          dtype=torch.float32).unsqueeze(-1) * freqs[None]
         return torch.cat([torch.cos(x), torch.sin(x)], dim=-1)
     
     

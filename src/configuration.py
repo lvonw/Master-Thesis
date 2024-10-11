@@ -22,6 +22,15 @@ class Configuration():
                                 log_level=constants.LogLevel.ERROR) 
             return _InvalidSection()
         
+    def __str__(self):
+        string = "\n"
+
+        for key, value in self.sections.items():
+            string += key + "\n"
+            string += str(value)
+
+        return string
+    
     def __prepare_sections(self, sections, config_path):
         for section_name, section in sections.items(): 
             if "external" in section:
@@ -29,17 +38,23 @@ class Configuration():
             else:
                 self.__add_section(section_name, config_path, section)
 
-    def __add_external_section(self, section_name, section):
-            external_path = util.make_path(section["external"])
-            external_sections = self.__load_config_file(external_path)
-            if not external_sections:
-                return
-            
-            if ("only_load_selection" in section 
-                and "selection" in section
-                and section["selection"] in external_sections):
+    def get_external_section(section):
+        external_path = util.make_path(section["external"])
+        external_section = Configuration.__load_config_file(external_path)
+        if not external_section:
+            return None
+        return external_section, external_path
 
-                external_section = external_sections[section["selection"]]
+    def __add_external_section(self, section_name, section):
+            external_section, external_path = (
+                Configuration.get_external_section(section))
+            
+            if (external_section 
+                and "only_load_selection" in section 
+                and "selection" in section
+                and section["selection"] in external_section):
+
+                external_section = external_section[section["selection"]]
 
                 self.__add_section(section_name, 
                                    external_path, 
@@ -61,7 +76,7 @@ class Configuration():
         
         self.add_section_path(section_path, section_name)
 
-    def __load_config_file(self, config_path):
+    def __load_config_file(config_path):
         loaded_data = {}
         
         if os.path.exists(config_path):
@@ -90,7 +105,7 @@ class Configuration():
     def load_configuration(self, config_file):
         """Loads configuration data from the specified file."""
         config_path = os.path.join(self.directory, config_file)
-        loaded_data = self.__load_config_file(config_path)
+        loaded_data = Configuration.__load_config_file(config_path)
 
         if loaded_data:
             self.__prepare_sections(loaded_data, config_path)
@@ -116,9 +131,6 @@ class Configuration():
 
         with open(config_path, 'w') as file:
             yaml.dump(self.config_data, file, indent=4)   
-
-    def print(self):
-        pass
 
 class Section():
     def __init__(self, 
@@ -156,6 +168,16 @@ class Section():
     def __contains__(self, configuration_name):
         return configuration_name in self.configurations
     
+    def __str__(self, level=1):
+        string = ""
+
+        for key, value in self.configurations.items():
+            string += "\t" * level
+            string += key + ":\n"
+            string += value.__str__(level + 1)
+
+        return string
+    
     def __prepare_items(self, section):
         configurations = {}
         for item_name, item in section.items():
@@ -163,6 +185,14 @@ class Section():
                 configurations[item_name] = Item(item)
             elif "value" in item:
                 configurations[item_name] = Item(item["value"])
+            elif "external" in item:
+                external_section, _ = (
+                    Configuration.get_external_section(item))
+                if not external_section:
+                    continue
+                configurations[item_name] = Section(item_name, 
+                                                    external_section[
+                                                        item["selection"]])
             else:
                 configurations[item_name] = Section(item_name, item)
 
@@ -191,6 +221,9 @@ class Item():
         self.value  = value
         self.usage  = "No usage set yet"
         self.type   = type(value) 
+
+    def __str__(self, level=2):
+        return "\t" * level + str(self.value) + "\n"
 
     def set_usage(self, usage):
         self.usage  = usage   
