@@ -52,9 +52,9 @@ class _Attention(nn.Module):
         weight  = weight / math.sqrt(self.head_dimension)
         weight  = f.softmax(weight, dim=-1)
 
-        output = (weight @ value)
-        output = output.transpose(1,2).contiguous().view(query.shape)
-        output = self.out_projection(query)
+        output  = (weight @ value)
+        output  = output.transpose(1,2).contiguous().view(query.shape)
+        output  = self.out_projection(query)
 
         return output
 

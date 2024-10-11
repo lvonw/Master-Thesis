@@ -11,12 +11,13 @@ from data.dataset           import DatasetFactory
 from pipeline               import generate, training
 from debug                  import Printer
 from generation.models.vae  import AutoEncoderFactory
+from generation.models.ddpm import DDPM
 from data.data_util         import DataVisualizer
 
 from torchvision.datasets   import MNIST
 from torchvision            import transforms
 
-from generation.modules.diffusion    import UNET
+from generation.modules.unet    import UNETFactory
 
 
 
@@ -75,11 +76,12 @@ def main():
 
     printer.print_log("Creating Model...")
     # model = AutoEncoderFactory.create_auto_encoder(config["Model"])
-    model = UNET(2)
+    # model = UNETFactory.create_unet(config["Model2"])
+    model = DDPM(config["Model2"])
     printer.print_log("Finished.")
 
 
-    total_params = sum(p.numel() for p in model.parameters())
+    total_params = 2 # sum(p.numel() for p in model.parameters())
     printer.print_log(f"Total amount of parameters: {total_params:,}")
     printer.print_log(f"Using device: {util.get_device()}")
     printer.print_log(f"Core count: { os.cpu_count()}")

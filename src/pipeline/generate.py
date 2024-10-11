@@ -41,7 +41,3 @@ def generate(condition,
     # transform prediciont back into image
 
 
-def get_time_embedding(timestep):
-    freqs = torch.pow(10000, -torch.arange(start=0, end=160, dtype=torch.float32)/160)
-    x  = torch.tensor([timestep], dtype=torch.float32)[:, None] * freqs[None]
-    return torch.cat([torch.cos(x), torch.sin(x)], dim=-1)

@@ -17,10 +17,13 @@ test_diffusion:
   unet_architecture:
     ResNet_blocks_per_level: 2
     starting_channels: 320
+    num_heads: 8
+    embedding_channels: 40
 
     channel_multipliers:
       - 1
       - 2
+      - 4
       - 4
 
     attention_levels:
