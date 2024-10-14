@@ -2,9 +2,13 @@ import enum
 import torch
 import torch.nn                 as nn
 import torch.nn.functional      as f
+import util
 
-from generation.models.vae      import AutoEncoderFactory
-from generation.modules.unet    import UNETFactory
+from generation.models.vae          import AutoEncoderFactory
+from generation.modules.unet        import UNETFactory
+from generation.modules.diffusion   import Diffusion
+from tqdm                           import tqdm
+
 
 class BetaSchedules(enum.Enum):
     LINEAR  = "Linear"
@@ -17,11 +21,14 @@ class PredictionType(enum.Enum):
 class DDPM(nn.Module):
     def __init__(self, 
                  configuration,
-                 generator=torch.Generator(), 
+                 generator=torch.Generator(device=util.get_device()), 
                  num_training_steps=1000, 
                  beta_start=0.00085,
                  beta_end = 0.0120):
         super().__init__()
+        self.name           = configuration["name"]
+        self.device         = util.get_device()
+        self.generator      = generator
         
         self.input_shape    = (configuration["input_num_channels"], 
                                configuration["input_resolution_x"],
@@ -31,17 +38,15 @@ class DDPM(nn.Module):
         if self.latent:
             self.latent_model   = AutoEncoderFactory.create_auto_encoder(
                 configuration["latent_model"])
-        self.model          = UNETFactory.create_unet(configuration)
+        self.model          = Diffusion(configuration)
             
         self.betas = self.__create_beta_schedule(num_training_steps, 
-                                                 beta_end,
+                                                 beta_start,
                                                  beta_end,
                                                  BetaSchedules.LINEAR)
-        
+                
         self.alphas             = 1.0 - self.betas
         self.alpha_bars         = torch.cumprod(self.alphas, 0)
-        self.one                = torch.tensor(1.0)
-        self.generator          = generator
         self.num_training_steps = num_training_steps
 
 
@@ -53,41 +58,69 @@ class DDPM(nn.Module):
         epsilon_coefficients        = self.__compute_epsilon_coefficients()
         self.one_over_sqrt_alphas   = epsilon_coefficients[0]
         self.epsilon_coefficient    = epsilon_coefficients[1]
-        
+
+    
+    def to_device(self, device):
+        return self.to(device=device)
+
+    def to(self, device=None, *args, **kwargs):
+        if device is not None:
+            self.device                 = device
+
+            self.betas                  = self.betas.to(device) 
+            self.alphas                 = self.alphas.to(device) 
+            self.alpha_bars             = self.alpha_bars.to(device) 
+            self.x_zero_coefs           = self.x_zero_coefs.to(device)
+            self.x_t_coefs              = self.x_t_coefs.to(device)
+            self.variance_t             = self.variance_t.to(device)
+            self.one_over_sqrt_alphas   = self.one_over_sqrt_alphas.to(device)
+            self.epsilon_coefficient    = self.epsilon_coefficient.to(device)
+                    
+        return super().to(device=device, *args, **kwargs)
 
     def set_inference_timesteps():
         pass
 
+    def generate(self):
+        return self.sample(1)
+
     @torch.no_grad()
     def sample(self, amount_samples):
         """ Algorithm 2 DDPM """
-        x = torch.randn(amount_samples + self.input_shape).to(self.device)
-        control_signal = 1
+        x = torch.randn((amount_samples,) + self.input_shape,
+                        device=self.device)
+        control_signal = None
         prediction_type = PredictionType.EPSILON_SIMPLE
 
-        # TODO Timestep encoding
-        for timestep in reversed(range(self.num_training_steps)):
-            model_output = self.model(x, control_signal, timestep)
+        for timestep in tqdm(reversed(range(self.num_training_steps)),
+                             total = self.num_training_steps,
+                             desc = "Generating Image"):
+            timesteps = torch.tensor([timestep] * amount_samples, 
+                                    device=self.device)
+            
+            model_output = self.model(x, control_signal, timesteps)
 
             match prediction_type:
                 # As proposed by algorithm 2
                 case PredictionType.EPSILON_SIMPLE:
-                    x = self.__predict_epsilon_simple(timestep, x, model_output)
-                # Without the simplification, this is what SD does
+                    x = self.__predict_epsilon_simple(timesteps, x, model_output)
+                # Without the simplification, this is what SD does 
                 case PredictionType.MEAN_VARIANCE:
-                    x = self.__predict_mean_variance(timestep, x, model_output)
-        
+                    x = self.__predict_mean_variance(timesteps, x, model_output)
+            
         return x
     
     def training_step(self, inputs, labels):
-        timesteps = self.__sample_timesteps(10, 10)
-        noised_images, noise = self.__add_noise(inputs)
+        inputs_shape = inputs.shape
+        timesteps = self.__sample_timesteps(self.num_training_steps, 
+                                            inputs_shape[0])
+        noised_images, noise = self.__add_noise(inputs, timesteps)
 
-        predicted_noise = self.model(noised_images, timesteps)
+        predicted_noise = self.model(noised_images, None, timesteps)
 
-        loss = f.mse_loss(noise, predicted_noise)
+        loss = f.mse_loss(noise, predicted_noise, reduction="sum")
 
-        return loss
+        return loss, None
     
     def __predict_epsilon_simple(self, timestep, x_t, model_output):
         """ Algorithm 2 DDPM """
@@ -96,11 +129,11 @@ class DDPM(nn.Module):
             noise = torch.randn(model_output.shape, 
                                 generator=self.generator, 
                                 device=model_output.device, 
-                                dtype=model_output.device)
-            
-        return (self.one_over_sqrt_alphas 
-                * (x_t - self.epsilon_coefficient * model_output) 
-                + torch.sqrt(self.betas) * noise)
+                                dtype=model_output.dtype)
+        
+        return (self.one_over_sqrt_alphas[timestep] 
+                * (x_t - self.epsilon_coefficient[timestep] * model_output) 
+                + torch.sqrt(self.betas[timestep]) * noise)
 
 
     def __predict_mean_variance(self, timestep, x_t, model_output):
@@ -178,13 +211,14 @@ class DDPM(nn.Module):
         
         timesteps   = timesteps.to(device=original_samples.device)    
 
-        sqrt_alpha_bars = (alpha_bars[timesteps] ** 0.5).flatten()
+        sqrt_alpha_bars             = torch.sqrt(alpha_bars[timesteps]
+                                                 ).flatten()
+        sqrt_one_minus_alpha_bars   = torch.sqrt(1-alpha_bars[timesteps]
+                                                 ).flatten()
 
         # can probably just set this to len 4?
         while len(sqrt_alpha_bars.shape) < len(original_samples.shape):
             sqrt_alpha_bars = sqrt_alpha_bars.unsqueeze(-1)
-
-        sqrt_one_minus_alpha_bars = ((1-alpha_bars[timesteps]) ** 0.5).flatten()
 
         while len(sqrt_one_minus_alpha_bars.shape) < len(original_samples.shape):
             sqrt_one_minus_alpha_bars = sqrt_one_minus_alpha_bars.unsqueeze(-1)
@@ -201,7 +235,8 @@ class DDPM(nn.Module):
     def __sample_timesteps(self, amount_steps, amount_samples):
         return torch.randint(low=1, 
                              high=amount_steps,
-                             size=(amount_samples,))
+                             size=(amount_samples,),
+                             device=self.device)
 
     def compute_loss():
         pass

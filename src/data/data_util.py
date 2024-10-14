@@ -174,12 +174,12 @@ class GeoUtil():
             if nodata_value is None:  
                 nodata_value = raster_band.GetNoDataValue()
             
-            if nodata_behaviour == constants.NoDataBehaviour.LOCAL_MINIMUM:
+            if nodata_behaviour == NoDataBehaviour.LOCAL_MINIMUM:
                 global_min = np.min(band_array)
                 np.copyto(band_array, 
                           global_min, 
                           where=(band_array == nodata_value))
-            elif nodata_behaviour == constants.NoDataBehaviour.GLOBAL_MINIMUM:
+            elif nodata_behaviour == NoDataBehaviour.GLOBAL_MINIMUM:
                 np.copyto(band_array, 
                           global_min, 
                           where=(band_array == nodata_value))

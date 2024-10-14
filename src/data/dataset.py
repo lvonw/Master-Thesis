@@ -195,7 +195,7 @@ class TerrainDataset(Dataset):
                 DEM_dataset.GetRasterBand(1),
                 nodata_behaviour        = NoDataBehaviour.NONE,
                 normalization_method    = NormalizationMethod.SIGMOID,
-                nodata_val              = constants.DEM_NODATA_VAL,
+                nodata_value            = constants.DEM_NODATA_VAL,
                 global_min              = constants.DEM_GLOBAL_MIN,
                 global_max              = constants.DEM_GLOBAL_MAX
             )

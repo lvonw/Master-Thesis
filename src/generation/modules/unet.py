@@ -6,7 +6,7 @@ from generation.modules.util_modules    import (ResNetBlock,
                                                 Downsample, 
                                                 Upsample, 
                                                 Normalize)
-from generation.modules.attention       import ContextualAttentionBlock
+from generation.modules.attention       import ContextualAttentionBlock, AttentionBlock
 
 
 
@@ -27,9 +27,11 @@ class UNETFactory():
         pass
 
     def create_unet(configuration):
-        input_shape     = (configuration["input_num_channels"], 
-                           configuration["input_resolution_x"],
-                           configuration["input_resolution_y"])
+        input_shape         = (configuration["input_num_channels"], 
+                               configuration["input_resolution_x"],
+                               configuration["input_resolution_y"])
+        
+        use_control_signal  = configuration["use_control_signal"]
         
 
         architecture = configuration["unet_architecture"]
@@ -55,7 +57,8 @@ class UNETFactory():
                     resNet_per_level_decoder,
                     attention_levels,
                     num_heads,
-                    embedding_channels)
+                    embedding_channels,
+                    use_control_signal)
 
 
 class UNET(nn.Module):
@@ -68,9 +71,11 @@ class UNET(nn.Module):
                  resNet_per_level_decoder,
                  attention_levels,
                  num_heads = 8,
-                 embedding_channels = 40):
+                 embedding_channels = 40,
+                 use_control_signal = False):
         super().__init__()
 
+        self.use_control_signal = use_control_signal
         self.input_shape        = input_shape
         input_channel_amount    = input_shape[0]
         
@@ -102,7 +107,9 @@ class UNET(nn.Module):
 
                 if level in attention_levels:
                     current_block.append(
-                        ContextualAttentionBlock(num_heads, current_embed)  
+                        self.__get_attention_block(current_channel_amount,
+                                                   current_embed,
+                                                   num_heads)
                     )
                 
                 self.encoder.append(SwitchSequential(*current_block))
@@ -110,14 +117,17 @@ class UNET(nn.Module):
                 previous_channel_amount = current_channel_amount
 
             if level + 1 < len(channel_multipliers_encoder):
-                self.encoder.append(Downsample(current_channel_amount,
-                                               asymmetric_padding=False))
+                self.encoder.append(SwitchSequential(
+                    Downsample(current_channel_amount, asymmetric_padding=False)
+                ))
                 skip_channels.append(current_channel_amount)
         
         # Bottleneck
         self.bottleneck = SwitchSequential(
             ResNetBlock(current_channel_amount, current_channel_amount),
-            ContextualAttentionBlock(num_heads, current_embed),
+            self.__get_attention_block(current_channel_amount,
+                                       current_embed,
+                                       num_heads),
             ResNetBlock(current_channel_amount, current_channel_amount)
         )
 
@@ -143,7 +153,9 @@ class UNET(nn.Module):
                 # Attention
                 if level in attention_levels:
                     current_block.append(
-                        ContextualAttentionBlock(num_heads, current_embed)  
+                        self.__get_attention_block(current_channel_amount,
+                                                   current_embed,
+                                                   num_heads) 
                     )
                 # Upsampling
                 if (layer + 1 == resNet_per_level_decoder and level):
@@ -169,7 +181,7 @@ class UNET(nn.Module):
         skip_connections.append(x)
 
         # Encoding
-        for layers in self.encoders:
+        for layers in self.encoder:
             x = layers(x, context, time)
             skip_connections.append(x)
 
@@ -177,7 +189,7 @@ class UNET(nn.Module):
         x = self.bottleneck(x, context, time)
 
         # Decoding
-        for layers in self.decoders:
+        for layers in self.decoder:
             x = torch.cat((x, skip_connections.pop()), dim=1) 
             x = layers(x, context, time)
         
@@ -187,3 +199,12 @@ class UNET(nn.Module):
         x = self.output_conv(x)
 
         return x
+    
+    def __get_attention_block(self, 
+                              channels, 
+                              embedding_channels, 
+                              amount_heads):
+        if self.use_control_signal:
+            return ContextualAttentionBlock(amount_heads, embedding_channels)
+        else:
+            return AttentionBlock(channels)

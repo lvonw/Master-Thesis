@@ -174,7 +174,8 @@ def __validate(model, dataloader, configuration, batch_size):
             loss, individual_losses = model.training_step(inputs, labels)
             
             running_loss    += loss.item()
-            losses          += [l.item() for l in individual_losses]
+            if individual_losses:
+                losses          += [l.item() for l in individual_losses]
             metadatas       += metadata
 
 

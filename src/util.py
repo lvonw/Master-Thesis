@@ -1,9 +1,9 @@
 import constants
 import os
 import torch
-import torch.nn         as nns
+import torch.nn         as nn
 
-
+# TODO Need to make it so we dont constantly check this
 def get_device():
     if torch.cuda.is_available():
         device = "cuda"
@@ -28,7 +28,7 @@ def get_model_family(model):
     # elif isinstance(model, ddpm.DDPM):
     #     return "ddpm"
     
-    return "vae"
+    return "diffusion"
 
 def get_model_file_path(model):
     model_family = get_model_family(model)

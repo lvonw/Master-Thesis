@@ -75,11 +75,8 @@ def main():
             quit()
 
     printer.print_log("Creating Model...")
-    # model = AutoEncoderFactory.create_auto_encoder(config["Model"])
-    # model = UNETFactory.create_unet(config["Model2"])
-    model = DDPM(config["Model2"])
+    model = DDPM(config["Model"])
     printer.print_log("Finished.")
-
 
     total_params = sum(p.numel() for p in model.parameters())
     printer.print_log(f"Total amount of parameters: {total_params:,}")
@@ -107,8 +104,8 @@ def main():
         
         training.train(model, training_set, validation_set, config["Training"])
     
-    # TODO just for testing 
     if config["Main"]["generate"]:
+        model = model.to(util.get_device())
         model.eval()
         with torch.no_grad():
             for _ in range(10):
