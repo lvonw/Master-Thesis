@@ -1,6 +1,7 @@
 import  os
 from    osgeo   import gdal
 from    tqdm    import tqdm
+import numpy as np
 
 NEW_WIDTH   = 64
 NEW_HEIGHT  = 64
@@ -60,6 +61,54 @@ def resize_DEM(input_dem, output_dem, new_width, new_height):
     return True
 
 
+def resize_data(input_dem, output_dem, new_width, new_height):
+    dataset = gdal.Open(input_dem)
+
+    if not dataset:
+        print(f"Error opening file: {input_dem}")
+        return False
+
+    geo_transform   = dataset.GetGeoTransform()
+    projection      = dataset.GetProjection()
+
+    original_width  = dataset.RasterXSize
+    original_height = dataset.RasterYSize
+    band_count      = dataset.RasterCount
+
+    driver = gdal.GetDriverByName('GTiff')
+    resized_dataset = driver.Create(output_dem, 
+                                    new_width, 
+                                    new_height, 
+                                    band_count, 
+                                    gdal.GDT_Byte)
+
+    scale_x = original_width    / new_width
+    scale_y = original_height   / new_height
+
+    new_geo_transform = (geo_transform[0],
+                         geo_transform[1] * scale_x,
+                         geo_transform[2],
+                         geo_transform[3],
+                         geo_transform[4],
+                         geo_transform[5] * scale_y)
+
+    resized_dataset.SetGeoTransform(new_geo_transform)
+    resized_dataset.SetProjection(projection)
+
+    for band_idx in range(1, band_count + 1):
+        band = dataset.GetRasterBand(band_idx)
+        data = band.ReadAsArray(buf_xsize=new_width, 
+                                buf_ysize=new_height,
+                                resample_alg=gdal.GRIORA_NearestNeighbour)
+        resized_dataset.GetRasterBand(band_idx).WriteArray(data)
+
+    resized_dataset.FlushCache()
+
+    resized_dataset = None
+    dataset = None
+
+    return True
+
 def process_DEMs(dems, output_base_folder, new_width, new_height):
     resolution_folder = os.path.join(
         output_base_folder,
@@ -77,6 +126,20 @@ def process_DEMs(dems, output_base_folder, new_width, new_height):
             return
         
 
+def process_data():
+    parent = os.path.join(
+        DATA_PATH_MASTER,
+        "GTC",
+        "Iwahashi_etal_2018")
+
+    filename = os.path.basename("GlobalTerrainClassification_Iwahashi_etal_2018.tif")
+    input_file = os.path.join(parent, filename)
+    output_file = os.path.join(parent,"3600x1800_"+filename)
+
+    if not resize_data(input_file, output_file, 3600, 1800):
+        print ("Aborting")
+        return
+
 def open_DEM_list():
         dem_list = []
         with open(DATA_PATH_DEM_LIST, 'r') as file:
@@ -86,6 +149,7 @@ def open_DEM_list():
         return dem_list 
 
 if __name__ == "__main__":
-    dems = open_DEM_list()
-
-    process_DEMs(dems, DATA_PATH_DEM, NEW_WIDTH, NEW_HEIGHT)
+    #dems = open_DEM_list()
+    process_data()
+    #process_DEMs(dems, DATA_PATH_DEM, NEW_WIDTH, NEW_HEIGHT)
+    

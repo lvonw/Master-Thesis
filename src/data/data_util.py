@@ -51,7 +51,7 @@ class GeoUtil():
 
         x = (latitude  - x_origin) / pixel_width
         y = (longitude - y_origin) / pixel_height
-        
+
         return int(x), int(y)
     
     def get_geo_frame_coordinates(geo_transform, top_left, bottom_right):
@@ -155,7 +155,7 @@ class GeoUtil():
         if clip:
             x = np.clip(x, min_value, max_value)
 
-        x = (x - min_value).astype(np.float32) 
+        x = x - min_value
         x /= max_value - min_value
         return x
     
@@ -227,7 +227,8 @@ class DataVisualizer():
         cax = ax.imshow(image_data, cmap=cmap)
         ax.set_title(title)
         fig.colorbar(cax)
-        return fig
+        #plt.show()
+        # return fig
 
     def create_array_figure(array):
         if len(array.shape) == 1:

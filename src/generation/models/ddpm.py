@@ -1,11 +1,12 @@
 import enum
 import torch
-import torch.nn                 as nn
-import torch.nn.functional      as f
 import util
 
+import torch.nn                 as nn
+import numpy                    as np
+import torch.nn.functional      as f
+
 from generation.models.vae          import AutoEncoderFactory
-from generation.modules.unet        import UNETFactory
 from generation.modules.diffusion   import Diffusion
 from tqdm                           import tqdm
 
@@ -24,11 +25,13 @@ class DDPM(nn.Module):
                  generator=torch.Generator(device=util.get_device()), 
                  num_training_steps=1000, 
                  beta_start=0.00085,
-                 beta_end = 0.0120):
+                 beta_end = 0.0120, 
+                 amount_classes=0):
         super().__init__()
         self.name           = configuration["name"]
         self.device         = util.get_device()
         self.generator      = generator
+        self.amount_classes = amount_classes
         
         self.input_shape    = (configuration["input_num_channels"], 
                                configuration["input_resolution_x"],
@@ -38,7 +41,7 @@ class DDPM(nn.Module):
         if self.latent:
             self.latent_model   = AutoEncoderFactory.create_auto_encoder(
                 configuration["latent_model"])
-        self.model          = Diffusion(configuration)
+        self.model          = Diffusion(configuration, amount_classes)
             
         self.betas = self.__create_beta_schedule(num_training_steps, 
                                                  beta_start,
@@ -81,15 +84,19 @@ class DDPM(nn.Module):
     def set_inference_timesteps():
         pass
 
-    def generate(self):
-        return self.sample(1)
+    def generate(self, label=None):
+        if label:
+            label = torch.tensor([label], device=self.device)
+        return self.sample(1, label)
 
     @torch.no_grad()
-    def sample(self, amount_samples):
+    def sample(self, amount_samples, control_signals):
         """ Algorithm 2 DDPM """
+        classifier_free_guidance_weight = 3.0
+
         x = torch.randn((amount_samples,) + self.input_shape,
                         device=self.device)
-        control_signal = None
+        
         prediction_type = PredictionType.EPSILON_SIMPLE
 
         for timestep in tqdm(reversed(range(self.num_training_steps)),
@@ -98,12 +105,24 @@ class DDPM(nn.Module):
             timesteps = torch.tensor([timestep] * amount_samples, 
                                     device=self.device)
             
-            model_output = self.model(x, control_signal, timesteps)
+            model_output = self.model(x, control_signals, timesteps)
+            
+            if classifier_free_guidance_weight and control_signals: 
+                unconditional_model_output = self.model(x, None, timesteps)
+                model_output = torch.lerp(
+                    unconditional_model_output, 
+                    model_output,
+                    classifier_free_guidance_weight
+                )
 
             match prediction_type:
                 # As proposed by algorithm 2
                 case PredictionType.EPSILON_SIMPLE:
-                    x = self.__predict_epsilon_simple(timesteps, x, model_output)
+                    x = self.__predict_epsilon_simple(timesteps, 
+                                                      x, 
+                                                      model_output)
+                        
+
                 # Without the simplification, this is what SD does 
                 case PredictionType.MEAN_VARIANCE:
                     x = self.__predict_mean_variance(timesteps, x, model_output)
@@ -111,12 +130,16 @@ class DDPM(nn.Module):
         return x
     
     def training_step(self, inputs, labels):
-        inputs_shape = inputs.shape
-        timesteps = self.__sample_timesteps(self.num_training_steps, 
-                                            inputs_shape[0])
+        inputs_shape        = inputs.shape
+        timesteps           = self.__sample_timesteps(self.num_training_steps, 
+                                                      inputs_shape[0])
         noised_images, noise = self.__add_noise(inputs, timesteps)
 
-        predicted_noise = self.model(noised_images, None, timesteps)
+        # Classifier Free Guidance
+        if np.random.random() < 0.1:
+            labels = None         
+
+        predicted_noise = self.model(noised_images, labels, timesteps)
 
         loss = f.mse_loss(noise, predicted_noise, reduction="sum")
 

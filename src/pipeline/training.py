@@ -101,8 +101,9 @@ def train(model, training_dataset, validation_dataset, configuration):
             optimizer.zero_grad()
             
             inputs, labels, _ = __prepare_data(data)
+
             loss, _ = model.training_step(inputs, labels)
-            
+
             loss.backward()
             optimizer.step()
             
@@ -138,8 +139,8 @@ def train(model, training_dataset, validation_dataset, configuration):
             
             for image_idx in range(min(len(inputs), 6)):
                 image_tensor = inputs[image_idx]
-                DataVisualizer.create_image_tensor_figure(image_tensor,
-                                                          metadata["filename"][image_idx])
+                DataVisualizer.create_image_tensor_figure(
+                    image_tensor, metadata["filename"][image_idx])
 
                 inputs  = inputs.to(util.get_device())
                 x_hat   = reconstruction[image_idx]

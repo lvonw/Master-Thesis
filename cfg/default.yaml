@@ -2,12 +2,12 @@
 # MAIN
 # =============================================================================
 Main:
-  train:      false
+  train:      true
   validate:   false
   test:       false
-  generate:   true
+  generate:   false
 
-  load_model: true 
+  load_model: false 
 
   use_MNIST:  false
 
@@ -50,7 +50,7 @@ Data:
     use_as_label:   false
     use_as_channel: false
     cache:          false
-  climate: 
+  Climate: 
     use_as_label:   false
     use_as_channel: false
     cache:          false
@@ -59,9 +59,9 @@ Data:
     use_as_channel: false
     cache:          false
   GTC:
-    use_as_label:   false
+    use_as_label:   true
     use_as_channel: false
-    cache:          false
+    cache:          true
   
   # Data transforms
   Resize:

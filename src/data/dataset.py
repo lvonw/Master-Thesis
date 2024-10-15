@@ -3,6 +3,7 @@ import math
 import multiprocessing
 import os
 import torch
+import numpy                as np
 
 from configuration          import Section
 from data.data_access       import DataAccessor
@@ -10,6 +11,9 @@ from data.data_util         import GeoUtil, NoDataBehaviour, NormalizationMethod
 from debug                  import Printer
 from torchvision            import transforms
 from torch.utils.data       import Dataset, random_split
+
+
+from data.data_util import DataVisualizer
 
 class DatasetFactory():
     def create_dataset(data_configuration: Section):
@@ -33,49 +37,25 @@ class DatasetFactory():
 
         # TODO make it so that the preprocess happens immediately 
         # after every load or parallelize it
-        if data_configuration["GLiM"]["cache"]:
-            if data_configuration["GLiM"]["use_as_channel"]:
-                channel_cache.append(DataAccessor.open_gdal_dataset(
-                    constants.DATA_PATH_GLIM))
-            elif data_configuration["GLiM"]["use_as_label"]:
-                pass
-            else:
-                pass
-        
-        if data_configuration["climate"]["cache"]:
-            if data_configuration["climate"]["use_as_channel"]:
-                channel_cache.append(DataAccessor.open_gdal_dataset(
-                    constants.DATA_PATH_CLIMATE))
-            elif data_configuration["climate"]["use_as_label"]:
-                pass
-            else:
-                pass
-        
-        if data_configuration["DSMW"]["cache"]:
-            if data_configuration["DSMW"]["use_as_channel"]:
-                channel_cache.append(DataAccessor.open_gdal_dataset(
-                    constants.DATA_PATH_DSMW))
-            elif data_configuration["DSMW"]["use_as_label"]:
-                pass
-            else:
-                pass
-        
-        if data_configuration["GTC"]["cache"]:
-            if data_configuration["GTC"]["use_as_channel"]:
-                channel_cache.append(DataAccessor.open_gdal_dataset(
-                    constants.DATA_PATH_GTC))
-            elif data_configuration["GTC"]["use_as_label"]:
-                e = DataAccessor.open_gdal_dataset(
-                    constants.DATA_PATH_GTC)
-                
-                geo_transform = e.GetGeoTransform()
-                asd = e.GetRasterBand(1).ReadAsArray()
+        DatasetFactory.__append_to_cache(data_configuration["GLiM"], 
+                                        channel_cache, 
+                                        label_cache)
 
-                label_cache.append((geo_transform, asd))
-            else:
-                pass
+        DatasetFactory.__append_to_cache(data_configuration["Climate"], 
+                                        channel_cache, 
+                                        label_cache)
+
+        DatasetFactory.__append_to_cache(data_configuration["DSMW"], 
+                                        channel_cache, 
+                                        label_cache)
+        
+        DatasetFactory.__append_to_cache(data_configuration["GTC"], 
+                                         channel_cache, 
+                                         label_cache)
+    
   
-        channel_cache = DatasetFactory.__pre_process_data_cache(channel_cache)
+        channel_cache   = DatasetFactory.__pre_process_data_cache(channel_cache)
+        amount_classes  = DatasetFactory.__get_amount_classes(label_cache)
             
         # This probably needs to be the very first operation
         if data_configuration["Resize"]["active"]:
@@ -114,7 +94,7 @@ class DatasetFactory():
         
         transform = transforms.Compose(transform_list)
 
-        return DatasetFactory.__get_data_splits(
+        return (DatasetFactory.__get_data_splits(
             TerrainDataset(DEM_List, 
                            channel_cache,
                            label_cache, 
@@ -122,6 +102,7 @@ class DatasetFactory():
                            source_dataset,
                            cache_dems=data_configuration["Cache_DEMs"]),
             data_configuration["Data_Split"])
+            , amount_classes)
     
     def __get_data_splits(dataset, training_data_split):
         total_data      = len(dataset)
@@ -148,7 +129,32 @@ class DatasetFactory():
             )
 
         return processed_cache
+    
 
+    def __append_to_cache(dataset_configuration, channel_cache, label_cache):
+        if not dataset_configuration["cache"]:
+            return 
+
+        if dataset_configuration["use_as_channel"]:
+            channel_cache.append(DataAccessor.open_gdal_dataset(
+                constants.DATA_PATH_GTC))
+        elif dataset_configuration["use_as_label"]:
+            dataset = DataAccessor.open_gdal_dataset(constants.DATA_PATH_GTC)
+            geo_transform   = dataset.GetGeoTransform()
+            geo_array       = dataset.GetRasterBand(1).ReadAsArray()
+
+            label_cache.append((geo_transform, geo_array))
+
+    # TODO Multilabel will not work with this
+    def __get_amount_classes(label_cache):
+        amount_classes = 0
+        
+        # Might have to consider nodata later
+        for geo_transform, geo_array in label_cache:
+            amount_classes += len(np.unique(geo_array))            
+
+        return amount_classes
+    
 class TerrainDataset(Dataset): 
     def __create_shared_cache():
         manager = multiprocessing.Manager()
@@ -162,13 +168,15 @@ class TerrainDataset(Dataset):
                  transform=None,
                  source_dataset=constants.DATA_PATH_DEMS,
                  cache_dems = True):
+        manager                     = multiprocessing.Manager()
+
         self.transform              = transform
         self.DEM_list               = DEM_list
-        self.channel_data_cache     = channel_data_cache
-        self.label_data_cache       = label_data_cache
         self.source_dataset         = source_dataset
+
+        self.channel_data_cache     = channel_data_cache
+        self.label_data_cache       = manager.list(label_data_cache)
         
-        manager                     = multiprocessing.Manager()
         self.dem_cache              = manager.list([None] * len(DEM_list))
         self.cache_dems             = cache_dems
 
@@ -176,14 +184,22 @@ class TerrainDataset(Dataset):
         return len(self.DEM_list)
     
     def __getitem__(self, index):
-        metadata    = {}
-        label       = []
-        filename    = self.DEM_list[index]
+        metadata        = {}
+        filename        = self.DEM_list[index]
+        label           = []
 
         metadata["filename"] = filename
 
         if self.cache_dems and self.dem_cache[index]:
-            DEM_geo_transform, DEM_tensor = self.dem_cache[index]   
+            DEM_geo_transform   = self.dem_cache[index].dem_geo_transform
+            DEM_tensor          = self.dem_cache[index].dem_tensor 
+            label               = self.dem_cache[index].label_tensors
+
+            DEM_shape = DEM_tensor.shape[-3:]
+            
+            if self.label_data_cache:
+                self.label_data_cache = None
+
         else:   
             DEM_dataset = DataAccessor.open_DEM(filename, self.source_dataset)
             DEM_geo_transform = None
@@ -194,23 +210,20 @@ class TerrainDataset(Dataset):
             DEM_tensor = GeoUtil.get_normalized_raster_band(
                 DEM_dataset.GetRasterBand(1),
                 nodata_behaviour        = NoDataBehaviour.NONE,
-                normalization_method    = NormalizationMethod.SIGMOID,
+                normalization_method    = NormalizationMethod.CLIPPED_LINEAR,
                 nodata_value            = constants.DEM_NODATA_VAL,
                 global_min              = constants.DEM_GLOBAL_MIN,
                 global_max              = constants.DEM_GLOBAL_MAX
             )
-            
-            if self.cache_dems:
-                self.dem_cache[index] = (DEM_dataset.GetGeoTransform(), 
-                                         DEM_tensor)
 
-        DEM_shape   = DEM_tensor.shape
-        DEM_tensor  = DEM_tensor.unsqueeze(0)
+
+            DEM_shape   = DEM_tensor.shape
+            DEM_tensor  = DEM_tensor.unsqueeze(0)
         
         channels    = [DEM_tensor]
 
         # Extract all the specified additional channel data from other maps
-        if self.channel_data_cache or self.label_data_cache: 
+        if (not label) and (self.channel_data_cache or self.label_data_cache): 
             if DEM_geo_transform is None: 
                 DEM_geo_transform = DEM_dataset.GetGeoTransform()
             
@@ -236,22 +249,38 @@ class TerrainDataset(Dataset):
             
             for cache in self.label_data_cache:
                 # TODO figure out a way to do multiclass and stuff also One Hot
-                # data_frame = GeoUtil.get_geo_frame_array(
-                #     cache[1], 
-                #     cache[0],
-                #     top_left_geo,
-                #     bot_right_geo)
+                data_frame = GeoUtil.get_geo_frame_array(
+                    cache[1], 
+                    cache[0],
+                    top_left_geo,
+                    bot_right_geo)
 
-                middle_geo = ((bot_right_geo[0]- top_left_geo[0]) 
-                              / 2 + top_left_geo[0], 
-                              (bot_right_geo[1]- top_left_geo[1]) 
-                              / 2 + top_left_geo[1])
+                # middle_geo = ((bot_right_geo[0]- top_left_geo[0]) 
+                #               / 2 + top_left_geo[0], 
+                #               (bot_right_geo[1]- top_left_geo[1]) 
+                #               / 2 + top_left_geo[1])
                  
-                middle_coord = GeoUtil.geo_coordinates_to_cell(cache[0],
-                                                               middle_geo[0], 
-                                                               middle_geo[1])
+                # middle_coord = GeoUtil.geo_coordinates_to_cell(cache[0],
+                #                                                middle_geo[0], 
+                #                                                middle_geo[1])
 
-                label = [cache[1][middle_coord[1], middle_coord[0]]]
+                # label = [cache[1][middle_coord[1], middle_coord[0]]]
+                
+
+                label = torch.tensor(np.median(data_frame), dtype=torch.int32)
+                # self.dem_cache[index] = self.dem_cache[index] + (label,)
+                
+                # self.dem_cache[index].set_label_tensors(label)
+                
+                # DataVisualizer.create_image_plot(data_frame)
+                # DataVisualizer.create_image_tensor_figure(DEM_tensor)
+
+
+        if self.cache_dems and not self.dem_cache[index]:
+            self.dem_cache[index] = GeoDatasetCache(
+                DEM_dataset.GetGeoTransform(), 
+                DEM_tensor,
+                label_tensors = label)
       
         data_entry = torch.cat(channels, dim=0)
 
@@ -259,4 +288,25 @@ class TerrainDataset(Dataset):
             data_entry = self.transform(data_entry)
 
         return data_entry, label, metadata
-    
+
+
+class GeoDatasetCache():
+    def __init__(self,
+                 dem_geo_transform, 
+                 dem_tensor,
+                 label_geo_transforms   = None,
+                 label_tensors          = [], 
+                 channel_geo_transforms = None,
+                 channel_tensors        = None):
+        
+        self.dem_geo_transform      = dem_geo_transform
+        self.dem_tensor             = dem_tensor
+        self.label_geo_transforms   = label_geo_transforms
+        self.label_tensors          = label_tensors
+        self.channel_geo_transforms = channel_geo_transforms
+        self.channel_tensors        = channel_tensors
+
+    def set_label_tensors(self, value):
+        self.label_tensors = value
+
+

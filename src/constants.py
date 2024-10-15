@@ -37,7 +37,7 @@ DATA_PATH_DSMW      = os.path.join(DATA_PATH_MASTER,
 DATA_PATH_GTC       = os.path.join(DATA_PATH_MASTER, 
                                    "GTC",
                                    "Iwahashi_etal_2018",
-                                   "GlobalTerrainClassification_Iwahashi_etal_2018.tif")
+                                   "3600x1800_GlobalTerrainClassification_Iwahashi_etal_2018.tif")
 
 DEFAULT_DEM_LIST    = "SRTM_GL1_list.txt"
 
@@ -105,5 +105,5 @@ DATALOADER_SEED = 42
 # Pre gathered these values as they are distributed across multiple DEMs
 DEM_NODATA_VAL = -32768
 
-DEM_GLOBAL_MIN = -2      # 0      #   # -12269
-DEM_GLOBAL_MAX = 4993    # 3213   #   # 22894
+DEM_GLOBAL_MIN = -1 # -1503 # -2      # 0      # -12269
+DEM_GLOBAL_MAX = 8092  # 4993    # 3213   # 22894

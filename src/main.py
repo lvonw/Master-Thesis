@@ -17,7 +17,6 @@ from data.data_util         import DataVisualizer
 from torchvision.datasets   import MNIST
 from torchvision            import transforms
 
-from generation.modules.unet    import UNETFactory
 
 
 
@@ -59,6 +58,9 @@ def main():
     arguments   = parser.parse_args()
     printer     = Printer()
 
+    # =========================================================================
+    # Configuration
+    # =========================================================================
     printer.print_log("Loading Configuration...")
     config = Configuration()
     if arguments.config:
@@ -67,6 +69,9 @@ def main():
         config.load_defaults()
     printer.print_log("Finished.")
 
+    # =========================================================================
+    # CLI
+    # =========================================================================
     if arguments.cli:
         config.load_usages()
         cli = CLI(config);
@@ -74,14 +79,27 @@ def main():
         if should_quit:
             quit()
 
-    printer.print_log("Creating Model...")
-    model = DDPM(config["Model"])
+    # =========================================================================
+    # Dataset
+    # =========================================================================
+    printer.print_log("Creating Dataset...")
+    if config["Main"]["use_MNIST"]:
+        printer.print_log("Using MNIST")
+        training_set, validation_set = get_mnist()
+        amount_classes = 10
+    else:
+        printer.print_log("Using DEMs")
+        (training_set, 
+         validation_set), amount_classes = DatasetFactory.create_dataset(
+            config["Data"])
     printer.print_log("Finished.")
 
-    total_params = sum(p.numel() for p in model.parameters())
-    printer.print_log(f"Total amount of parameters: {total_params:,}")
-    printer.print_log(f"Using device: {util.get_device()}")
-    printer.print_log(f"Core count: { os.cpu_count()}")
+    # =========================================================================
+    # Model
+    # =========================================================================
+    printer.print_log("Creating Model...")
+    model = DDPM(config["Model"], amount_classes=amount_classes)
+    printer.print_log("Finished.")
 
     if config["Main"]["load_model"]:
         printer.print_log("Loading state dict...")
@@ -90,26 +108,31 @@ def main():
                               constants.LogLevel.WARNING)
         else:    
             printer.print_log("Finished.")
-    
-    if config["Main"]["train"]:
-        printer.print_log("Creating Dataset...")
-        if config["Main"]["use_MNIST"]:
-            printer.print_log("Using MNIST")
-            training_set, validation_set = get_mnist()
-        else:
-            printer.print_log("Using DEMs")
-            training_set, validation_set = DatasetFactory.create_dataset(
-                config["Data"])
-        printer.print_log("Finished.")
-        
+
+    # =========================================================================
+    # Stats
+    # =========================================================================
+    total_params = sum(p.numel() for p in model.parameters())
+    printer.print_log(f"Total amount of parameters: {total_params:,}")
+    printer.print_log(f"Using device: {util.get_device()}")
+    printer.print_log(f"Core count: {os.cpu_count()}")
+    printer.print_log(f"Amount Classes: {amount_classes}")
+
+    # =========================================================================
+    # Training
+    # =========================================================================
+    if config["Main"]["train"]:        
         training.train(model, training_set, validation_set, config["Training"])
-    
+
+    # =========================================================================
+    # Generation
+    # =========================================================================
     if config["Main"]["generate"]:
         model = model.to(util.get_device())
         model.eval()
         with torch.no_grad():
-            for _ in range(10):
-                sample = model.generate()
+            for i in range(10):
+                sample = model.generate(i)
                 DataVisualizer.create_image_tensor_figure(sample)
 
 
