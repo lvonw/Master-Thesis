@@ -121,6 +121,9 @@ class VariationalAutoEncoder(nn.Module):
         reduced_loss        = torch.sum(individual_losses)        
 
         return reduced_loss, individual_losses
+    
+    def on_training_step_completed(self):
+        pass
 
     def encode(self, x):
         x = self.encoder(x)
@@ -136,7 +139,8 @@ class VariationalAutoEncoder(nn.Module):
     def decode(self, z):
         x = self.decoder(z)
         # make sure that the values are in image space
-        x = f.sigmoid(x)
+        # if we use mse we probably dont need this?
+        # x = f.sigmoid(x)
         return x
 
     def generate(self):

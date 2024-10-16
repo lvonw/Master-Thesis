@@ -16,7 +16,7 @@ Main:
 # =============================================================================
 Training:  
   epochs:           200
-  batch_size:       32
+  batch_size:       64
   learning_rate:    4.5e-6
   logging_steps:    10
   num_workers:      2
@@ -32,7 +32,7 @@ Model:
   # external: cfg/vae/vae.yaml
   # selection: VAE_full_test
   external: cfg/diffusion/ddpm.yaml
-  selection: light_diffusion
+  selection: light_diffusion_beta_schedule_ema
   only_load_selection: true
   read_only: true
 
@@ -62,6 +62,9 @@ Data:
     use_as_label:   true
     use_as_channel: false
     cache:          true
+    # use_as_label:   false
+    # use_as_channel: false
+    # cache:          false
   
   # Data transforms
   Resize:

@@ -106,6 +106,8 @@ def train(model, training_dataset, validation_dataset, configuration):
 
             loss.backward()
             optimizer.step()
+
+            model.on_training_step_completed()
             
             training_losses.append(loss.item())
             running_loss += loss.item()

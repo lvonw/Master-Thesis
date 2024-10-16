@@ -2,12 +2,13 @@ import enum
 import torch
 import util
 
-import torch.nn                 as nn
-import numpy                    as np
-import torch.nn.functional      as f
+import numpy                        as np
+import torch.nn                     as nn
+import torch.nn.functional          as f
 
 from generation.models.vae          import AutoEncoderFactory
 from generation.modules.diffusion   import Diffusion
+from generation.modules.ema         import EMA
 from tqdm                           import tqdm
 
 
@@ -29,6 +30,7 @@ class DDPM(nn.Module):
                  amount_classes=0):
         super().__init__()
         self.name           = configuration["name"]
+        self.use_ema        = configuration["use_ema"]
         self.device         = util.get_device()
         self.generator      = generator
         self.amount_classes = amount_classes
@@ -42,11 +44,15 @@ class DDPM(nn.Module):
             self.latent_model   = AutoEncoderFactory.create_auto_encoder(
                 configuration["latent_model"])
         self.model          = Diffusion(configuration, amount_classes)
-            
+
+        self.ema_model      = None
+        if self.use_ema:
+            self.ema_model  = EMA(self.model)
+
         self.betas = self.__create_beta_schedule(num_training_steps, 
                                                  beta_start,
                                                  beta_end,
-                                                 BetaSchedules.LINEAR)
+                                                 BetaSchedules.COSINE)
                 
         self.alphas             = 1.0 - self.betas
         self.alpha_bars         = torch.cumprod(self.alphas, 0)
@@ -61,6 +67,7 @@ class DDPM(nn.Module):
         epsilon_coefficients        = self.__compute_epsilon_coefficients()
         self.one_over_sqrt_alphas   = epsilon_coefficients[0]
         self.epsilon_coefficient    = epsilon_coefficients[1]
+
 
     
     def to_device(self, device):
@@ -85,7 +92,7 @@ class DDPM(nn.Module):
         pass
 
     def generate(self, label=None):
-        if label:
+        if label is not None:
             label = torch.tensor([label], device=self.device)
         return self.sample(1, label)
 
@@ -145,6 +152,10 @@ class DDPM(nn.Module):
 
         return loss, None
     
+    def on_training_step_completed(self):
+        if self.use_ema:
+            self.ema_model.ema_step(self.model)
+    
     def __predict_epsilon_simple(self, timestep, x_t, model_output):
         """ Algorithm 2 DDPM """
         noise = 0
@@ -189,16 +200,34 @@ class DDPM(nn.Module):
                              amount_timesteps,
                              beta_start,
                              beta_end, 
-                             schedule = BetaSchedules.LINEAR):
+                             schedule = BetaSchedules.COSINE):
         match schedule:
             case BetaSchedules.LINEAR:
                 return torch.linspace(beta_start ** 0.5, 
                                       beta_end ** 0.5,
                                       amount_timesteps, 
                                       dtype=torch.float32) ** 2
-            # TODO
             case BetaSchedules.COSINE:
-                return None
+                # Improved DDPM formula 17
+                s = 0.01
+                pi_over_two         = np.pi / 2
+                timesteps           = torch.arange(end=amount_timesteps + 1,
+                                                   dtype=torch.float32)
+                timestep_over_time  = timesteps / amount_timesteps
+                time_over_offset    = (timestep_over_time + s) / (1 + s) 
+
+                f_t = torch.pow(torch.cos(time_over_offset * pi_over_two), 2)
+
+                alpha_bar_t = f_t / f_t[0]
+                betas       = 1 - (alpha_bar_t[1:] / alpha_bar_t[:-1])
+                return torch.clip(betas, min=0, max=0.999)
+    
+    def __compute_epsilon_coefficients(self):
+        one_over_sqrt_alphas    = 1. / torch.sqrt(self.alphas)
+        epsilon_coefficient     = ((1. - self.alphas) 
+                                   / torch.sqrt(1. - self.alpha_bars))
+        
+        return one_over_sqrt_alphas, epsilon_coefficient
             
     def __compute_mean_variance_coefficients(self):
         """ Formula 7 DDPM """
@@ -217,16 +246,7 @@ class DDPM(nn.Module):
 
         return x_zero_coefs, x_t_coefs, variance_t
     
-    def __compute_epsilon_coefficients(self):
-        one_over_sqrt_alphas    = 1. / torch.sqrt(self.alphas)
-        epsilon_coefficient     = ((1. - self.alphas) 
-                                   / torch.sqrt(1. - self.alpha_bars))
-        
-        return one_over_sqrt_alphas, epsilon_coefficient
-
-
     
-    # Do i really need to noise all images at the same step
     def __add_noise(self, original_samples, timesteps):
         """ Formula 4 DDPM """
         alpha_bars   = self.alpha_bars.to(device  = original_samples.device,
@@ -239,7 +259,6 @@ class DDPM(nn.Module):
         sqrt_one_minus_alpha_bars   = torch.sqrt(1-alpha_bars[timesteps]
                                                  ).flatten()
 
-        # can probably just set this to len 4?
         while len(sqrt_alpha_bars.shape) < len(original_samples.shape):
             sqrt_alpha_bars = sqrt_alpha_bars.unsqueeze(-1)
 

@@ -99,6 +99,7 @@ def main():
     # =========================================================================
     printer.print_log("Creating Model...")
     model = DDPM(config["Model"], amount_classes=amount_classes)
+    # model = AutoEncoderFactory.create_auto_encoder(config["Model"])
     printer.print_log("Finished.")
 
     if config["Main"]["load_model"]:
