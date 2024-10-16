@@ -11,6 +11,10 @@ from data.data_util         import GeoUtil, NoDataBehaviour, NormalizationMethod
 from debug                  import Printer
 from torchvision            import transforms
 from torch.utils.data       import Dataset, random_split
+from tqdm                   import tqdm
+
+from concurrent.futures import ThreadPoolExecutor
+from tqdm import tqdm
 
 
 from data.data_util import DataVisualizer
@@ -92,17 +96,24 @@ class DatasetFactory():
             transform_list.append(transforms.RandomHorizontalFlip(
                 p=data_configuration["RandomVerticalFlip"]["probability"]))
         
-        transform = transforms.Compose(transform_list)
-
-        return (DatasetFactory.__get_data_splits(
-            TerrainDataset(DEM_List, 
-                           channel_cache,
-                           label_cache, 
-                           transform,
-                           source_dataset,
-                           cache_dems=data_configuration["Cache_DEMs"]),
+        transform           = transforms.Compose(transform_list)
+        complete_dataset    = TerrainDataset(
+            DEM_List, 
+            channel_cache,
+            label_cache, 
+            transform,
+            source_dataset,
+            cache_dems=data_configuration["Cache_DEMs"],
+            amount_classes=amount_classes) 
+        
+        training_dataset, eval_dataset = DatasetFactory.__get_data_splits(
+            complete_dataset,
             data_configuration["Data_Split"])
-            , amount_classes)
+        
+        #complete_dataset.preprocess_dataset()
+        #complete_dataset.analyse_dataset()
+
+        return training_dataset, eval_dataset, amount_classes
     
     def __get_data_splits(dataset, training_data_split):
         total_data      = len(dataset)
@@ -119,7 +130,7 @@ class DatasetFactory():
 
         for i, cache in enumerate(data_cache, 0):
             if cache.RasterCount == 0:
-                    continue
+                continue
 
             geo_transform = cache.GetGeoTransform()
 
@@ -167,7 +178,8 @@ class TerrainDataset(Dataset):
                  label_data_cache, 
                  transform=None,
                  source_dataset=constants.DATA_PATH_DEMS,
-                 cache_dems = True):
+                 cache_dems = True,
+                 amount_classes = 0):
         manager                     = multiprocessing.Manager()
 
         self.transform              = transform
@@ -179,6 +191,8 @@ class TerrainDataset(Dataset):
         
         self.dem_cache              = manager.list([None] * len(DEM_list))
         self.cache_dems             = cache_dems
+
+        self.amount_classes         = amount_classes
 
     def __len__(self):
         return len(self.DEM_list)
@@ -196,9 +210,18 @@ class TerrainDataset(Dataset):
             label               = self.dem_cache[index].label_tensors
 
             DEM_shape = DEM_tensor.shape[-3:]
+            channels    = [DEM_tensor]
             
             if self.label_data_cache:
                 self.label_data_cache = None
+
+            data_entry = torch.cat(channels, dim=0)
+
+            if self.transform:
+                data_entry = self.transform(data_entry)
+
+            return data_entry, label, metadata
+
 
         else:   
             DEM_dataset = DataAccessor.open_DEM(filename, self.source_dataset)
@@ -215,7 +238,6 @@ class TerrainDataset(Dataset):
                 global_min              = constants.DEM_GLOBAL_MIN,
                 global_max              = constants.DEM_GLOBAL_MAX
             )
-
 
             DEM_shape   = DEM_tensor.shape
             DEM_tensor  = DEM_tensor.unsqueeze(0)
@@ -255,26 +277,7 @@ class TerrainDataset(Dataset):
                     top_left_geo,
                     bot_right_geo)
 
-                # middle_geo = ((bot_right_geo[0]- top_left_geo[0]) 
-                #               / 2 + top_left_geo[0], 
-                #               (bot_right_geo[1]- top_left_geo[1]) 
-                #               / 2 + top_left_geo[1])
-                 
-                # middle_coord = GeoUtil.geo_coordinates_to_cell(cache[0],
-                #                                                middle_geo[0], 
-                #                                                middle_geo[1])
-
-                # label = [cache[1][middle_coord[1], middle_coord[0]]]
-                
-
                 label = torch.tensor(np.median(data_frame), dtype=torch.int32)
-                # self.dem_cache[index] = self.dem_cache[index] + (label,)
-                
-                # self.dem_cache[index].set_label_tensors(label)
-                
-                # DataVisualizer.create_image_plot(data_frame)
-                # DataVisualizer.create_image_tensor_figure(DEM_tensor)
-
 
         if self.cache_dems and not self.dem_cache[index]:
             self.dem_cache[index] = GeoDatasetCache(
@@ -288,7 +291,55 @@ class TerrainDataset(Dataset):
             data_entry = self.transform(data_entry)
 
         return data_entry, label, metadata
+    
+    # def preprocess_dataset(self):
+    #     for index in tqdm(range(len(self.DEM_list) - 1),
+    #                       total = len(self.DEM_list),
+    #                       desc = "Preprocessing Dataset"):
+    #         self.__getitem__(index)
 
+    def preprocess_dataset(self):
+        with ThreadPoolExecutor() as executor:
+            indices = range(len(self.DEM_list) - 1)
+            list(tqdm(executor.map(self.__getitem__, indices),
+                    total=len(indices), 
+                    desc="Preprocessing Dataset"))
+    
+    def analyse_dataset(self):
+        analysis_result = AnalysisResult(self.amount_classes)
+        
+        for idx, cache in tqdm(enumerate(self.dem_cache), 
+                               total=len(self.dem_cache),
+                               desc="Analysing data"):
+            if cache is None: 
+                continue
+            label = cache.label_tensors.item()
+            
+            analysis_result.label_bucket[label] += 1
+            analysis_result.std_devs[label].append(
+                np.std(cache.dem_tensor.numpy()))
+            
+        analysis_result.post_process()
+        print (analysis_result)
+
+
+class AnalysisResult():
+    def __init__(self, amount_classes):
+        self.amount_classes     = amount_classes
+        self.label_bucket       = [0]  * amount_classes
+        self.std_devs           = [[] for _ in range(amount_classes)]
+        self.std_dev_bucket     = [0]  * amount_classes     
+
+    def post_process(self):
+        for idx in range(len(self.std_devs)):
+            self.std_dev_bucket[idx] = np.mean(self.std_devs[idx])
+
+    def __str__(self):
+        string = ""
+        for idx, (amount, sigma) in enumerate(zip(self.label_bucket, self.std_dev_bucket)):
+            string += f"\nLabel {idx}; Amount: {amount}, \tSigma {sigma}"
+
+        return string
 
 class GeoDatasetCache():
     def __init__(self,

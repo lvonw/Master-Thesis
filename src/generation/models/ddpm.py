@@ -1,3 +1,4 @@
+import constants
 import enum
 import torch
 import util
@@ -6,6 +7,7 @@ import numpy                        as np
 import torch.nn                     as nn
 import torch.nn.functional          as f
 
+from debug                          import Printer
 from generation.models.vae          import AutoEncoderFactory
 from generation.modules.diffusion   import Diffusion
 from generation.modules.ema         import EMA
@@ -28,6 +30,7 @@ class DDPM(nn.Module):
                  beta_start=0.00085,
                  beta_end = 0.0120, 
                  amount_classes=0):
+        
         super().__init__()
         self.name           = configuration["name"]
         self.use_ema        = configuration["use_ema"]
@@ -43,6 +46,14 @@ class DDPM(nn.Module):
         if self.latent:
             self.latent_model   = AutoEncoderFactory.create_auto_encoder(
                 configuration["latent_model"])
+            if not util.load_model(self.latent_model, "vae"):
+                Printer().print_log(
+                    f"Model {self.latent_model.name} could not be loaded",
+                    constants.LogLevel.WARNING)    
+
+            
+            util.load_model(self.latent_model, "vae")
+            
         self.model          = Diffusion(configuration, amount_classes)
 
         self.ema_model      = None
@@ -52,7 +63,7 @@ class DDPM(nn.Module):
         self.betas = self.__create_beta_schedule(num_training_steps, 
                                                  beta_start,
                                                  beta_end,
-                                                 BetaSchedules.COSINE)
+                                                 BetaSchedules.LINEAR)
                 
         self.alphas             = 1.0 - self.betas
         self.alpha_bars         = torch.cumprod(self.alphas, 0)
@@ -68,26 +79,6 @@ class DDPM(nn.Module):
         self.one_over_sqrt_alphas   = epsilon_coefficients[0]
         self.epsilon_coefficient    = epsilon_coefficients[1]
 
-
-    
-    def to_device(self, device):
-        return self.to(device=device)
-
-    def to(self, device=None, *args, **kwargs):
-        if device is not None:
-            self.device                 = device
-
-            self.betas                  = self.betas.to(device) 
-            self.alphas                 = self.alphas.to(device) 
-            self.alpha_bars             = self.alpha_bars.to(device) 
-            self.x_zero_coefs           = self.x_zero_coefs.to(device)
-            self.x_t_coefs              = self.x_t_coefs.to(device)
-            self.variance_t             = self.variance_t.to(device)
-            self.one_over_sqrt_alphas   = self.one_over_sqrt_alphas.to(device)
-            self.epsilon_coefficient    = self.epsilon_coefficient.to(device)
-                    
-        return super().to(device=device, *args, **kwargs)
-
     def set_inference_timesteps():
         pass
 
@@ -100,6 +91,8 @@ class DDPM(nn.Module):
     def sample(self, amount_samples, control_signals):
         """ Algorithm 2 DDPM """
         classifier_free_guidance_weight = 3.0
+        if self.use_ema:
+            self.ema_model.apply_to_model(self.model) 
 
         x = torch.randn((amount_samples,) + self.input_shape,
                         device=self.device)
@@ -114,7 +107,7 @@ class DDPM(nn.Module):
             
             model_output = self.model(x, control_signals, timesteps)
             
-            if classifier_free_guidance_weight and control_signals: 
+            if classifier_free_guidance_weight and control_signals is not None: 
                 unconditional_model_output = self.model(x, None, timesteps)
                 model_output = torch.lerp(
                     unconditional_model_output, 
@@ -133,10 +126,21 @@ class DDPM(nn.Module):
                 # Without the simplification, this is what SD does 
                 case PredictionType.MEAN_VARIANCE:
                     x = self.__predict_mean_variance(timesteps, x, model_output)
-            
+
+
+        if self.latent:
+            self.latent_model.eval()
+            with torch.no_grad():
+                x = self.latent_model.decode(x)
+
         return x
     
     def training_step(self, inputs, labels):
+        if self.latent:
+            self.latent_model.eval()
+            with torch.no_grad():
+                inputs = self.latent_model.encode(inputs)[1]
+
         inputs_shape        = inputs.shape
         timesteps           = self.__sample_timesteps(self.num_training_steps, 
                                                       inputs_shape[0])
@@ -155,6 +159,24 @@ class DDPM(nn.Module):
     def on_training_step_completed(self):
         if self.use_ema:
             self.ema_model.ema_step(self.model)
+
+    def to_device(self, device):
+        return self.to(device=device)
+
+    def to(self, device=None, *args, **kwargs):
+        if device is not None:
+            self.device                 = device
+
+            self.betas                  = self.betas.to(device) 
+            self.alphas                 = self.alphas.to(device) 
+            self.alpha_bars             = self.alpha_bars.to(device) 
+            self.x_zero_coefs           = self.x_zero_coefs.to(device)
+            self.x_t_coefs              = self.x_t_coefs.to(device)
+            self.variance_t             = self.variance_t.to(device)
+            self.one_over_sqrt_alphas   = self.one_over_sqrt_alphas.to(device)
+            self.epsilon_coefficient    = self.epsilon_coefficient.to(device)
+                    
+        return super().to(device=device, *args, **kwargs)
     
     def __predict_epsilon_simple(self, timestep, x_t, model_output):
         """ Algorithm 2 DDPM """
@@ -220,6 +242,12 @@ class DDPM(nn.Module):
 
                 alpha_bar_t = f_t / f_t[0]
                 betas       = 1 - (alpha_bar_t[1:] / alpha_bar_t[:-1])
+
+                # 0.999 causes the magnitude of the image to be completely
+                # wrong, why???
+                # Some github issues suggest clipping during reverse is needed
+                # Seems to be what SD does
+                # Some say this doesnt work with predicting epsilon
                 return torch.clip(betas, min=0, max=0.999)
     
     def __compute_epsilon_coefficients(self):
@@ -248,7 +276,7 @@ class DDPM(nn.Module):
     
     
     def __add_noise(self, original_samples, timesteps):
-        """ Formula 4 DDPM """
+        """ Formula 12 DDPM """
         alpha_bars   = self.alpha_bars.to(device  = original_samples.device,
                                           dtype   = original_samples.dtype)
         
@@ -258,6 +286,7 @@ class DDPM(nn.Module):
                                                  ).flatten()
         sqrt_one_minus_alpha_bars   = torch.sqrt(1-alpha_bars[timesteps]
                                                  ).flatten()
+
 
         while len(sqrt_alpha_bars.shape) < len(original_samples.shape):
             sqrt_alpha_bars = sqrt_alpha_bars.unsqueeze(-1)

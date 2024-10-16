@@ -224,7 +224,7 @@ class DataVisualizer():
                           cmap      = "gray"):
         
         fig, ax = plt.subplots()
-        cax = ax.imshow(image_data, cmap=cmap)
+        cax = ax.imshow(image_data, vmin=0, vmax=1, cmap=cmap)
         ax.set_title(title)
         fig.colorbar(cax)
         #plt.show()

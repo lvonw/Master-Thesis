@@ -90,7 +90,7 @@ def main():
     else:
         printer.print_log("Using DEMs")
         (training_set, 
-         validation_set), amount_classes = DatasetFactory.create_dataset(
+         validation_set, amount_classes) = DatasetFactory.create_dataset(
             config["Data"])
     printer.print_log("Finished.")
 

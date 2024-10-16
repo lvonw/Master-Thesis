@@ -153,6 +153,7 @@ class VariationalAutoEncoder(nn.Module):
                                 constants.LogLevel.WARNING)
         posterior = self.encode(x)
 
+        # TODO do we need to do this
         if sample_posterior:
             z = posterior[1]
         else: 

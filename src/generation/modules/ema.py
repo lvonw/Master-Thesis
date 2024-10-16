@@ -27,9 +27,9 @@ class EMA(nn.Module):
             new_weights     = model_params.data * self.one_minus_ema_weight
             ema_params.data = old_weights + new_weights
 
-        # tranfer the values back, should we do this after every training step?
-        model.load_state_dict(self.ema_model.state_dict())
 
+    def apply_to_model(self, model):
+        model.load_state_dict(self.ema_model.state_dict())
 
 
     

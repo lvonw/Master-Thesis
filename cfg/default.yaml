@@ -5,9 +5,9 @@ Main:
   train:      true
   validate:   false
   test:       false
-  generate:   false
+  generate:   true
 
-  load_model: false 
+  load_model: false
 
   use_MNIST:  false
 
@@ -15,7 +15,7 @@ Main:
 # TRAINING
 # =============================================================================
 Training:  
-  epochs:           200
+  epochs:           400
   batch_size:       64
   learning_rate:    4.5e-6
   logging_steps:    10
@@ -32,7 +32,7 @@ Model:
   # external: cfg/vae/vae.yaml
   # selection: VAE_full_test
   external: cfg/diffusion/ddpm.yaml
-  selection: light_diffusion_beta_schedule_ema
+  selection: latent_diffusion_test
   only_load_selection: true
   read_only: true
 
@@ -74,7 +74,7 @@ Data:
   RandomRotation:
     active:         false 
   RandomCrop:
-    active:         true
+    active:         false # true
     size:           32 
   FiveCrop:
     active:         false 
