@@ -1,4 +1,6 @@
 .env
+run.bat
+
 *__pycache__
 *.pth
 

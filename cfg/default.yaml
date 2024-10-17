@@ -2,10 +2,10 @@
 # MAIN
 # =============================================================================
 Main:
-  train:      false
+  train:      true
   validate:   false
   test:       false
-  generate:   true
+  generate:   false
 
   load_model: false
 

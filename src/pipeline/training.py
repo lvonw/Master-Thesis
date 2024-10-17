@@ -87,7 +87,9 @@ def train(model, training_dataset, validation_dataset, configuration):
     print_to_log_file(f"\nModel: {model.name}", constants.TRAINING_LOSS_LOG)
 
     model.to(util.get_device())
-    for epoch in tqdm(range(num_epochs), desc="Epochs"):
+    for epoch in tqdm(range(num_epochs), 
+                      desc="Epochs",
+                      disable=False):
         model.train()
 
         print_to_log_file(f"Epoch: {epoch+1}", constants.TRAINING_LOSS_LOG)

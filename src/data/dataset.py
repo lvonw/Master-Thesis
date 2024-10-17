@@ -16,7 +16,6 @@ from tqdm                   import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 
-
 from data.data_util import DataVisualizer
 
 class DatasetFactory():
@@ -39,8 +38,6 @@ class DatasetFactory():
         label_cache     = []
         transform_list  = []
 
-        # TODO make it so that the preprocess happens immediately 
-        # after every load or parallelize it
         DatasetFactory.__append_to_cache(data_configuration["GLiM"], 
                                         channel_cache, 
                                         label_cache)
@@ -110,7 +107,7 @@ class DatasetFactory():
             complete_dataset,
             data_configuration["Data_Split"])
         
-        #complete_dataset.preprocess_dataset()
+        complete_dataset.preprocess_dataset()
         #complete_dataset.analyse_dataset()
 
         return training_dataset, eval_dataset, amount_classes
@@ -166,144 +163,56 @@ class DatasetFactory():
 
         return amount_classes
     
-class TerrainDataset(Dataset): 
-    def __create_shared_cache():
-        manager = multiprocessing.Manager()
-        shared_cache = manager.dict()
-        return shared_cache
 
+class TerrainDataset(Dataset): 
     def __init__(self, 
                  DEM_list, 
-                 channel_data_cache,
-                 label_data_cache, 
+                 channel_cache,
+                 label_cache, 
                  transform=None,
                  source_dataset=constants.DATA_PATH_DEMS,
                  cache_dems = True,
                  amount_classes = 0):
-        manager                     = multiprocessing.Manager()
+        self.printer                = Printer()
 
-        self.transform              = transform
         self.DEM_list               = DEM_list
+        self.transform              = transform
         self.source_dataset         = source_dataset
-
-        self.channel_data_cache     = channel_data_cache
-        self.label_data_cache       = manager.list(label_data_cache)
         
-        self.dem_cache              = manager.list([None] * len(DEM_list))
         self.cache_dems             = cache_dems
-
         self.amount_classes         = amount_classes
+
+        # Single-Process cache
+        self.dem_cache              = [None] * len(DEM_list)
+        self.channel_cache          = channel_cache
+        self.label_cache            = label_cache
+
+        # Thread-Safe cache, introduces massive overheads        
+        self.shared_channel_cache   = None
+        self.shared_label_cache     = None
+        self.shared_dem_cache       = None
+    
 
     def __len__(self):
         return len(self.DEM_list)
-    
-    def __getitem__(self, index):
-        metadata        = {}
-        filename        = self.DEM_list[index]
-        label           = []
 
-        metadata["filename"] = filename
+    def __getitem__(self, index):        
+        cache       = self.shared_dem_cache[index]
 
-        if self.cache_dems and self.dem_cache[index]:
-            DEM_geo_transform   = self.dem_cache[index].dem_geo_transform
-            DEM_tensor          = self.dem_cache[index].dem_tensor 
-            label               = self.dem_cache[index].label_tensors
+        dem_tensor  = cache.dem_tensor 
+        label       = cache.label_tensor
+        metadata    = cache.metadata
 
-            DEM_shape = DEM_tensor.shape[-3:]
-            channels    = [DEM_tensor]
-            
-            if self.label_data_cache:
-                self.label_data_cache = None
-
+        if cache.channel_tensor is not None:
+            channels    = [dem_tensor, cache.label_tensor]        
             data_entry = torch.cat(channels, dim=0)
-
-            if self.transform:
-                data_entry = self.transform(data_entry)
-
-            return data_entry, label, metadata
-
-
-        else:   
-            DEM_dataset = DataAccessor.open_DEM(filename, self.source_dataset)
-            DEM_geo_transform = None
-
-            if DEM_dataset.RasterCount == 0:
-                return None, None    
-
-            DEM_tensor = GeoUtil.get_normalized_raster_band(
-                DEM_dataset.GetRasterBand(1),
-                nodata_behaviour        = NoDataBehaviour.NONE,
-                normalization_method    = NormalizationMethod.CLIPPED_LINEAR,
-                nodata_value            = constants.DEM_NODATA_VAL,
-                global_min              = constants.DEM_GLOBAL_MIN,
-                global_max              = constants.DEM_GLOBAL_MAX
-            )
-
-            DEM_shape   = DEM_tensor.shape
-            DEM_tensor  = DEM_tensor.unsqueeze(0)
-        
-        channels    = [DEM_tensor]
-
-        # Extract all the specified additional channel data from other maps
-        if (not label) and (self.channel_data_cache or self.label_data_cache): 
-            if DEM_geo_transform is None: 
-                DEM_geo_transform = DEM_dataset.GetGeoTransform()
-            
-            # Get the reference coordinates for the respective data frame
-            top_left_geo, bot_right_geo = GeoUtil.get_geo_frame_coordinates(
-                DEM_geo_transform, 
-                (0, 0),
-                (DEM_shape[1], DEM_shape[0]))
-            resize = transforms.Resize(DEM_shape)
-            
-            for cache in self.channel_data_cache:
-                # Extract the data frame
-                data_frame = GeoUtil.get_geo_frame_array(
-                    cache[1], 
-                    cache[0],
-                    top_left_geo,
-                    bot_right_geo)
-        
-                data_tensor = torch.from_numpy(data_frame).unsqueeze(0)
-                data_tensor = resize(data_tensor)
-
-                channels.append(data_tensor)
-            
-            for cache in self.label_data_cache:
-                # TODO figure out a way to do multiclass and stuff also One Hot
-                data_frame = GeoUtil.get_geo_frame_array(
-                    cache[1], 
-                    cache[0],
-                    top_left_geo,
-                    bot_right_geo)
-
-                label = torch.tensor(np.median(data_frame), dtype=torch.int32)
-
-        if self.cache_dems and not self.dem_cache[index]:
-            self.dem_cache[index] = GeoDatasetCache(
-                DEM_dataset.GetGeoTransform(), 
-                DEM_tensor,
-                label_tensors = label)
-      
-        data_entry = torch.cat(channels, dim=0)
+        else:
+            data_entry = dem_tensor
 
         if self.transform:
             data_entry = self.transform(data_entry)
 
         return data_entry, label, metadata
-    
-    # def preprocess_dataset(self):
-    #     for index in tqdm(range(len(self.DEM_list) - 1),
-    #                       total = len(self.DEM_list),
-    #                       desc = "Preprocessing Dataset"):
-    #         self.__getitem__(index)
-
-    def preprocess_dataset(self):
-        with ThreadPoolExecutor() as executor:
-            indices = range(len(self.DEM_list) - 1)
-            list(tqdm(executor.map(self.__getitem__, indices),
-                    total=len(indices), 
-                    desc="Preprocessing Dataset"))
     
     def analyse_dataset(self):
         analysis_result = AnalysisResult(self.amount_classes)
@@ -321,6 +230,95 @@ class TerrainDataset(Dataset):
             
         analysis_result.post_process()
         print (analysis_result)
+
+    def preprocess_dataset(self):
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            indices = range(len(self.DEM_list))
+            list(tqdm(executor.map(self.__prefetch_cache, indices),
+                    total=len(indices), 
+                    desc="Preprocessing Dataset"))
+            
+        # Transfer our single process cache to the shared cache
+        manager = multiprocessing.Manager()
+        self.shared_dem_cache = manager.list(self.dem_cache)
+        self.dem_cache.clear()
+        
+            
+    def __prefetch_cache(self, index):
+        filename    = self.DEM_list[index]
+        metadata    = {"filename": filename}
+
+        geo_cache               = GeoDatasetCache()
+        self.dem_cache[index]   = geo_cache
+
+        dem_dataset = DataAccessor.open_DEM(filename, self.source_dataset) 
+        
+        if dem_dataset.RasterCount == 0:
+            return    
+
+        dem_tensor = GeoUtil.get_normalized_raster_band(
+            dem_dataset.GetRasterBand(1),
+            nodata_behaviour        = NoDataBehaviour.NONE,
+            normalization_method    = NormalizationMethod.CLIPPED_LINEAR,
+            nodata_value            = constants.DEM_NODATA_VAL,
+            global_min              = constants.DEM_GLOBAL_MIN,
+            global_max              = constants.DEM_GLOBAL_MAX
+        )
+
+        dem_shape               = dem_tensor.shape
+        dem_tensor              = dem_tensor.unsqueeze(0)
+        geo_cache.dem_tensor    = dem_tensor
+
+        
+        if self.channel_cache or self.label_cache:
+            # maybe we can get away with none for now
+            dem_geo_transform = dem_dataset.GetGeoTransform()
+            geo_cache.dem_geo_transform = dem_geo_transform
+            
+            # Get the reference coordinates for the respective data frame
+            top_left_geo, bot_right_geo = GeoUtil.get_geo_frame_coordinates(
+                dem_geo_transform, 
+                (0, 0),
+                (dem_shape[1], dem_shape[0]))
+        else: 
+            return
+        
+        if self.channel_cache:
+            channels            = []
+            resize_to_dem_shape = transforms.Resize(dem_shape)
+            for cache in self.channel_cache:
+                # Extract the data frame
+                data_frame = GeoUtil.get_geo_frame_array(
+                    cache[1], 
+                    cache[0],
+                    top_left_geo,
+                    bot_right_geo)
+        
+                data_tensor = torch.from_numpy(data_frame).unsqueeze(0)
+                data_tensor = resize_to_dem_shape(data_tensor)
+
+                channels.append(data_tensor)
+                channels = torch.cat(channels, dim=0)
+
+                geo_cache.channel_geo_transforms.append(cache[0])
+                geo_cache.channel_tensor = channels
+
+
+        if self.label_cache:
+            for cache in self.label_cache:
+                # TODO figure out a way to do multiclass and stuff also One Hot
+                data_frame = GeoUtil.get_geo_frame_array(
+                    cache[1], 
+                    cache[0],
+                    top_left_geo,
+                    bot_right_geo)
+                label = torch.tensor(np.median(data_frame), dtype=torch.int32)
+
+                geo_cache.label_geo_transforms.append(cache[0]) 
+                geo_cache.label_tensor = label
+
+        geo_cache.metadata      = metadata
+        
 
 
 class AnalysisResult():
@@ -343,21 +341,19 @@ class AnalysisResult():
 
 class GeoDatasetCache():
     def __init__(self,
-                 dem_geo_transform, 
-                 dem_tensor,
-                 label_geo_transforms   = None,
-                 label_tensors          = [], 
-                 channel_geo_transforms = None,
-                 channel_tensors        = None):
+                 dem_tensor             = None,            
+                 dem_geo_transform      = None,
+                 label_geo_transforms   = [],
+                 label_tensor           = None, 
+                 channel_geo_transforms = [],
+                 channel_tensor         = None,
+                 metadata               = {}):
         
         self.dem_geo_transform      = dem_geo_transform
         self.dem_tensor             = dem_tensor
         self.label_geo_transforms   = label_geo_transforms
-        self.label_tensors          = label_tensors
+        self.label_tensor           = label_tensor
         self.channel_geo_transforms = channel_geo_transforms
-        self.channel_tensors        = channel_tensors
-
-    def set_label_tensors(self, value):
-        self.label_tensors = value
-
+        self.channel_tensor         = channel_tensor
+        self.metadata               = metadata
 

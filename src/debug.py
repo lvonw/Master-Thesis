@@ -61,10 +61,11 @@ class Printer():
         log_line.append(str(log_level.value[1]))
         log_line.append(str(log_level.value[0]))
         log_line.append(" ")
-        log_line.append(str(datetime.now()))
+        log_line.append(str(datetime.
+                            now()))
         log_line.append(" | ")
         log_line.append(constants.STYLE_RESET)
-        log_line.append(message)
+        log_line.append(str(message))
 
         self.print("".join(log_line))
 
