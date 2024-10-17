@@ -1,124 +1,34 @@
-test_diffusion:
-  name: test_diffusion
-  description: Test DDPM To see if the code works
-  
-  latent: true
-
-  latent_model:
-    external: cfg/vae/vae.yaml
-    selection: VAE_1x16x16_4x4x4_5
-    only_load_selection: true
-    read_only: true
-
-  input_num_channels: 4
-  input_resolution_x: 8
-  input_resolution_y: 8
-
-  unet_architecture:
-    ResNet_blocks_per_level: 2
-    starting_channels: 320
-    num_heads: 8
-    embedding_channels: 40
-
-    channel_multipliers:
-      - 1
-      - 2
-      - 4
-      - 4
-
-    attention_levels:
-      - 0
-      - 1
-      - 2
-    
-
 light_diffusion:
-  name: light_diffusion
-  description: Just to check if things are ok
-  
-  use_control_signal: false
-
-  input_num_channels: 1
-  input_resolution_x: 32
-  input_resolution_y: 32
-
-  time_embedding_size: 320
-
-  latent: false
-  latent_model:
-    external: cfg/vae/vae.yaml
-    selection: VAE_1x16x16_4x4x4_funkmoid2_mse
-    only_load_selection: true
-    read_only: true
-
-  unet_architecture:
-    ResNet_blocks_per_level: 2
-    starting_channels: 64
-    num_heads: 8
-    embedding_channels: 40
-
-    channel_multipliers:
-      - 1
-      - 2
-      - 2
-
-    attention_levels:
-      - 0
-      - 1
-
-light_diffusion_beta_schedule:
-  name: light_diffusion_beta_schedule
-  description: Just to check if things are ok
-  
-  use_control_signal: false
-
-  input_num_channels: 1
-  input_resolution_x: 32
-  input_resolution_y: 32
-
-  time_embedding_size: 320
-
-  latent: false
-  latent_model:
-    external: cfg/vae/vae.yaml
-    selection: VAE_1x16x16_4x4x4_funkmoid2_mse
-    only_load_selection: true
-    read_only: true
-
-  unet_architecture:
-    ResNet_blocks_per_level: 2
-    starting_channels: 64
-    num_heads: 8
-    embedding_channels: 40
-
-    channel_multipliers:
-      - 1
-      - 2
-      - 2
-
-    attention_levels:
-      - 0
-      - 1
-
-light_diffusion_beta_schedule_ema:
   name: light_diffusion_beta_schedule_ema
   description: Just to check if things are ok
-  
-  use_control_signal: false
-  use_ema: true
 
   input_num_channels: 1
   input_resolution_x: 32
   input_resolution_y: 32
 
   time_embedding_size: 320
+  training_steps: 1000
+  sample_steps: 50
 
-  latent: false
-  latent_model:
-    external: cfg/vae/vae.yaml
-    selection: VAE_1x16x16_4x4x4_funkmoid2_mse
-    only_load_selection: true
-    read_only: true
+
+  Classifier_free_guidance:
+    active: true
+    no_class_probability: 0.1
+    weight: 3.0
+
+  EMA:
+    active: true
+    weight: 0.995
+    warm_up_steps: 2000
+
+  Latent:
+    active: false
+    pre_trained: true
+    model:
+      external: cfg/vae/vae.yaml
+      selection: VAE_full_test
+      only_load_selection: true
+      read_only: true
 
   unet_architecture:
     ResNet_blocks_per_level: 2
@@ -137,23 +47,34 @@ light_diffusion_beta_schedule_ema:
 
 latent_diffusion_test:
   name: latent_diffusion_test
-  description: Just to check if things are ok
+  description: Check if latent diffusion works
   
-  use_control_signal: false
-  use_ema: true
-
   input_num_channels: 4
   input_resolution_x: 8
   input_resolution_y: 8
 
   time_embedding_size: 320
+  training_steps: 1000
+  sample_steps: 50
 
-  latent: true
-  latent_model:
-    external: cfg/vae/vae.yaml
-    selection: VAE_full_test
-    only_load_selection: true
-    read_only: true
+  Classifier_free_guidance:
+    active: true
+    no_class_probability: 0.1
+    weight: 3.0
+
+  EMA:
+    active: true
+    weight: 0.995
+    warm_up_steps: 2000
+
+  Latent:
+    active: true
+    pre_trained: true
+    model:
+      external: cfg/vae/vae.yaml
+      selection: VAE_full_test
+      only_load_selection: true
+      read_only: true
 
   unet_architecture:
     ResNet_blocks_per_level: 2
@@ -170,39 +91,6 @@ latent_diffusion_test:
       - 0
       - 1
     
-MNIST_diffusion:
-  name: MNIST_diffusion
-  description: Diffusion for the mnist dataset
-  
-  use_control_signal: false
-
-  input_num_channels: 1
-  input_resolution_x: 28
-  input_resolution_y: 28
-
-  time_embedding_size: 320
-
-  latent: false
-  latent_model:
-    external: cfg/vae/vae.yaml
-    selection: VAE_MNIST
-    only_load_selection: true
-    read_only: true
-
-  unet_architecture:
-    ResNet_blocks_per_level: 2
-    starting_channels: 64
-    num_heads: 8
-    embedding_channels: 40
-
-    channel_multipliers:
-      - 1
-      - 2
-      - 2
-
-    attention_levels:
-      - 0
-      - 1
     
 MNIST_cfg_diffusion:
   name: MNIST_cfg_diffusion

@@ -17,9 +17,6 @@ from data.data_util         import DataVisualizer
 from torchvision.datasets   import MNIST
 from torchvision            import transforms
 
-
-
-
 def prepare_arg_parser():
     parser = argparse.ArgumentParser(prog="Diffusion",
                                      description="Description")
@@ -97,7 +94,8 @@ def main():
     # =========================================================================
     # Model
     # =========================================================================
-    printer.print_log("Creating Model...")
+    model_name = config["Model"]["name"]
+    printer.print_log(f"Creating Model {model_name}...")
     model = DDPM(config["Model"], amount_classes=amount_classes)
     # model = AutoEncoderFactory.create_auto_encoder(config["Model"])
     printer.print_log("Finished.")
@@ -129,15 +127,7 @@ def main():
     # Generation
     # =========================================================================
     if config["Main"]["generate"]:
-        model = model.to(util.get_device())
-        model.eval()
-        with torch.no_grad():
-            for i in range(10):
-                sample = model.generate(i)
-                DataVisualizer.create_image_tensor_figure(sample)
-
-
-
+        generate.generate(model)
 
 if __name__ == "__main__":
     main()

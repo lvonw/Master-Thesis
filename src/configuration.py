@@ -4,7 +4,7 @@ import os
 import yaml
 import util
 
-from debug  import Printer
+from debug  import Printer, LogLevel
 
 class Configuration():
     def __init__(self):
@@ -19,7 +19,7 @@ class Configuration():
             return self.sections[section_name]
         else:
             Printer().print_log(f"{section_name} is not a valid section",
-                                log_level=constants.LogLevel.ERROR) 
+                                log_level=LogLevel.ERROR) 
             return _InvalidSection()
         
     def __str__(self):
@@ -150,20 +150,20 @@ class Section():
             return self.configurations[configuration_name].value
         else:
             Printer().print_log(f"{configuration_name} is not a valid item",
-                                log_level=constants.LogLevel.ERROR) 
+                                log_level=LogLevel.ERROR) 
         return None
     
     def __setitem__(self, configuration_name, configuration):
         if self.read_only:
             Printer().print_log(f"{self.name} is read-only",
-                                log_level=constants.LogLevel.WARNING) 
+                                log_level=LogLevel.WARNING) 
             return
 
         if configuration_name in self.configurations:
             self.configurations[configuration_name].value = configuration
         else:
             Printer().print_log(f"{configuration_name} is not a valid item",
-                                log_level=constants.LogLevel.ERROR) 
+                                log_level=LogLevel.ERROR) 
 
     def __contains__(self, configuration_name):
         return configuration_name in self.configurations

@@ -31,9 +31,6 @@ class UNETFactory():
                                configuration["input_resolution_x"],
                                configuration["input_resolution_y"])
         
-        use_control_signal  = configuration["use_control_signal"]
-        
-
         architecture = configuration["unet_architecture"]
         
         resNet_per_level_encoder    = architecture["ResNet_blocks_per_level"]
@@ -57,8 +54,7 @@ class UNETFactory():
                     resNet_per_level_decoder,
                     attention_levels,
                     num_heads,
-                    embedding_channels,
-                    use_control_signal)
+                    embedding_channels)
 
 
 class UNET(nn.Module):
@@ -71,11 +67,9 @@ class UNET(nn.Module):
                  resNet_per_level_decoder,
                  attention_levels,
                  num_heads = 8,
-                 embedding_channels = 40,
-                 use_control_signal = False):
+                 embedding_channels = 40):
         super().__init__()
 
-        self.use_control_signal = use_control_signal
         self.input_shape        = input_shape
         input_channel_amount    = input_shape[0]
         
@@ -204,7 +198,8 @@ class UNET(nn.Module):
                               channels, 
                               embedding_channels, 
                               amount_heads):
-        if self.use_control_signal:
+        
+        if False:
             return ContextualAttentionBlock(amount_heads, embedding_channels)
         else:
             return AttentionBlock(channels)

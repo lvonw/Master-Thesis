@@ -2,7 +2,7 @@
 # MAIN
 # =============================================================================
 Main:
-  train:      true
+  train:      false
   validate:   false
   test:       false
   generate:   true

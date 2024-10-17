@@ -4,21 +4,22 @@ import torch.nn                 as nn
 import torch.nn.functional      as f
 
 from configuration              import Section
+from debug                      import Printer, LogLevel
+from enum                       import Enum
 from generation.modules.encoder import Encoder, Decoder
-from util                       import get_device
-from debug                      import Printer
 
+class LossMethod(Enum):
+    BINARY_CROSS_ENTROPY    = "bianry cross entropy"
+    MEAN_SQUARED_ERROR      = "mean squared error"
+    
 class AutoEncoderFactory():
     def __init__(self):
         pass
 
     def create_auto_encoder(vae_configuration: Section):
-        architecture = vae_configuration["architecture"]
+        architecture    = vae_configuration["architecture"]
 
-        beta = 0.000001
-
-        if "beta" in vae_configuration:
-            beta        = vae_configuration["beta"]
+        beta            = vae_configuration["beta"]
 
         data_shape      = (vae_configuration["data_num_channels"], 
                            vae_configuration["data_resolution_x"],
@@ -29,6 +30,8 @@ class AutoEncoderFactory():
                            vae_configuration["latent_resolution_y"]) 
         
         starting_channels   = architecture["starting_channels"]
+
+        loss_method         = LossMethod.MEAN_SQUARED_ERROR
         
         channel_multipliers_encoder = architecture["channel_multipliers"]
         channel_multipliers_decoder = channel_multipliers_encoder[::-1]
@@ -67,7 +70,8 @@ class AutoEncoderFactory():
                                       data_shape,
                                       latent_shape,
                                       vae_configuration["name"],
-                                      beta=beta)
+                                      beta=beta,
+                                      loss_method=loss_method)
 
 class VariationalAutoEncoder(nn.Module):
     def __init__(self, 
@@ -76,54 +80,53 @@ class VariationalAutoEncoder(nn.Module):
                  data_shape, 
                  latent_shape,
                  name,
-                 beta = 0.000001):
+                 beta,
+                 loss_method):
         super().__init__()
 
+        self.model_family   = "vae"
+        self.name           = name
+        
         self.encoder        = encoder
         self.decoder        = decoder
         self.data_shape     = data_shape
         self.latent_shape   = latent_shape
-        self.name           = name
         self.beta           = beta
-
-
-    def ELBO_loss(a, b, c):
-        return a
+        self.loss_method    = loss_method
 
 
     def training_step(self, inputs, labels):
-        reconstructions, posteriours = self(inputs)
-
-        log_var, mean = posteriours[2], posteriours[0]
-
-        # Reconstruction loss ensures that we learn meaningful latents, and
-        # good reconstructions
-        # reconstruction_loss = f.binary_cross_entropy(input  = reconstructions, 
-        #                                              target = inputs,
-        #                                              reduction="none")
-        
-        reconstruction_loss = f.mse_loss(input  = reconstructions, 
-                                         target = inputs,
-                                         reduction="none")
+        reconstructions, latent_encoding = self(inputs)
+    
+        # Reconstruction Loss
+        match self.loss_method:
+            case LossMethod.BINARY_CROSS_ENTROPY: 
+                reconstruction_loss = f.binary_cross_entropy(
+                    input  = reconstructions, 
+                    target = inputs,
+                    reduction="none")
+            case LossMethod.MEAN_SQUARED_ERROR:
+                reconstruction_loss = f.mse_loss(
+                    input  = reconstructions, 
+                    target = inputs,
+                    reduction="none")   
+                       
         reconstruction_loss = torch.sum(reconstruction_loss, dim=(1, 2, 3))
-        reconstruction_loss_reduced = torch.sum(reconstruction_loss)
         
-        # KL-Divergence between a standard gaussian and our posterior
-        # ensures that our latent space is as close as possible to a gaussian
-        kl_divergence = -0.5 * (1 + log_var - mean.pow(2) - log_var.exp())
-        kl_divergence = torch.sum(kl_divergence, dim=(1, 2, 3))
-        kl_divergence_reduced = torch.sum(kl_divergence)
+        # KL-Divergence between Posterior and Gaussian
+        mean            = latent_encoding.mean     
+        log_var         = latent_encoding.log_variance
+        kl_divergence   = -0.5 * (1 + log_var - mean.pow(2) - log_var.exp())
+        kl_divergence   = torch.sum(kl_divergence, dim=(1, 2, 3))
         
-        # Printer().print_log(
-        #     f"rec loss {reconstruction_loss_reduced:.4f}, KL {kl_divergence_reduced:.4f}")
-
+        # Combine the losses
         individual_losses   = reconstruction_loss + self.beta * kl_divergence
         reduced_loss        = torch.sum(individual_losses)        
 
         return reduced_loss, individual_losses
     
     def on_training_step_completed(self):
-        pass
+        return 
 
     def encode(self, x):
         x = self.encoder(x)
@@ -134,13 +137,14 @@ class VariationalAutoEncoder(nn.Module):
         noise   = torch.randn(mu.shape).to(mu.device)
         x       = mu + sigma * noise
         
-        return (mu, x, log_variance)
+        return LatentEncoding(x, mu, log_variance)
 
     def decode(self, z):
         x = self.decoder(z)
-        # make sure that the values are in image space
-        # if we use mse we probably dont need this?
-        # x = f.sigmoid(x)
+
+        if self.loss_method == LossMethod.BINARY_CROSS_ENTROPY:
+            x = f.sigmoid(x)
+        
         return x
 
     def generate(self):
@@ -148,20 +152,24 @@ class VariationalAutoEncoder(nn.Module):
         return self.decode(noise)
     
     def forward(self, x, sample_posterior=True):
-        if x[0].shape != self.data_shape:
+        if x.shape[:-3] != self.data_shape:
             Printer().print_log("Data shape does not match specified shape!",
-                                constants.LogLevel.WARNING)
-        posterior = self.encode(x)
+                                LogLevel.WARNING)
+            return x
+        
+        latent_encoding = self.encode(x)
 
-        # TODO do we need to do this
         if sample_posterior:
-            z = posterior[1]
+            z = latent_encoding.latents
         else: 
-            z = posterior[0]
+            z = latent_encoding.mean
             
         x = self.decode(z)
 
+        return x, latent_encoding
 
-        return x, posterior
-
-
+class LatentEncoding():
+    def __init__(self, latents, mean, log_variance):
+        self.latents        = latents
+        self.mean           = mean
+        self.log_variance   = log_variance

@@ -19,22 +19,12 @@ def make_path(path_string):
     path_arr = path_string.split("/")
     return os.path.join(*path_arr)
 
-# from torch.utils.data   import random_split
-# from generation.models  import vae, ddpm
-
 def get_model_family(model):
-    # if isinstance(model, vae.VariationalAutoEncoder):
-    #     return "vae"
-    # elif isinstance(model, ddpm.DDPM):
-    #     return "ddpm"
-    
-    return "diffusion"
+    return model.model_family
 
-def get_model_file_path(model, family=None):
-    if family is None:
-        model_family = get_model_family(model)
-    else: 
-        model_family = family
+def get_model_file_path(model):
+    model_family = get_model_family(model)
+    
     return os.path.join(constants.MODEL_PATH_MASTER,
                         model_family,
                         model.name + constants.MODEL_FILE_TYPE)
@@ -42,8 +32,8 @@ def get_model_file_path(model, family=None):
 def save_model(model):
     torch.save(model.state_dict(), get_model_file_path(model))
 
-def load_model(model, family=None):
-    model_path = get_model_file_path(model, family)
+def load_model(model):
+    model_path = get_model_file_path(model)
     if not os.path.exists(model_path):
         return False
 

@@ -1,22 +1,21 @@
 import copy
-import torch
 import torch.nn     as nn
 
 class EMA(nn.Module):
-    def __init__(self, model, ema_weight=0.995, warmup_steps=2000):
+    def __init__(self, model, configuration):
         super().__init__()
         self.ema_model = copy.deepcopy(model).eval().requires_grad_(False)
         
-        self.ema_weight             = ema_weight
-        self.one_minus_ema_weight   = 1 - ema_weight
-        self.warmup_steps           = warmup_steps
-        self.current_step           = 0
+        self.ema_weight             = configuration["weight"]
+        self.one_minus_ema_weight   = 1 - self.ema_weight 
+        self.warmup_steps           = configuration["warm_up_steps"]
+        self._current_step           = 0
 
     def ema_step(self, model):
-        self.current_step += 1
-        if self.current_step < self.warmup_steps:
+        self._current_step += 1
+        if self._current_step < self.warmup_steps:
             return 
-        elif self.current_step == self.warmup_steps:
+        elif self._current_step == self.warmup_steps:
             self.ema_model.load_state_dict(model.state_dict())
             return 
 

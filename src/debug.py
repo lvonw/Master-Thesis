@@ -2,15 +2,20 @@ import constants
 import sys
 import os
 
-from datetime import datetime
+from datetime   import datetime
+from enum       import Enum
 
+class LogLevel(Enum):
+    TEMP    = ("TEMP",      constants.COLOUR_GRAY)
+    INFO    = ("INFO",      constants.COLOUR_BLUE)
+    WARNING = ("WARNING",   constants.COLOUR_YELLOW)
+    ERROR   = ("ERROR",     constants.COLOUR_RED) 
 
 def print_to_log_file(data, filename):
     file_path = os.path.join(constants.LOG_PATH, filename)
     with open(file_path, 'a') as file:
         file.write(f"{data}\n")
     
-
 class Printer():
     _singleton = None
 
@@ -50,7 +55,7 @@ class Printer():
 
     def print_log(self, 
                   message, 
-                  log_level=constants.LogLevel.INFO):
+                  log_level=LogLevel.INFO):
         
         log_line = []
         log_line.append(str(log_level.value[1]))
