@@ -55,7 +55,7 @@ latent_diffusion_test:
 
   time_embedding_size: 320
   training_steps: 1000
-  sample_steps: 50
+  sample_steps: 1000
 
   Classifier_free_guidance:
     active: true

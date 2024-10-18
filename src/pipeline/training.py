@@ -1,4 +1,5 @@
 import constants
+import math
 import matplotlib.pyplot    as plt
 import numpy                as np
 import torch
@@ -8,8 +9,9 @@ import os
 
 from data.data_util     import DataVisualizer
 from debug              import Printer, print_to_log_file
-from torch.utils.data   import DataLoader
+from torch.utils.data   import DataLoader, random_split
 from tqdm               import tqdm
+
 
 
 def print_loss_graph(losses):
@@ -34,7 +36,6 @@ def show_tensors(dataloader, num_tensors=1):
         if num_tensors == 0:
             break
         
-
 def __prepare_data(data):
     if len(data) == 2:
         inputs, labels = data
@@ -48,8 +49,17 @@ def __prepare_data(data):
 
     return inputs, labels, metadata
 
+def __get_data_splits(dataset, training_data_split):
+        total_data      = len(dataset)
+        training_split  = math.ceil( total_data * training_data_split)
+        
+        return random_split(dataset, 
+                            [training_split, total_data - training_split],
+                            generator=torch.Generator()
+                                .manual_seed(constants.DATALOADER_SEED))
 
-def train(model, training_dataset, validation_dataset, configuration):
+
+def train(model, complete_dataset, configuration):
     printer = Printer()
     
     batch_size      = configuration["batch_size"]
@@ -63,6 +73,13 @@ def train(model, training_dataset, validation_dataset, configuration):
 
     data_loader_generator = torch.Generator()
     data_loader_generator.manual_seed(constants.DATALOADER_SEED)
+
+    loss_weights = complete_dataset.loss_weights
+
+    training_dataset, validation_dataset = __get_data_splits(
+            complete_dataset,
+            configuration["Data_Split"])
+    
 
     training_dataloader = DataLoader(training_dataset, 
                                      batch_size=batch_size, 
@@ -104,7 +121,7 @@ def train(model, training_dataset, validation_dataset, configuration):
             
             inputs, labels, _ = __prepare_data(data)
 
-            loss, _ = model.training_step(inputs, labels)
+            loss, _ = model.training_step(inputs, labels, loss_weights)
 
             loss.backward()
             optimizer.step()
@@ -141,10 +158,10 @@ def train(model, training_dataset, validation_dataset, configuration):
 
             reconstruction  = model(inputs)[0]
             
-            for image_idx in range(min(len(inputs), 6)):
+            for image_idx in range(min(len(inputs), 10000)):
                 image_tensor = inputs[image_idx]
                 DataVisualizer.create_image_tensor_figure(
-                    image_tensor, metadata["filename"][image_idx])
+                    image_tensor, metadata["filename"][image_idx], show=False)
 
                 inputs  = inputs.to(util.get_device())
                 x_hat   = reconstruction[image_idx]

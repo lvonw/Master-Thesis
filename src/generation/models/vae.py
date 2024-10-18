@@ -95,7 +95,7 @@ class VariationalAutoEncoder(nn.Module):
         self.loss_method    = loss_method
 
 
-    def training_step(self, inputs, labels):
+    def training_step(self, inputs, labels, loss_weights):
         reconstructions, latent_encoding = self(inputs)
     
         # Reconstruction Loss
@@ -121,6 +121,11 @@ class VariationalAutoEncoder(nn.Module):
         
         # Combine the losses
         individual_losses   = reconstruction_loss + self.beta * kl_divergence
+
+        if labels is not None and loss_weights is not None:
+            for idx in range(len(individual_losses)):
+                individual_losses[idx] *= loss_weights[labels[idx].item()]
+
         reduced_loss        = torch.sum(individual_losses)        
 
         return reduced_loss, individual_losses
@@ -152,10 +157,10 @@ class VariationalAutoEncoder(nn.Module):
         return self.decode(noise)
     
     def forward(self, x, sample_posterior=True):
-        if x.shape[:-3] != self.data_shape:
+        if x.shape[1:] != self.data_shape:
             Printer().print_log("Data shape does not match specified shape!",
                                 LogLevel.WARNING)
-            return x
+            return x, None
         
         latent_encoding = self.encode(x)
 

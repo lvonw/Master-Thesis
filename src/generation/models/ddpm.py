@@ -152,7 +152,7 @@ class DDPM(nn.Module):
     # =========================================================================
     # Training
     # =========================================================================
-    def training_step(self, inputs, labels):
+    def training_step(self, inputs, labels, loss_weights):
         if self.is_latent:
             self.latent_model.eval()
             with torch.no_grad():

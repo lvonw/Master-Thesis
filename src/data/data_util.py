@@ -224,7 +224,8 @@ class DataVisualizer():
                           cmap      = "gray"):
         
         fig, ax = plt.subplots()
-        cax = ax.imshow(image_data, vmin=0, vmax=1, cmap=cmap)
+        cax = ax.imshow(image_data, cmap=cmap)
+        # cax = ax.imshow(image_data, vmin=0, vmax=1, cmap=cmap)
         ax.set_title(title)
         fig.colorbar(cax)
         #plt.show()
@@ -260,7 +261,7 @@ class DataVisualizer():
         ax.set_zlim(-1000, +1000)
         plt.show()
 
-    def create_image_tensor_figure(tensor, title="Image"):
+    def create_image_tensor_figure(tensor, title="Image", show=True):
         tensor = tensor.to("cpu")
         if len(tensor.shape) == 4:
             image_tensor = tensor[0].permute(1, 2, 0)
@@ -270,7 +271,8 @@ class DataVisualizer():
         image = image_tensor.numpy()
         
         DataVisualizer.create_image_plot(image, title=title)
-        plt.show()
+        if show:
+            plt.show()
 
     def show_image_tensors(tensors):
         for tensor in tensors:

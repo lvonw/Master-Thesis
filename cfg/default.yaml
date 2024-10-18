@@ -9,7 +9,7 @@ Main:
 
   load_model: false
 
-  use_MNIST:  false
+  # use_MNIST:  false
 
 # =============================================================================
 # TRAINING
@@ -21,6 +21,7 @@ Training:
   logging_steps:    10
   num_workers:      2
   Save_after_epoch: true
+  Data_Split:       1.0
 
   Validation:
     z_score: 3
@@ -29,10 +30,10 @@ Training:
 # MODEL
 # =============================================================================
 Model:
-  # external: cfg/vae/vae.yaml
-  # selection: VAE_full_test
-  external: cfg/diffusion/ddpm.yaml
-  selection: latent_diffusion_test
+  external: cfg/vae/vae.yaml
+  selection: VAE_small_test
+  # external: cfg/diffusion/ddpm.yaml
+  # selection: latent_diffusion_test
   only_load_selection: true
   read_only: true
 
@@ -40,7 +41,6 @@ Model:
 # DATA
 # =============================================================================
 Data:
-  Data_Split: 1.0
   DEM_List: SRTM_GL1_10_list.txt
   DEM_Dataset: SRTM_GL1_64x64
   Cache_DEMs: true
@@ -74,7 +74,7 @@ Data:
   RandomRotation:
     active:         false 
   RandomCrop:
-    active:         false # true
+    active:         true
     size:           32 
   FiveCrop:
     active:         false 

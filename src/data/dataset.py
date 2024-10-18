@@ -10,7 +10,7 @@ from data.data_access       import DataAccessor
 from data.data_util         import GeoUtil, NoDataBehaviour, NormalizationMethod
 from debug                  import Printer
 from torchvision            import transforms
-from torch.utils.data       import Dataset, random_split
+from torch.utils.data       import Dataset
 from tqdm                   import tqdm
 
 from concurrent.futures import ThreadPoolExecutor
@@ -103,23 +103,11 @@ class DatasetFactory():
             cache_dems=data_configuration["Cache_DEMs"],
             amount_classes=amount_classes) 
         
-        training_dataset, eval_dataset = DatasetFactory.__get_data_splits(
-            complete_dataset,
-            data_configuration["Data_Split"])
-        
         complete_dataset.preprocess_dataset()
-        #complete_dataset.analyse_dataset()
 
-        return training_dataset, eval_dataset, amount_classes
+        return complete_dataset, amount_classes
     
-    def __get_data_splits(dataset, training_data_split):
-        total_data      = len(dataset)
-        training_split  = math.ceil( total_data * training_data_split)
-        
-        return random_split(dataset, 
-                            [training_split, total_data - training_split],
-                            generator=torch.Generator()
-                                .manual_seed(constants.DATALOADER_SEED))
+    
 
     
     def __pre_process_data_cache(data_cache):
@@ -192,6 +180,7 @@ class TerrainDataset(Dataset):
         self.shared_label_cache     = None
         self.shared_dem_cache       = None
     
+        self.loss_weights = {None: 1}
 
     def __len__(self):
         return len(self.DEM_list)
@@ -222,14 +211,14 @@ class TerrainDataset(Dataset):
                                desc="Analysing data"):
             if cache is None: 
                 continue
-            label = cache.label_tensors.item()
+            label = cache.label_tensor.item()
             
             analysis_result.label_bucket[label] += 1
             analysis_result.std_devs[label].append(
                 np.std(cache.dem_tensor.numpy()))
             
         analysis_result.post_process()
-        print (analysis_result)
+        return analysis_result
 
     def preprocess_dataset(self):
         with ThreadPoolExecutor(max_workers=2) as executor:
@@ -238,10 +227,18 @@ class TerrainDataset(Dataset):
                     total=len(indices), 
                     desc="Preprocessing Dataset"))
             
+
+        analysis_result = self.analyse_dataset()
+        for label, label_amount in enumerate(analysis_result.label_bucket):
+            # self.loss_weights[label] = len(self.DEM_list) / label_amount 
+            # self.loss_weights[label] = np.log(len(self.DEM_list) / label_amount) 
+            # self.loss_weights[label] = 1 + analysis_result.std_dev_bucket[label]
+            self.loss_weights[label] = len(self.DEM_list) / (label_amount)
         # Transfer our single process cache to the shared cache
         manager = multiprocessing.Manager()
         self.shared_dem_cache = manager.list(self.dem_cache)
         self.dem_cache.clear()
+
         
             
     def __prefetch_cache(self, index):
@@ -326,7 +323,7 @@ class AnalysisResult():
         self.amount_classes     = amount_classes
         self.label_bucket       = [0]  * amount_classes
         self.std_devs           = [[] for _ in range(amount_classes)]
-        self.std_dev_bucket     = [0]  * amount_classes     
+        self.std_dev_bucket     = [0]  * amount_classes 
 
     def post_process(self):
         for idx in range(len(self.std_devs)):

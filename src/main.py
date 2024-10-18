@@ -76,28 +76,32 @@ def main():
         if should_quit:
             quit()
 
+
+
     # =========================================================================
     # Dataset
     # =========================================================================
-    printer.print_log("Creating Dataset...")
-    if config["Main"]["use_MNIST"]:
-        printer.print_log("Using MNIST")
-        training_set, validation_set = get_mnist()
-        amount_classes = 10
-    else:
-        printer.print_log("Using DEMs")
-        (training_set, 
-         validation_set, amount_classes) = DatasetFactory.create_dataset(
-            config["Data"])
-    printer.print_log("Finished.")
+    needs_dataset = config["Main"]["train"]
+    amount_classes = 16
+    if needs_dataset:
+        printer.print_log("Creating Dataset...")
+        if config["Main"]["use_MNIST"]:
+            printer.print_log("Using MNIST")
+            training_set, validation_set = get_mnist()
+            amount_classes = 10
+        else:
+            printer.print_log("Using DEMs")
+            complete_dataset, amount_classes = DatasetFactory.create_dataset(
+                config["Data"])
+        printer.print_log("Finished.")
 
     # =========================================================================
     # Model
     # =========================================================================
     model_name = config["Model"]["name"]
     printer.print_log(f"Creating Model {model_name}...")
-    model = DDPM(config["Model"], amount_classes=amount_classes)
-    # model = AutoEncoderFactory.create_auto_encoder(config["Model"])
+    # model = DDPM(config["Model"], amount_classes=amount_classes)
+    model = AutoEncoderFactory.create_auto_encoder(config["Model"])
     printer.print_log("Finished.")
 
     if config["Main"]["load_model"]:
@@ -121,7 +125,7 @@ def main():
     # Training
     # =========================================================================
     if config["Main"]["train"]:        
-        training.train(model, training_set, validation_set, config["Training"])
+        training.train(model, complete_dataset, config["Training"])
 
     # =========================================================================
     # Generation
