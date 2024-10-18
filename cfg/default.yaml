@@ -16,7 +16,7 @@ Main:
 # =============================================================================
 Training:  
   epochs:           400
-  batch_size:       64
+  batch_size:       128
   learning_rate:    4.5e-6
   logging_steps:    10
   num_workers:      2
@@ -41,7 +41,7 @@ Model:
 # DATA
 # =============================================================================
 Data:
-  DEM_List: SRTM_GL1_10_list.txt
+  DEM_List: SRTM_GL1_50_over_list.txt
   DEM_Dataset: SRTM_GL1_64x64
   Cache_DEMs: true
 

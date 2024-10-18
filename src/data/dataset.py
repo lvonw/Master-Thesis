@@ -229,14 +229,19 @@ class TerrainDataset(Dataset):
             
 
         analysis_result = self.analyse_dataset()
+        self.printer.print_log(analysis_result)
+
         for label, label_amount in enumerate(analysis_result.label_bucket):
             # self.loss_weights[label] = len(self.DEM_list) / label_amount 
             # self.loss_weights[label] = np.log(len(self.DEM_list) / label_amount) 
             # self.loss_weights[label] = 1 + analysis_result.std_dev_bucket[label]
-            self.loss_weights[label] = len(self.DEM_list) / (label_amount)
+            # self.loss_weights[label] = len(self.DEM_list) / (label_amount)
+            pass
+        self.loss_weights = None
+
         # Transfer our single process cache to the shared cache
-        manager = multiprocessing.Manager()
-        self.shared_dem_cache = manager.list(self.dem_cache)
+        manager                 = multiprocessing.Manager()
+        self.shared_dem_cache   = manager.list(self.dem_cache)
         self.dem_cache.clear()
 
         
@@ -332,7 +337,7 @@ class AnalysisResult():
     def __str__(self):
         string = ""
         for idx, (amount, sigma) in enumerate(zip(self.label_bucket, self.std_dev_bucket)):
-            string += f"\nLabel {idx}; Amount: {amount}, \tSigma {sigma}"
+            string += f"\nLabel {idx}; Amount: {amount}, \t\tSigma {sigma}"
 
         return string
 

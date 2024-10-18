@@ -18,10 +18,10 @@ DATA_PATH_DEM_LIST      = os.path.join(DATA_PATH_DEM, "SRTM_GL1_list.txt")
 PLOT_SIGMA              = False
 PLOT_RANGES             = False
 
-PRINT_SIGMA_LIST        = True
+PRINT_SIGMA_LIST        = False
 PRINT_RANGE_LIST        = False
 
-SEA_LEVEL               = 5
+SEA_LEVEL               = 1
 SIGMA_THRESHOLD         = 10
 
 RANGE_MIN               = 0 #-2
@@ -48,6 +48,8 @@ def analyze_DEM(dem_path):
     analysis["range"]           = analysis["max"] - analysis["min"]
     analysis["nodata_value"]    = nodata_value
     analysis["median"]          = np.median(band_array)
+
+    analysis["sea_level_percentage"] = np.sum(band_array <= SEA_LEVEL) / 4096
 
     nodata_count = 0
     if nodata_value is not None:
@@ -79,6 +81,9 @@ def analyze_DEMs(dems):
     point3_sigma_negative   = 0
     one_sigma_negative      = 0
     sigma_over_threshold    = 0
+
+    amount_50_percent_over_sea_level = 0
+    all_files_over_75               = []
     
     all_negative_mean_means         = []
     all_negative_mean_median_mean   = []
@@ -91,7 +96,8 @@ def analyze_DEMs(dems):
 
     for dem_name in tqdm(dems,
                          total=len(dems),
-                         desc="Analysing DEMs"):
+                         desc="Analysing DEMs",
+                         disable=False):
         
         dem_file = os.path.join(DATA_PATH_SOURCE_DEMs, dem_name)
         
@@ -142,7 +148,11 @@ def analyze_DEMs(dems):
         #     all_affected_by_range.append(metric["file"])
         if metric["max"] <= RANGE_MAX and metric["min"] >= RANGE_MIN:
             all_unaffected_by_range.append(metric["file"])
-        
+
+
+        if metric["sea_level_percentage"] <= 0.50:
+            amount_50_percent_over_sea_level += 1
+            all_files_over_75.append(metric["file"])
 
 
     mean_min    = np.mean(all_mins)
@@ -184,6 +194,7 @@ def analyze_DEMs(dems):
         #"all_affected_by_range": len(all_affected_by_range),
         "all_unaffected_by_range": len(all_unaffected_by_range),
         "all_excluded_by_range": len(all_excluded_by_range),
+        "amount_50_percent_over_sea_level": amount_50_percent_over_sea_level,
     }
 
     if PLOT_SIGMA:
@@ -220,6 +231,16 @@ def analyze_DEMs(dems):
         
         with open(dem_list_path, 'w') as file:
             for name in all_files_within_range:
+                file.write(f"{name}\n")
+
+    if True:
+        dem_list_path = os.path.join(DATA_PATH_DEM, 
+                                    (DEM_LIST_PREFIX 
+                                     + f"50_over"
+                                     + DEM_LIST_POSTFIX))
+        
+        with open(dem_list_path, 'w') as file:
+            for name in all_files_over_75:
                 file.write(f"{name}\n")
     
     return individual_metrics, aggregate_metrics

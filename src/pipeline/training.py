@@ -60,7 +60,8 @@ def __get_data_splits(dataset, training_data_split):
 
 
 def train(model, complete_dataset, configuration):
-    printer = Printer()
+    printer         = Printer()
+    data_visualizer = DataVisualizer()
     
     batch_size      = configuration["batch_size"]
     num_epochs      = configuration["epochs"]
@@ -151,21 +152,23 @@ def train(model, complete_dataset, configuration):
     # Post training evaluations
     model.eval()
 
-    figures = []
     with torch.no_grad():
         for data in training_dataloader:
             inputs, _, metadata = __prepare_data(data)
 
-            reconstruction  = model(inputs)[0]
+            reconstructions = model(inputs)[0]
             
-            for image_idx in range(min(len(inputs), 10000)):
-                image_tensor = inputs[image_idx]
-                DataVisualizer.create_image_tensor_figure(
-                    image_tensor, metadata["filename"][image_idx], show=False)
+            for image_idx in range(len(inputs)):
+                original_image  = inputs[image_idx]
+                reconstruction  = reconstructions[image_idx]
+
+                data_visualizer.create_image_tensor_tuple(
+                    [original_image, reconstruction], 
+                    title=metadata["filename"][image_idx])
 
                 inputs  = inputs.to(util.get_device())
-                x_hat   = reconstruction[image_idx]
-                DataVisualizer.create_image_tensor_figure(x_hat)
+                data_visualizer.show_ensemble()
+
 
             break
 

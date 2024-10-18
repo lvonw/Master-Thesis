@@ -1,16 +1,16 @@
 import constants
-import enum
 
 import torch
 import matplotlib.pyplot    as plt
 import numpy                as np
 
 from data.data_access       import DataAccessor
+from enum                   import Enum
 from mpl_toolkits.mplot3d   import Axes3D
 from osgeo                  import gdal
 from debug                  import Printer
 
-class NormalizationMethod(enum.Enum):
+class NormalizationMethod(Enum):
     NONE                = 0
     LINEAR              = 1
     CLIPPED_LINEAR      = 2
@@ -18,7 +18,7 @@ class NormalizationMethod(enum.Enum):
     SIGMOID_COMBINATION = 4
     ASYMMETRIC_SIGMOID  = 5
 
-class NoDataBehaviour(enum.Enum):
+class NoDataBehaviour(Enum):
     NONE            = "None" 
     GLOBAL_MINIMUM  = "Global_Minimum"
     LOCAL_MINIMUM   = "Local_Minimum"
@@ -211,38 +211,92 @@ class GeoUtil():
         
 
 class DataVisualizer():
-    def create_simple_plot(x, title):
-        fig, ax = plt.subplots()
-        ax.plot(x)
-        ax.set_title(title)
-        return fig
-    
-    def create_image_plot(image_data, 
-                          title     = None,
-                          xlabel    = None,
-                          ylabel    = None, 
-                          cmap      = "gray"):
-        
-        fig, ax = plt.subplots()
-        cax = ax.imshow(image_data, cmap=cmap)
-        # cax = ax.imshow(image_data, vmin=0, vmax=1, cmap=cmap)
-        ax.set_title(title)
-        fig.colorbar(cax)
-        #plt.show()
-        # return fig
+    def __init__(self):
+        self.plot_tuples = []
 
-    def create_array_figure(array):
+    def create_simple_plot(self, x, title):
+        self.plot_tuples.append((Plot(data=x, title=title),))
+    
+    def create_image_plot(self,
+                          image_data, 
+                          title         = None,
+                          x_label       = None,
+                          y_label       = None, 
+                          cmap          = "gray",
+                          latent_space  = True,
+                          append        = True):
+        
+        min_value, max_value = (0., 1.) if latent_space else (None, None)
+
+        image_plot = Plot(data      = image_data, 
+                          title     = title,
+                          x_label   = x_label,
+                          y_label   = y_label,
+                          cmap      = cmap,
+                          min_value = min_value,
+                          max_value = max_value,
+                          plot_type = PlotType.IMAGE)
+        
+        if append:
+            self.plot_tuples.append((image_plot,))
+        else: 
+            return image_plot
+        
+
+    def create_image_plot_tuple(self,
+                          image_datas, 
+                          title         = None,
+                          x_label       = None,
+                          y_label       = None,  
+                          cmap          = "gray",
+                          latent_space  = True):
+        
+        image_plots = []
+        for image_data in image_datas:
+            image_plots.append(self.create_image_plot(
+                image_data, 
+                title           = title,
+                x_label         = x_label,
+                y_label         = y_label,
+                cmap            = cmap,
+                latent_space    = latent_space,
+                append          = False))
+            
+        self.plot_tuples.append(tuple(image_plots))
+            
+    def create_array_figure(self, array):
         if len(array.shape) == 1:
             return DataVisualizer.create_simple_plot(array)
         else:
             return DataVisualizer.create_image_plot(array)
         
-    def create_geo_dataset_2D_figure(dataset):
+    def create_geo_dataset_2D_figure(self, dataset):
         dataset_array = dataset.GetRasterBand(1).ReadAsArray()
 
         return DataVisualizer.create_array_figure(dataset_array)
 
-    def create_geo_dataset_3D_figure(dataset):
+    def create_array_from_tensor(self, tensor):
+        tensor = tensor.to("cpu")
+        if len(tensor.shape) == 4:
+            image_tensor = tensor[0][0]
+        else:
+            image_tensor = tensor[0]
+
+        image = image_tensor.numpy()
+        return image
+        
+
+    def create_image_tensor_tuple(self, 
+                                  tensors, 
+                                  title=None, 
+                                  latent_space  = False):
+        images = []
+        for tensor in tensors:
+            images.append(self.create_array_from_tensor(tensor))
+        
+        self.create_image_plot_tuple(images, title, latent_space=latent_space)
+        
+    def create_geo_dataset_3D_figure(self, dataset):
         dataset_array = dataset.GetRasterBand(1).ReadAsArray()
 
         x = np.arange(dataset_array.shape[1])
@@ -261,55 +315,95 @@ class DataVisualizer():
         ax.set_zlim(-1000, +1000)
         plt.show()
 
-    def create_image_tensor_figure(tensor, title="Image", show=True):
-        tensor = tensor.to("cpu")
-        if len(tensor.shape) == 4:
-            image_tensor = tensor[0].permute(1, 2, 0)
-        else:
-            image_tensor = tensor.permute(1, 2, 0)
-
-        image = image_tensor.numpy()
+    def show_ensemble(self, 
+                      save=False, 
+                      save_only=False,
+                      clear_afterwards=True):
         
-        DataVisualizer.create_image_plot(image, title=title)
-        if show:
-            plt.show()
+        amount_rows     = len(self.plot_tuples)
+        amount_columns  = max(len(plots) for plots in self.plot_tuples)
 
-    def show_image_tensors(tensors):
-        for tensor in tensors:
-            DataVisualizer.show_image_tensor(tensor)
+        fig, axs = plt.subplots(nrows = amount_rows, 
+                                ncols = amount_columns, 
+                                figsize=(5*amount_columns, 5*amount_rows))
+        
+        # Adjust shape for consistency
+        axs = np.array(axs) 
+        if amount_rows  == 1:
+            axs = axs[np.newaxis, :]
+        if amount_columns == 1:
+            axs = axs[:, np.newaxis]
 
-    def show_figures(figure_tuples, save_path=None):
-        rows = len(figure_tuples)
-        cols = max(len(tup) for tup in figure_tuples)
+        for column, plot_tuple in enumerate(self.plot_tuples):
+            for row, plot in enumerate(plot_tuple):
+                if plot.data is None:
+                    continue
+                
+                ax = axs[column, row]
 
-        fig, axes   = plt.subplots(rows, cols, figsize=(cols*5, rows*4))
-        axes        = axes.reshape(rows, cols) 
+                ax.set_title(plot.title)
+                ax.set_xlabel(plot.x_label)
+                ax.set_ylabel(plot.y_label)
 
-        for row, figure_tuple in enumerate(figure_tuples):
-            for col, figure in enumerate(figure_tuple):
-                ax = axes[row, col] if rows > 1 else axes[col]
-
-                for figure_ax in figure.axes:
-                    if (isinstance(figure_ax.images, list) 
-                        and len(figure_ax.images) > 0):
+                match plot.plot_type:
+                    case PlotType.GRAPH_2D:
+                        ax.plot(plot.data)
                         
-                        im = figure_ax.images[0]
-                        ax.imshow(im.get_array(), cmap=im.get_cmap())
+                    case PlotType.BAR:
+                        ax.bar(range(len(plot.data)), 
+                               plot.data)
                         
-                    else:
-                        for line in figure_ax.get_lines():
-                            ax.plot(line.get_xdata(), line.get_ydata())
-                        
-                    ax.set_title(figure_ax.get_title())
-          
-        for row in range(rows):
-            for col in range(len(figure_tuples[row]), cols):
-                axes[row, col].axis("off")
+                    case PlotType.IMAGE:
+                        cax = ax.imshow(plot.data, 
+                                        cmap = plot.cmap, 
+                                        vmin = plot.min_value, 
+                                        vmax = plot.max_value)
+                        fig.colorbar(cax, ax = ax)
+
+                    case PlotType.PLANE:
+                        # todo
+                        pass
+
+        for row in range(amount_rows):
+            for column in range(len(self.plot_tuples[row]), amount_columns):
+                axs[row, column].axis("off")
 
         plt.tight_layout()
-
-        if save_path:
-            plt.savefig(save_path)
-        else:
+        
+        if not save_only:
             plt.show()
+        if save or save_only:
+            save_path = "todo"
+            plt.savefig(save_path)
+        if clear_afterwards:
+            self.plot_tuples.clear()
+
+
+class PlotType(Enum):
+    GRAPH_2D    = "Graph_2D"
+    BAR         = "Bar"
+    IMAGE       = "Image"
+    PLANE       = "Plane"
+
+class Plot():
+    def __init__(self,
+                 data       = None,
+                 title      = None,
+                 x_label    = "X",
+                 y_label    = "Y",
+                 z_label    = "Z",
+                 cmap       = "gray",
+                 min_value  = None, 
+                 max_value  = None,
+                 plot_type  = PlotType.GRAPH_2D):
+        
+        self.title      = title
+        self.data       = data
+        self.x_label    = x_label
+        self.y_label    = y_label
+        self.z_label    = z_label
+        self.cmap       = cmap
+        self.min_value  = min_value
+        self.max_value  = max_value
+        self.plot_type  = plot_type
 
