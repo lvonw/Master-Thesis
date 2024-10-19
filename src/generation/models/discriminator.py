@@ -1,22 +1,30 @@
+""" 
+Inspired by taming NLayerDiscriminator 
+https://github.com/CompVis/taming-transformers/blob/master/taming/modules/discriminator/model.py
+"""
+
 import torch
 import torch.functional as f
 import torch.nn         as nn
 
+
+def weights_init(module):
+    # Initialize to very small values, so that the loss does not explode
+    if issubclass(type(module), nn.Conv2d):
+        nn.init.normal_(module.weight.data, 0.0, 0.02)
+
+    elif issubclass(type(module), nn.BatchNorm2d):
+        nn.init.normal_(module.weight.data, 1.0, 0.02)
+        nn.init.constant_(module.bias.data, 0)
+
 class Discriminator(nn.Module):
-    """ Inspired by taming NLayerDiscriminator 
-    https://github.com/CompVis/taming-transformers/blob/master/taming/modules/discriminator/model.py
-    """
-
-
     # TODO Config
     def __init__(self, 
                  amount_input_channels = 1, 
                  amount_layers = 3,
                  starting_channels = 64):
         super().__init__()
-
-        # They do some weird weight init, might have to do that too
-
+        
         self.input_conv = nn.Conv2d(amount_input_channels,
                                     starting_channels,
                                     kernel_size = 3,
@@ -50,7 +58,9 @@ class Discriminator(nn.Module):
                                      1,
                                      kernel_size    = 3,
                                      stride         = 1,
-                                     padding        = 1)            
+                                     padding        = 1)  
+
+        self.apply(weights_init)          
 
     def forward(self, x):
         x = self.input_conv(x)

@@ -18,21 +18,6 @@ def print_loss_graph(losses):
     plt.ylabel("Loss")
     plt.title("Training Loss Plot")
     plt.show()
-
-def show_log_loss():
-    with open(constants.LOG_PATH_LOSS, 'r') as file:
-        numbers = [float(line.strip()) for line in file if line.strip()]
-    
-    print_loss_graph(numbers)
-
-def show_tensors(dataloader, num_tensors=1):
-    for images, _ in dataloader:
-        image_tensor = images[0]
-        
-        DataVisualizer.show_image_tensor(image_tensor)
-        num_tensors -= 1
-        if num_tensors == 0:
-            break
         
 def __prepare_data(data):
     if len(data) == 2:
@@ -170,7 +155,7 @@ def train(model, complete_dataset, configuration):
 
     print_to_log_file("\n", constants.TRAINING_LOSS_LOG)
     
-    # Post training evaluations ===============================================
+    # Post training evaluations =============================================== 
     model.eval()
 
     with torch.no_grad():

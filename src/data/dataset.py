@@ -143,8 +143,6 @@ class DatasetFactory():
             amount_classes += len(np.unique(geo_array))            
 
         return amount_classes
-    
-
 
 
 class TerrainDataset(Dataset): 
@@ -307,7 +305,9 @@ class TerrainDataset(Dataset):
             normalization_method    = NormalizationMethod.CLIPPED_LINEAR,
             nodata_value            = constants.DEM_NODATA_VAL,
             global_min              = constants.DEM_GLOBAL_MIN,
-            global_max              = constants.DEM_GLOBAL_MAX
+            global_max              = constants.DEM_GLOBAL_MAX,
+            new_min                 = -1.,
+            new_max                 = 1.            
         )
 
         dem_shape               = dem_tensor.shape

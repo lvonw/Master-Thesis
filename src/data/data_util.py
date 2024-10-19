@@ -166,7 +166,9 @@ class GeoUtil():
             nodata_behaviour        = NoDataBehaviour.LOCAL_MINIMUM, 
             nodata_value            = None,
             global_min              = None, 
-            global_max              = None):
+            global_max              = None,
+            new_min                 = -1.,
+            new_max                 = 1.):
 
         band_array = raster_band.ReadAsArray()
 
@@ -207,7 +209,8 @@ class GeoUtil():
             case NormalizationMethod.ASYMMETRIC_SIGMOID:
                 band_tensor = GeoUtil.__asymmetric_sigmoid(band_tensor)
 
-        return band_tensor
+        range_mulitplier = new_max - new_min
+        return band_tensor * range_mulitplier + new_min
         
 
 class DataVisualizer():

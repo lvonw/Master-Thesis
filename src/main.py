@@ -19,6 +19,7 @@ from torchvision            import transforms
 
 def prepare_arg_parser():
     parser = argparse.ArgumentParser(prog="Diffusion",
+                                     
                                      description="Description")
     parser.add_argument("-cfg",
                         "--config",
@@ -81,7 +82,7 @@ def main():
     # =========================================================================
     # Dataset
     # =========================================================================
-    needs_dataset = config["Main"]["train"]
+    needs_dataset = config["Main"]["train"] or config["Main"]["test"]
     amount_classes = 16
     if needs_dataset:
         printer.print_log("Creating Dataset...")

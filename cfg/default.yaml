@@ -9,7 +9,7 @@ Main:
 
   load_model: false
 
-  # use_MNIST:  false
+  use_MNIST:  false
 
 # =============================================================================
 # TRAINING
