@@ -6,12 +6,14 @@ import util
 import numpy                        as np
 import torch.nn                     as nn
 import torch.nn.functional          as f
+import torch.optim                  as optim
 
 from debug                          import Printer, LogLevel
 from generation.models.vae          import AutoEncoderFactory
 from generation.modules.diffusion   import Diffusion
 from generation.modules.ema         import EMA
 from tqdm                           import tqdm
+
 
 class BetaSchedules(enum.Enum):
     LINEAR  = "Linear"
@@ -152,7 +154,14 @@ class DDPM(nn.Module):
     # =========================================================================
     # Training
     # =========================================================================
-    def training_step(self, inputs, labels, loss_weights):
+    def training_step(self, 
+                      inputs, 
+                      labels, 
+                      loss_weights,
+                      epoch_idx,
+                      training_step_idx,
+                      optimizer_idx):
+        
         if self.is_latent:
             self.latent_model.eval()
             with torch.no_grad():
@@ -177,7 +186,11 @@ class DDPM(nn.Module):
     def on_training_step_completed(self):
         if self.use_ema:
             self.ema_model.ema_step(self.model)
-    
+
+    def get_optimizers(self):
+        optimizer = optim.Adam(self.parameters(), lr=4.5e-6)
+        return [optimizer]
+
     # =========================================================================
     # Predict Epsilon
     # =========================================================================

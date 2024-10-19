@@ -1,4 +1,6 @@
 .env
+.throwaway*
+
 run.bat
 
 *__pycache__

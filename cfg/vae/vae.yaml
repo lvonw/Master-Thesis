@@ -559,9 +559,16 @@ VAE_small_test:
   latent_resolution_x: 4
   latent_resolution_y: 4
 
-  beta: 0.000001
-  
-  architecture:
+  Loss:
+    use_discriminator:      True
+    discriminator_warm_up:  50
+    discriminator_weight:   0.5
+
+    kl_beta: 0.000001
+
+    use_class_weights: True
+
+  Architecture:
     ResNet_blocks_per_layer: 2
     starting_channels: 64
     dropout: 0.0
@@ -574,8 +581,46 @@ VAE_small_test:
     use_attention: true
     attention_resolutions: []
 
-  training:
+  Training:
     learning_rate: 0.0001
+
+VAE_discriminator_test:
+  name: "VAE_discriminator_test"
+  description: Test VAE for sanity checks
+  
+  data_num_channels: 1
+  data_resolution_x: 32
+  data_resolution_y: 32
+
+  latent_num_channels: 8
+  latent_resolution_x: 4
+  latent_resolution_y: 4
+
+  Loss:
+    use_discriminator:      True
+    discriminator_warm_up:  50
+    discriminator_weight:   0.5
+
+    kl_beta: 0.000001
+
+    use_class_weights: True
+
+  Architecture:
+    ResNet_blocks_per_layer: 2
+    starting_channels: 64
+    dropout: 0.0
+    non_linearity: SiLU
+    channel_multipliers:
+    - 1
+    - 2
+    - 4
+    
+    use_attention: true
+    attention_resolutions: []
+
+  Training:
+    learning_rate: 0.0001
+
 
 
 

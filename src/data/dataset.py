@@ -1,22 +1,19 @@
 import constants
-import math
 import multiprocessing
 import os
 import torch
-import numpy                as np
 
-from configuration          import Section
-from data.data_access       import DataAccessor
-from data.data_util         import GeoUtil, NoDataBehaviour, NormalizationMethod
-from debug                  import Printer
-from torchvision            import transforms
-from torch.utils.data       import Dataset
-from tqdm                   import tqdm
+import numpy            as np
 
 from concurrent.futures import ThreadPoolExecutor
-from tqdm import tqdm
+from configuration      import Section
+from data.data_access   import DataAccessor
+from data.data_util     import GeoUtil, NoDataBehaviour, NormalizationMethod
+from debug              import Printer
+from torchvision        import transforms
+from torch.utils.data   import Dataset
+from tqdm               import tqdm
 
-from data.data_util import DataVisualizer
 
 class DatasetFactory():
     def create_dataset(data_configuration: Section):
@@ -39,16 +36,16 @@ class DatasetFactory():
         transform_list  = []
 
         DatasetFactory.__append_to_cache(data_configuration["GLiM"], 
-                                        channel_cache, 
-                                        label_cache)
+                                         channel_cache, 
+                                         label_cache)
 
         DatasetFactory.__append_to_cache(data_configuration["Climate"], 
-                                        channel_cache, 
-                                        label_cache)
+                                         channel_cache, 
+                                         label_cache)
 
         DatasetFactory.__append_to_cache(data_configuration["DSMW"], 
-                                        channel_cache, 
-                                        label_cache)
+                                         channel_cache, 
+                                         label_cache)
         
         DatasetFactory.__append_to_cache(data_configuration["GTC"], 
                                          channel_cache, 
@@ -103,12 +100,9 @@ class DatasetFactory():
             cache_dems=data_configuration["Cache_DEMs"],
             amount_classes=amount_classes) 
         
-        complete_dataset.preprocess_dataset()
+        complete_dataset.prepare_dataset()
 
         return complete_dataset, amount_classes
-    
-    
-
     
     def __pre_process_data_cache(data_cache):
         processed_cache = []
@@ -126,7 +120,6 @@ class DatasetFactory():
 
         return processed_cache
     
-
     def __append_to_cache(dataset_configuration, channel_cache, label_cache):
         if not dataset_configuration["cache"]:
             return 
@@ -152,6 +145,8 @@ class DatasetFactory():
         return amount_classes
     
 
+
+
 class TerrainDataset(Dataset): 
     def __init__(self, 
                  DEM_list, 
@@ -163,7 +158,7 @@ class TerrainDataset(Dataset):
                  amount_classes = 0):
         self.printer                = Printer()
 
-        self.DEM_list               = DEM_list
+        self.DEM_list               = DEM_list[:]
         self.transform              = transform
         self.source_dataset         = source_dataset
         
@@ -171,14 +166,14 @@ class TerrainDataset(Dataset):
         self.amount_classes         = amount_classes
 
         # Single-Process cache
-        self.dem_cache              = [None] * len(DEM_list)
+        self.dataset_cache          = [None] * len(DEM_list)
         self.channel_cache          = channel_cache
         self.label_cache            = label_cache
 
         # Thread-Safe cache, introduces massive overheads        
         self.shared_channel_cache   = None
         self.shared_label_cache     = None
-        self.shared_dem_cache       = None
+        self.shared_dataset_cache   = None
     
         self.loss_weights = {None: 1}
 
@@ -186,17 +181,26 @@ class TerrainDataset(Dataset):
         return len(self.DEM_list)
 
     def __getitem__(self, index):        
-        cache       = self.shared_dem_cache[index]
-
-        dem_tensor  = cache.dem_tensor 
-        label       = cache.label_tensor
+        cache       = self.shared_dataset_cache[index]
         metadata    = cache.metadata
 
+        if cache.did_not_cache_dem:
+            pass
+        else:
+            dem_tensor  = cache.dem_tensor 
+
+        if cache.did_not_cache_channels:
+            pass
         if cache.channel_tensor is not None:
             channels    = [dem_tensor, cache.label_tensor]        
             data_entry = torch.cat(channels, dim=0)
         else:
             data_entry = dem_tensor
+
+        if cache.did_not_cache_labels:
+            pass
+        else:
+            label       = cache.label_tensor
 
         if self.transform:
             data_entry = self.transform(data_entry)
@@ -206,8 +210,8 @@ class TerrainDataset(Dataset):
     def analyse_dataset(self):
         analysis_result = AnalysisResult(self.amount_classes)
         
-        for idx, cache in tqdm(enumerate(self.dem_cache), 
-                               total=len(self.dem_cache),
+        for idx, cache in tqdm(enumerate(self.dataset_cache), 
+                               total=len(self.dataset_cache),
                                desc="Analysing data"):
             if cache is None: 
                 continue
@@ -220,16 +224,16 @@ class TerrainDataset(Dataset):
         analysis_result.post_process()
         return analysis_result
 
-    def preprocess_dataset(self):
+    def prepare_dataset(self):
         with ThreadPoolExecutor(max_workers=2) as executor:
             indices = range(len(self.DEM_list))
             list(tqdm(executor.map(self.__prefetch_cache, indices),
                     total=len(indices), 
-                    desc="Preprocessing Dataset"))
+                    desc="Preparing Dataset"))
             
 
         analysis_result = self.analyse_dataset()
-        self.printer.print_log(analysis_result)
+        #self.printer.print_log(analysis_result)
 
         for label, label_amount in enumerate(analysis_result.label_bucket):
             # self.loss_weights[label] = len(self.DEM_list) / label_amount 
@@ -240,19 +244,58 @@ class TerrainDataset(Dataset):
         self.loss_weights = None
 
         # Transfer our single process cache to the shared cache
-        manager                 = multiprocessing.Manager()
-        self.shared_dem_cache   = manager.list(self.dem_cache)
-        self.dem_cache.clear()
+        manager                     = multiprocessing.Manager()
+        self.shared_dataset_cache   = manager.list(self.dataset_cache)
+        self.dataset_cache.clear()
 
         
             
     def __prefetch_cache(self, index):
-        filename    = self.DEM_list[index]
-        metadata    = {"filename": filename}
+        filename                    = self.DEM_list[index]
+        geo_cache                   = GeoDatasetCache()
+        self.dataset_cache[index]   = geo_cache
+        
+        metadata            = {"filename": filename}
+        geo_cache.metadata  = metadata
 
-        geo_cache               = GeoDatasetCache()
-        self.dem_cache[index]   = geo_cache
+        dem_tensor, dem_shape, dem_dataset  = self.__load_dem(filename)  
+        geo_cache.dem_tensor                = dem_tensor
 
+        if self.channel_cache or self.label_cache:
+            (top_left_geo, bot_right_geo), dem_geo_transform = (
+                self.__load_dem_geo_coordinates(dem_dataset, dem_shape))
+            
+            geo_cache.dem_geo_coordinates   = (top_left_geo, bot_right_geo)
+            geo_cache.dem_geo_transform     = dem_geo_transform
+        else:
+            return
+        
+        if self.channel_cache:
+            channels            = []
+            resize_to_dem_shape = transforms.Resize(dem_shape)
+            
+            for cache in self.channel_cache:
+                channels.append(self.__load_channel(cache, 
+                                                    top_left_geo, 
+                                                    bot_right_geo,
+                                                    resize_to_dem_shape))
+                
+                geo_cache.channel_geo_transforms.append(cache[0])
+
+            channels = torch.cat(channels, dim=0)
+            geo_cache.channel_tensor = channels
+
+        if self.label_cache:
+            for cache in self.label_cache:
+                label, label_data_frame = self.__load_label(cache, 
+                                                            top_left_geo, 
+                                                            bot_right_geo)
+
+                geo_cache.label_geo_transforms.append(cache[0]) 
+                geo_cache.label_tensor  = label
+                geo_cache.label_frame   = label_data_frame
+
+    def __load_dem(self, filename):
         dem_dataset = DataAccessor.open_DEM(filename, self.source_dataset) 
         
         if dem_dataset.RasterCount == 0:
@@ -269,59 +312,45 @@ class TerrainDataset(Dataset):
 
         dem_shape               = dem_tensor.shape
         dem_tensor              = dem_tensor.unsqueeze(0)
-        geo_cache.dem_tensor    = dem_tensor
 
-        
-        if self.channel_cache or self.label_cache:
-            # maybe we can get away with none for now
-            dem_geo_transform = dem_dataset.GetGeoTransform()
-            geo_cache.dem_geo_transform = dem_geo_transform
+        return dem_tensor, dem_shape, dem_dataset
+
+    def __load_dem_geo_coordinates(self, dem_dataset, dem_shape):
+        dem_geo_transform = dem_dataset.GetGeoTransform()
             
-            # Get the reference coordinates for the respective data frame
-            top_left_geo, bot_right_geo = GeoUtil.get_geo_frame_coordinates(
-                dem_geo_transform, 
-                (0, 0),
-                (dem_shape[1], dem_shape[0]))
-        else: 
-            return
+        # Get the reference coordinates for the respective data frame
+        top_left_geo, bot_right_geo = GeoUtil.get_geo_frame_coordinates(
+            dem_geo_transform, 
+            (0, 0),
+            (dem_shape[1], dem_shape[0]))
+
+        return (top_left_geo, bot_right_geo), dem_geo_transform
+
+    def __load_channel(self, 
+                       cache, 
+                       top_left_geo, 
+                       bot_right_geo, 
+                       resize_transform):
+        # Extract the data frame
+        data_frame = GeoUtil.get_geo_frame_array(
+            cache[1], 
+            cache[0],
+            top_left_geo,
+            bot_right_geo)
+
+        data_tensor = torch.from_numpy(data_frame).unsqueeze(0)
+        data_tensor = resize_transform(data_tensor)
         
-        if self.channel_cache:
-            channels            = []
-            resize_to_dem_shape = transforms.Resize(dem_shape)
-            for cache in self.channel_cache:
-                # Extract the data frame
-                data_frame = GeoUtil.get_geo_frame_array(
-                    cache[1], 
-                    cache[0],
-                    top_left_geo,
-                    bot_right_geo)
-        
-                data_tensor = torch.from_numpy(data_frame).unsqueeze(0)
-                data_tensor = resize_to_dem_shape(data_tensor)
+        return data_tensor
 
-                channels.append(data_tensor)
-                channels = torch.cat(channels, dim=0)
+    def __load_label(self, cache, top_left_geo, bot_right_geo):
+        data_frame = GeoUtil.get_geo_frame_array(cache[1], 
+                                                 cache[0],
+                                                 top_left_geo,
+                                                 bot_right_geo)
+        label = torch.tensor(np.median(data_frame), dtype=torch.int32)
 
-                geo_cache.channel_geo_transforms.append(cache[0])
-                geo_cache.channel_tensor = channels
-
-
-        if self.label_cache:
-            for cache in self.label_cache:
-                # TODO figure out a way to do multiclass and stuff also One Hot
-                data_frame = GeoUtil.get_geo_frame_array(
-                    cache[1], 
-                    cache[0],
-                    top_left_geo,
-                    bot_right_geo)
-                label = torch.tensor(np.median(data_frame), dtype=torch.int32)
-
-                geo_cache.label_geo_transforms.append(cache[0]) 
-                geo_cache.label_tensor = label
-
-        geo_cache.metadata      = metadata
-        
-
+        return label, data_frame
 
 class AnalysisResult():
     def __init__(self, amount_classes):
@@ -336,8 +365,9 @@ class AnalysisResult():
 
     def __str__(self):
         string = ""
-        for idx, (amount, sigma) in enumerate(zip(self.label_bucket, self.std_dev_bucket)):
-            string += f"\nLabel {idx}; Amount: {amount}, \t\tSigma {sigma}"
+        for idx, (amount, sigma) in enumerate(zip(self.label_bucket, 
+                                                  self.std_dev_bucket)):
+            string += f"\nLabel {idx}; Amount: {amount}, \tSigma {sigma}"
 
         return string
 
@@ -345,17 +375,33 @@ class GeoDatasetCache():
     def __init__(self,
                  dem_tensor             = None,            
                  dem_geo_transform      = None,
+                 dem_geo_coordinates    = None,
                  label_geo_transforms   = [],
                  label_tensor           = None, 
                  channel_geo_transforms = [],
                  channel_tensor         = None,
                  metadata               = {}):
         
+        self.metadata               = metadata
+
         self.dem_geo_transform      = dem_geo_transform
         self.dem_tensor             = dem_tensor
+        self.dem_geo_coordinates    = dem_geo_coordinates
+
         self.label_geo_transforms   = label_geo_transforms
+        self.label_frame            = None
         self.label_tensor           = label_tensor
+
         self.channel_geo_transforms = channel_geo_transforms
         self.channel_tensor         = channel_tensor
-        self.metadata               = metadata
+
+        self.did_not_cache_dem      = False
+        self.did_not_cache_channels = False
+        self.did_not_cache_labels   = False
+
+        self.uncached_dem           = None
+        self.uncached_channels      = []        
+        self.uncached_labels        = []
+
+
 

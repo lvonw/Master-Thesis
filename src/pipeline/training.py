@@ -12,8 +12,6 @@ from debug              import Printer, print_to_log_file
 from torch.utils.data   import DataLoader, random_split
 from tqdm               import tqdm
 
-
-
 def print_loss_graph(losses):
     plt.plot(losses)
     plt.xlabel("Step")
@@ -66,7 +64,6 @@ def train(model, complete_dataset, configuration):
     batch_size      = configuration["batch_size"]
     num_epochs      = configuration["epochs"]
     logging_steps   = configuration["logging_steps"]
-    learning_rate   = configuration["learning_rate"]
 
     cpu_count       = configuration["num_workers"]
     cpu_count       = (cpu_count if cpu_count >= 0 
@@ -100,45 +97,69 @@ def train(model, complete_dataset, configuration):
             
     training_losses     = []
     validation_losses   = []
-    optimizer           = optim.Adam(model.parameters(), lr=learning_rate)
-        
+
+    optimizers = model.get_optimizers()
+            
     print_to_log_file(f"\nModel: {model.name}", constants.TRAINING_LOSS_LOG)
 
     model.to(util.get_device())
-    for epoch in tqdm(range(num_epochs), 
-                      desc="Epochs",
-                      disable=False):
+    
+    # Training ================================================================
+    for epoch_idx in tqdm(range(num_epochs), 
+                          total=num_epochs,
+                          desc="Epochs",
+                          disable=False,
+                          colour="magenta"):
         model.train()
 
-        print_to_log_file(f"Epoch: {epoch+1}", constants.TRAINING_LOSS_LOG)
+        print_to_log_file(f"Epoch: {epoch_idx+1}", constants.TRAINING_LOSS_LOG)
 
-        running_loss = 0.0
-        for i, data in tqdm(enumerate(training_dataloader, 0), 
-                            total=len(training_dataloader),
-                            desc="Training Steps",
-                            disable=False):
+        running_losses = [0.] * len(optimizers)
+        for training_step_idx, data in tqdm(enumerate(training_dataloader, 0), 
+                                            total=len(training_dataloader),
+                                            desc="Training Steps",
+                                            disable=False):
             
-            optimizer.zero_grad()
-            
-            inputs, labels, _ = __prepare_data(data)
+            for optimizer_idx, optimizer in enumerate(optimizers):
+                # Smoother loss for monitoring, averaged over the epoch
+                running_loss = running_losses[optimizer_idx]
+                
+                # Main training loop ==========================================
+                optimizer.zero_grad()
+                inputs, labels, _ = __prepare_data(data)
 
-            loss, _ = model.training_step(inputs, labels, loss_weights)
+                loss, _ = model.training_step(inputs, 
+                                              labels, 
+                                              loss_weights,
+                                              epoch_idx,
+                                              training_step_idx,
+                                              optimizer_idx)
+                # Ignore irrelevant losses
+                if loss.item() == 0:  
+                    continue
 
-            loss.backward()
-            optimizer.step()
+                loss.backward()
+                optimizer.step()
 
+                # Loss monitoring =============================================
+                training_losses.append(loss.item())
+                
+                running_loss                    += loss.item()
+                running_losses[optimizer_idx]   = running_loss 
+
+                if ((training_step_idx + 1) % logging_steps) == 0:
+                    print_to_log_file(
+                        f"{optimizer_idx}: {running_loss / (training_step_idx + 1)}", 
+                        constants.TRAINING_LOSS_LOG)
+                    
+            # Post training step behaviour ====================================
             model.on_training_step_completed()
-            
-            training_losses.append(loss.item())
-            running_loss += loss.item()
 
-            if ((i + 1) % logging_steps) == 0:
-                print_to_log_file(running_loss / (i + 1), 
-                                  constants.TRAINING_LOSS_LOG)
-        
+        # Post epoch behaviour ================================================
         if configuration["Save_after_epoch"]:
             util.save_model(model)
         
+        # Validation ==========================================================
         if len(validation_dataloader):
             validation_loss = __validate(model,
                                             validation_dataloader, 
@@ -149,7 +170,7 @@ def train(model, complete_dataset, configuration):
 
     print_to_log_file("\n", constants.TRAINING_LOSS_LOG)
     
-    # Post training evaluations
+    # Post training evaluations ===============================================
     model.eval()
 
     with torch.no_grad():

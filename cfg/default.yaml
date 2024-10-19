@@ -31,7 +31,7 @@ Training:
 # =============================================================================
 Model:
   external: cfg/vae/vae.yaml
-  selection: VAE_small_test
+  selection: VAE_discriminator_test
   # external: cfg/diffusion/ddpm.yaml
   # selection: latent_diffusion_test
   only_load_selection: true
