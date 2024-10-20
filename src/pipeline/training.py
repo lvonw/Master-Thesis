@@ -89,8 +89,11 @@ def train(model,
 
     model.to(util.get_device()) 
     # Training ================================================================
-    for epoch_idx in tqdm(range(starting_epoch, num_epochs), 
+    for epoch_idx in tqdm(range(starting_epoch, num_epochs),
                           total     = num_epochs,
+                          initial   = starting_epoch,
+                          position  = 0,
+                          leave     = True, 
                           desc      = "Epochs",
                           disable   = False,
                           colour    = "magenta"):
@@ -101,6 +104,8 @@ def train(model,
         running_losses = [0.] * len(model.optimizers)
         for training_step_idx, data in tqdm(enumerate(training_dataloader, 0), 
                                             total   = len(training_dataloader),
+                                            position= 1,
+                                            leave   = False,
                                             desc    = "Training Steps",
                                             disable = False,
                                             colour  = "red"):

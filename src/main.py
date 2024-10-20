@@ -105,12 +105,13 @@ def main():
 
     if config["Main"]["load_model"]:
         printer.print_log("Loading state dict...")
-        starting_epoch_idx = util.load_checkpoint(model)
-        if not starting_epoch_idx:
+        starting_epoch = util.load_checkpoint(model)
+        
+        if not starting_epoch:
             printer.print_log(f"Model {model.name} could not be loaded",
                               constants.LogLevel.WARNING)
         else:    
-            printer.print_log("Finished.")
+            printer.print_log(f"Finished, starting at epoch: {starting_epoch}.")
 
     # =========================================================================
     # Stats
@@ -128,7 +129,7 @@ def main():
         training.train(model, 
                        complete_dataset, 
                        config["Training"], 
-                       starting_epoch=starting_epoch_idx)
+                       starting_epoch=starting_epoch)
 
     # =========================================================================
     # Generation
