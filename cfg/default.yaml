@@ -15,7 +15,7 @@ Main:
 # TRAINING
 # =============================================================================
 Training:  
-  epochs:           400
+  epochs:           500
   batch_size:       128
   learning_rate:    4.5e-6
   logging_steps:    10
@@ -31,7 +31,7 @@ Training:
 # =============================================================================
 Model:
   external: cfg/vae/vae.yaml
-  selection: VAE_discriminator_test
+  selection: VAE_discriminator_perceptual_test
   # external: cfg/diffusion/ddpm.yaml
   # selection: latent_diffusion_test
   only_load_selection: true

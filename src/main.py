@@ -77,8 +77,6 @@ def main():
         if should_quit:
             quit()
 
-
-
     # =========================================================================
     # Dataset
     # =========================================================================
@@ -107,7 +105,8 @@ def main():
 
     if config["Main"]["load_model"]:
         printer.print_log("Loading state dict...")
-        if not util.load_model(model):
+        starting_epoch_idx = util.load_checkpoint(model)
+        if not starting_epoch_idx:
             printer.print_log(f"Model {model.name} could not be loaded",
                               constants.LogLevel.WARNING)
         else:    

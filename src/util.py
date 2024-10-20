@@ -40,3 +40,30 @@ def load_model(model):
     model.load_state_dict(torch.load(model_path, 
                                      weights_only=False))
     return True
+
+def save_checkpoint(model, epoch_idx):
+    optimizer_states = [opt.state_dict() for opt in model.optimizers]
+    checkpoint = {
+        "epoch": epoch_idx,
+        "model_state": model.state_dict(),
+        "optimizer_states": optimizer_states,
+    }
+    torch.save(checkpoint, get_model_file_path(model))
+
+def load_checkpoint(model):
+    model_path = get_model_file_path(model)
+    if not os.path.exists(model_path):
+        return 0
+
+    checkpoint = torch.load(model_path, 
+                            weights_only=False)
+    
+    model.load_state_dict(checkpoint["model_state"])
+    
+    optimizer_state_dicts = checkpoint["optimizer_states"]
+    for opt, state_dict in zip(model.optimizers, optimizer_state_dicts):
+        opt.load_state_dict(state_dict)
+    
+    epoch_idx = checkpoint["epoch"] + 1
+    
+    return epoch_idx

@@ -41,8 +41,10 @@ def __get_data_splits(dataset, training_data_split):
                             generator=torch.Generator()
                                 .manual_seed(constants.DATALOADER_SEED))
 
-
-def train(model, complete_dataset, configuration):
+def train(model, 
+          complete_dataset, 
+          configuration,
+          starting_epoch = 0):
     printer         = Printer()
     data_visualizer = DataVisualizer()
     
@@ -82,30 +84,29 @@ def train(model, complete_dataset, configuration):
             
     training_losses     = []
     validation_losses   = []
-
-    optimizers = model.get_optimizers()
             
     print_to_log_file(f"\nModel: {model.name}", constants.TRAINING_LOSS_LOG)
 
     model.to(util.get_device())
     
     # Training ================================================================
-    for epoch_idx in tqdm(range(num_epochs), 
-                          total=num_epochs,
-                          desc="Epochs",
-                          disable=False,
-                          colour="magenta"):
+    for epoch_idx in tqdm(range(starting_epoch, num_epochs), 
+                          total     = num_epochs,
+                          desc      = "Epochs",
+                          disable   = False,
+                          colour    = "magenta"):
         model.train()
 
         print_to_log_file(f"Epoch: {epoch_idx+1}", constants.TRAINING_LOSS_LOG)
 
-        running_losses = [0.] * len(optimizers)
+        running_losses = [0.] * len(model.optimizers)
         for training_step_idx, data in tqdm(enumerate(training_dataloader, 0), 
-                                            total=len(training_dataloader),
-                                            desc="Training Steps",
-                                            disable=False):
+                                            total   = len(training_dataloader),
+                                            desc    = "Training Steps",
+                                            disable = False,
+                                            colour  = "red"):
             
-            for optimizer_idx, optimizer in enumerate(optimizers):
+            for optimizer_idx, optimizer in enumerate(model.optimizers):
                 # Smoother loss for monitoring, averaged over the epoch
                 running_loss = running_losses[optimizer_idx]
                 
@@ -133,8 +134,9 @@ def train(model, complete_dataset, configuration):
                 running_losses[optimizer_idx]   = running_loss 
 
                 if ((training_step_idx + 1) % logging_steps) == 0:
+                    monitoring_loss = running_loss / (training_step_idx + 1)
                     print_to_log_file(
-                        f"{optimizer_idx}: {running_loss / (training_step_idx + 1)}", 
+                        f"{optimizer_idx}: {monitoring_loss}", 
                         constants.TRAINING_LOSS_LOG)
                     
             # Post training step behaviour ====================================
@@ -142,7 +144,7 @@ def train(model, complete_dataset, configuration):
 
         # Post epoch behaviour ================================================
         if configuration["Save_after_epoch"]:
-            util.save_model(model)
+            util.save_checkpoint(model, epoch_idx)
         
         # Validation ==========================================================
         if len(validation_dataloader):
@@ -176,9 +178,7 @@ def train(model, complete_dataset, configuration):
                 data_visualizer.show_ensemble()
 
 
-            break
-
-    
+            break    
 
 def __validate(model, dataloader, configuration, batch_size):    
     model.eval()

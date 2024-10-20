@@ -38,6 +38,8 @@ class DDPM(nn.Module):
         self.generator      = generator
         self.amount_classes = amount_classes
 
+        self.optimizers     = self.__get_optimizers()
+
         self.amount_training_steps     = configuration["training_steps"]
         self.amount_sample_steps       = configuration["sample_steps"]
         self.sample_steps = self.__get_sampling_timesteps(
@@ -187,7 +189,7 @@ class DDPM(nn.Module):
         if self.use_ema:
             self.ema_model.ema_step(self.model)
 
-    def get_optimizers(self):
+    def __get_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=4.5e-6)
         return [optimizer]
 

@@ -1,4 +1,3 @@
-import lpips
 import torch
 import torch.nn                 as nn
 import torch.nn.functional      as f
@@ -9,10 +8,10 @@ from debug                              import Printer, LogLevel
 from enum                               import Enum
 from generation.models.discriminator    import Discriminator
 from generation.modules.encoder         import Encoder, Decoder
-
+from torchmetrics.image.lpip            import LearnedPerceptualImagePatchSimilarity
 
 class LossMethod(Enum):
-    BINARY_CROSS_ENTROPY    = "bianry cross entropy"
+    BINARY_CROSS_ENTROPY    = "binary cross entropy"
     MEAN_SQUARED_ERROR      = "mean squared error"
     ABSOLUTE_DIFFERENCE     = "absolute difference"
     
@@ -27,12 +26,7 @@ class AutoEncoderFactory():
         loss            = vae_configuration["Loss"]
 
         beta                    = loss["kl_beta"]
-        use_discriminator       = loss["use_discriminator"]
         use_class_weights       = loss["use_class_weights"]
-        use_perceptual_loss     = loss["use_perceptual_loss"]
-        discriminator_weight    = loss["discriminator_weight"]
-        discriminator_warmup    = loss["discriminator_warm_up"]
-        perceptual_weight       = loss["perceptual_weight"]
 
         data_shape      = (vae_configuration["data_num_channels"], 
                            vae_configuration["data_resolution_x"],
@@ -79,16 +73,23 @@ class AutoEncoderFactory():
                           attention_resolutions_decoder,
                           use_attention)
         
-
-        discriminator = None
+        # Vae Gan =============================================================
+        use_discriminator       = loss["use_discriminator"]
+        discriminator_weight    = loss["discriminator_weight"]
+        discriminator_warmup    = loss["discriminator_warm_up"]
+        discriminator           = None
         if use_discriminator:   
             printer.print_log("Using Discriminator")
             discriminator = Discriminator(starting_channels=data_shape[0])
 
-        perceptual_loss = None
+        # Perceptual Metric ===================================================
+        use_perceptual_loss     = loss["use_perceptual_loss"]
+        perceptual_weight       = loss["perceptual_weight"]
+        perceptual_loss         = None
         if use_perceptual_loss:
             printer.print_log("Using Perceptual Loss")
-            perceptual_loss = lpips.LPIPS(net="alex").eval()
+            perceptual_loss = LearnedPerceptualImagePatchSimilarity(
+                net_type="vgg", reduction="sum").eval()
 
         return VariationalAutoEncoder(encoder, 
                                       decoder,
@@ -145,6 +146,8 @@ class VariationalAutoEncoder(nn.Module):
         self.use_perceptual_loss    = use_perceptual_loss
         self.perceptual_weight      = perceptual_weight
         self.perceptual_loss        = perceptual_loss
+
+        self.optimizers             = self.__get_optimizers()
         
 
     # =========================================================================
@@ -212,11 +215,10 @@ class VariationalAutoEncoder(nn.Module):
                                        .contiguous()) 
             
             perceptual_loss = self.perceptual_loss(lpips_inputs, 
-                                                   lpips_reconstructions).squeeze()
-            
-            
-            individual_reconstruction_loss += self.perceptual_weight * perceptual_loss
-
+                                                   lpips_reconstructions)
+             
+            individual_reconstruction_loss += (self.perceptual_weight 
+                                               * perceptual_loss)
 
         reconstruction_loss = (sum(individual_reconstruction_loss) 
                                / len(individual_reconstruction_loss)) 
@@ -257,7 +259,7 @@ class VariationalAutoEncoder(nn.Module):
             # than for the descrimination loss 
             # -> we likely have a good discriminator
             weight = (torch.norm(reconstruction_gradients) 
-                      / (torch.norm(discriminator_gradients)) + 1e-4)
+                      / (torch.norm(discriminator_gradients) + 1e-4))
             
             weight = torch.clamp(weight, 0.0, 1e4).detach()
             discriminator_loss *= weight * self.discriminator_weight
@@ -290,12 +292,17 @@ class VariationalAutoEncoder(nn.Module):
         
         return 0.5 * (loss_real + loss_fake)
     
-    def get_optimizers(self):
-        vae_optimizer           = optim.Adam(self.parameters(), lr=4.5e-6)    
+    def __get_optimizers(self):
+        # Need to make the distinction here, so we dont train the discriminator
+        # when training the vae and vice versa
+        vae_parameter_list      = (list(self.encoder.parameters())
+                                   + list(self.decoder.parameters()))
+        vae_optimizer           = optim.Adam(vae_parameter_list, lr=4.5e-6)    
         if not self.use_discriminator:
             return [vae_optimizer]
 
-        discriminator_optimizer = optim.Adam(self.parameters(), lr=4.5e-6)
+        discriminator_optimizer = optim.Adam(self.discriminator.parameters(), 
+                                             lr=4.5e-6)
         return [vae_optimizer, discriminator_optimizer]
 
 
