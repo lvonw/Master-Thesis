@@ -110,8 +110,8 @@ def main():
         if not starting_epoch:
             printer.print_log(f"Model {model.name} could not be loaded",
                               constants.LogLevel.WARNING)
-        else:    
-            printer.print_log(f"Finished, starting at epoch: {starting_epoch}.")
+        
+        printer.print_log(f"Finished, starting at epoch: {starting_epoch}.")
 
     # =========================================================================
     # Stats
