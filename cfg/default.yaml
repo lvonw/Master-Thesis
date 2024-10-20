@@ -7,7 +7,7 @@ Main:
   test:       false
   generate:   false
 
-  load_model: false
+  load_model: true
 
   use_MNIST:  false
 

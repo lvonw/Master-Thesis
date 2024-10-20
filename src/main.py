@@ -125,7 +125,10 @@ def main():
     # Training
     # =========================================================================
     if config["Main"]["train"]:        
-        training.train(model, complete_dataset, config["Training"])
+        training.train(model, 
+                       complete_dataset, 
+                       config["Training"], 
+                       starting_epoch=starting_epoch_idx)
 
     # =========================================================================
     # Generation

@@ -87,8 +87,7 @@ def train(model,
             
     print_to_log_file(f"\nModel: {model.name}", constants.TRAINING_LOSS_LOG)
 
-    model.to(util.get_device())
-    
+    model.to(util.get_device()) 
     # Training ================================================================
     for epoch_idx in tqdm(range(starting_epoch, num_epochs), 
                           total     = num_epochs,

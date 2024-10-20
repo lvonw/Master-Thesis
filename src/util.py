@@ -56,13 +56,20 @@ def load_checkpoint(model):
         return 0
 
     checkpoint = torch.load(model_path, 
-                            weights_only=False)
+                            weights_only=False,
+                            map_location="cuda")
     
     model.load_state_dict(checkpoint["model_state"])
     
     optimizer_state_dicts = checkpoint["optimizer_states"]
-    for opt, state_dict in zip(model.optimizers, optimizer_state_dicts):
-        opt.load_state_dict(state_dict)
+    for optimizer, state_dict in zip(model.optimizers, optimizer_state_dicts):
+        optimizer.load_state_dict(state_dict)
+        
+        # Need to manually move the optimizer params back to the gpu
+        for state in optimizer.state.values():
+            for key, value in state.items():
+                if isinstance(value, torch.Tensor):
+                    state[key] = value.to(get_device())
     
     epoch_idx = checkpoint["epoch"] + 1
     
