@@ -15,8 +15,8 @@ Main:
 # TRAINING
 # =============================================================================
 Training:  
-  epochs:           500
-  batch_size:       128
+  epochs:           0 # 1000
+  batch_size:       32
   learning_rate:    4.5e-6
   logging_steps:    10
   num_workers:      2
@@ -31,7 +31,7 @@ Training:
 # =============================================================================
 Model:
   external: cfg/vae/vae.yaml
-  selection: VAE_discriminator_perceptual_test
+  selection: VAE_Big_test
   # external: cfg/diffusion/ddpm.yaml
   # selection: latent_diffusion_test
   only_load_selection: true
@@ -42,7 +42,7 @@ Model:
 # =============================================================================
 Data:
   DEM_List: SRTM_GL1_50_over_list.txt
-  DEM_Dataset: SRTM_GL1_64x64
+  DEM_Dataset: SRTM_GL1_256x256
   Cache_DEMs: true
 
   # Datasets
@@ -75,7 +75,7 @@ Data:
     active:         false 
   RandomCrop:
     active:         true
-    size:           32 
+    size:           128 
   FiveCrop:
     active:         false 
   TenCrop:

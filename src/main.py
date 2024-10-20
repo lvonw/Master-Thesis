@@ -9,7 +9,7 @@ from configuration          import Configuration
 from data.dataset           import DatasetFactory
 
 from pipeline               import generate, training
-from debug                  import Printer
+from debug                  import Printer, LogLevel
 from generation.models.vae  import AutoEncoderFactory
 from generation.models.ddpm import DDPM
 from data.data_util         import DataVisualizer
@@ -109,7 +109,7 @@ def main():
         
         if not starting_epoch:
             printer.print_log(f"Model {model.name} could not be loaded",
-                              constants.LogLevel.WARNING)
+                              LogLevel.WARNING)
         
         printer.print_log(f"Finished, starting at epoch: {starting_epoch}.")
 

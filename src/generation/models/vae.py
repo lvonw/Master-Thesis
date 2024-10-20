@@ -246,7 +246,7 @@ class VariationalAutoEncoder(nn.Module):
             discriminator_loss = -torch.mean(logits)
 
             reconstruction_gradients = torch.autograd.grad(
-                torch.sum(reconstruction_loss), 
+                reconstruction_loss, 
                 self.decoder.output_conv.weight, 
                 retain_graph=True)[0]
             
