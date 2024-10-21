@@ -223,7 +223,7 @@ class TerrainDataset(Dataset):
         return analysis_result
 
     def prepare_dataset(self):
-        with ThreadPoolExecutor(max_workers=2) as executor:
+        with ThreadPoolExecutor(max_workers=4) as executor:
             indices = range(len(self.DEM_list))
             list(tqdm(executor.map(self.__prefetch_cache, indices),
                     total=len(indices), 

@@ -15,8 +15,8 @@ Main:
 # TRAINING
 # =============================================================================
 Training:  
-  epochs:           0 # 1000
-  batch_size:       32
+  epochs:           1000
+  batch_size:       128
   learning_rate:    4.5e-6
   logging_steps:    10
   num_workers:      2
@@ -31,7 +31,7 @@ Training:
 # =============================================================================
 Model:
   external: cfg/vae/vae.yaml
-  selection: VAE_Big_test
+  selection: VAE_Big_test_64
   # external: cfg/diffusion/ddpm.yaml
   # selection: latent_diffusion_test
   only_load_selection: true
@@ -42,7 +42,7 @@ Model:
 # =============================================================================
 Data:
   DEM_List: SRTM_GL1_50_over_list.txt
-  DEM_Dataset: SRTM_GL1_256x256
+  DEM_Dataset: SRTM_GL1_128x128
   Cache_DEMs: true
 
   # Datasets
@@ -75,7 +75,7 @@ Data:
     active:         false 
   RandomCrop:
     active:         true
-    size:           128 
+    size:           64 
   FiveCrop:
     active:         false 
   TenCrop:
