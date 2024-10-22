@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot    as plt
 import numpy                as np
 import torch
-import torch.optim          as optim
+import torch.nn             as nn
 import util
 import os
 
@@ -45,6 +45,7 @@ def train(model,
           complete_dataset, 
           configuration,
           starting_epoch = 0):
+    
     printer         = Printer()
     data_visualizer = DataVisualizer()
     
@@ -64,31 +65,33 @@ def train(model,
     training_dataset, validation_dataset = __get_data_splits(
             complete_dataset,
             configuration["Data_Split"])
-    
 
     training_dataloader = DataLoader(training_dataset, 
                                      batch_size=batch_size, 
                                      shuffle=True,
                                      generator=data_loader_generator,
                                      num_workers=cpu_count,
-                                     pin_memory=True, 
+                                     persistent_workers=True,
+                                     pin_memory=True,
                                      pin_memory_device=str(util.get_device()))
     
     validation_dataloader = DataLoader(validation_dataset, 
                                        batch_size=batch_size, 
                                        shuffle=False,
                                        generator=data_loader_generator,
-                                       num_workers=cpu_count,
-                                       pin_memory=True, 
-                                       pin_memory_device=str(util.get_device()))
+                                       num_workers=cpu_count)
             
     training_losses     = []
     validation_losses   = []
             
-    print_to_log_file(f"\nModel: {model.name}", constants.TRAINING_LOSS_LOG)
-
     model.to(util.get_device()) 
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
+    printer.print_log(f"GPU Amount: {torch.cuda.device_count()}")
+    
     # Training ================================================================
+    print_to_log_file(f"\nModel: {model.name}", constants.TRAINING_LOSS_LOG)
+    
     for epoch_idx in tqdm(range(starting_epoch, num_epochs),
                           total     = num_epochs,
                           initial   = starting_epoch,
@@ -163,9 +166,9 @@ def train(model,
     
     # Post training evaluations =============================================== 
     model.eval()
-
+    model.on_loaded_as_pretrained()
     with torch.no_grad():
-        for data in training_dataloader:
+        for training_step_idx, data in tqdm(enumerate(training_dataloader, 0)):
             inputs, _, metadata = __prepare_data(data)
 
             reconstructions = model(inputs)[0]

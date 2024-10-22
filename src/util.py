@@ -50,7 +50,8 @@ def save_checkpoint(model, epoch_idx):
     }
     torch.save(checkpoint, get_model_file_path(model))
 
-def load_checkpoint(model):
+def load_checkpoint(model,
+                    strict=True):
     model_path = get_model_file_path(model)
     if not os.path.exists(model_path):
         return 0
@@ -59,7 +60,7 @@ def load_checkpoint(model):
                             weights_only=False,
                             map_location="cuda")
     
-    model.load_state_dict(checkpoint["model_state"])
+    model.load_state_dict(checkpoint["model_state"], strict=strict)
     
     optimizer_state_dicts = checkpoint["optimizer_states"]
     for optimizer, state_dict in zip(model.optimizers, optimizer_state_dicts):

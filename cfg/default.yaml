@@ -5,7 +5,7 @@ Main:
   train:      true
   validate:   false
   test:       false
-  generate:   false
+  generate:   true
 
   load_model: true
 
@@ -31,9 +31,9 @@ Training:
 # =============================================================================
 Model:
   external: cfg/vae/vae.yaml
-  selection: VAE_Big_test_64
+  selection: VAE_EMA_test
   # external: cfg/diffusion/ddpm.yaml
-  # selection: latent_diffusion_test
+  # selection: ld_finer_classes
   only_load_selection: true
   read_only: true
 
@@ -41,9 +41,12 @@ Model:
 # DATA
 # =============================================================================
 Data:
-  DEM_List: SRTM_GL1_50_over_list.txt
-  DEM_Dataset: SRTM_GL1_128x128
-  Cache_DEMs: true
+  DEM_List:       SRTM_GL1_50_over_list.txt
+  DEM_Dataset:    SRTM_GL1_512x512
+  Cache_DEMs:     true
+  loader_workers: 2
+  # < 1 -> We take all in the specified list
+  amount_dems:    0
 
   # Datasets
   GLiM:
@@ -75,26 +78,13 @@ Data:
     active:         false 
   RandomCrop:
     active:         true
-    size:           64 
-  FiveCrop:
-    active:         false 
-  TenCrop:
-    active:         false 
+    size:           32 
   RandomHorizontalFlip:
     active:         true 
     probability:    0.5
   RandomVerticalFlip:
     active:         true 
     probability:    0.5
-
-
-PTG_Model: 
-  train:
-    value: true
-
-Hyperparameters:
-  train:
-    value: true
 
 Debug:
   train:

@@ -38,8 +38,6 @@ class DDPM(nn.Module):
         self.generator      = generator
         self.amount_classes = amount_classes
 
-        self.optimizers     = self.__get_optimizers()
-
         self.amount_training_steps     = configuration["training_steps"]
         self.amount_sample_steps       = configuration["sample_steps"]
         self.sample_steps = self.__get_sampling_timesteps(
@@ -53,14 +51,17 @@ class DDPM(nn.Module):
         self.is_latent          = configuration["Latent"]["active"]
         if self.is_latent:
             self.latent_model   = AutoEncoderFactory.create_auto_encoder(
-                configuration["Latent"]["model"])
+                configuration["Latent"]["model"],
+                configuration["Latent"]["pre_trained"])
             
             if (configuration["Latent"]["pre_trained"] 
-                and not util.load_model(self.latent_model)):
+                and not util.load_checkpoint(self.latent_model, strict=False)):
                 
                 Printer().print_log(
                     f"Model {self.latent_model.name} could not be loaded",
-                    LogLevel.WARNING)    
+                    LogLevel.WARNING)
+            else:
+                self.latent_model.on_loaded_as_pretrained()  
 
         # DIFFUSION MODEL =====================================================               
         self.model          = Diffusion(configuration, amount_classes)
@@ -96,6 +97,16 @@ class DDPM(nn.Module):
         epsilon_coefficients = self.__compute_epsilon_coefficients()
         self.register_buffer("one_over_sqrt_alphas",  epsilon_coefficients[0])
         self.register_buffer("epsilon_coefficient",   epsilon_coefficients[1])
+
+        # TRAINING ============================================================
+        self.optimizers     = self.__get_optimizers()
+
+
+    def get_state_dict_to_save(self):
+        state_dict = self.state_dict()
+        state_dict.pop("latent_model")
+        return state_dict
+
 
     # =========================================================================
     # Sampling
@@ -190,7 +201,7 @@ class DDPM(nn.Module):
             self.ema_model.ema_step(self.model)
 
     def __get_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=4.5e-6)
+        optimizer = optim.Adam(self.model.parameters(), lr=4.5e-6)
         return [optimizer]
 
     # =========================================================================

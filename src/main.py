@@ -103,6 +103,7 @@ def main():
     model = AutoEncoderFactory.create_auto_encoder(config["Model"])
     printer.print_log("Finished.")
 
+    starting_epoch = 0
     if config["Main"]["load_model"]:
         printer.print_log("Loading state dict...")
         starting_epoch = util.load_checkpoint(model)
@@ -110,7 +111,7 @@ def main():
         if not starting_epoch:
             printer.print_log(f"Model {model.name} could not be loaded",
                               LogLevel.WARNING)
-        
+            
         printer.print_log(f"Finished, starting at epoch: {starting_epoch}.")
 
     # =========================================================================

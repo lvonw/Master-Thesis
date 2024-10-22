@@ -18,6 +18,7 @@ def weights_init(module):
         nn.init.constant_(module.bias.data, 0)
 
 class Discriminator(nn.Module):
+    # Patchgan discriminator
     # TODO Config
     def __init__(self, 
                  amount_input_channels = 1, 
@@ -60,7 +61,7 @@ class Discriminator(nn.Module):
                                      stride         = 1,
                                      padding        = 1)  
 
-        self.apply(weights_init)          
+        self.apply(weights_init)                  
 
     def forward(self, x):
         x = self.input_conv(x)

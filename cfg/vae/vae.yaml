@@ -758,6 +758,11 @@ VAE_Big_test_64:
   latent_resolution_x: 8
   latent_resolution_y: 8
 
+  EMA:
+    active: false
+    weight: 0.995
+    warm_up_steps: 2000
+
   Loss:
     use_discriminator:      true
     discriminator_warm_up:  150
@@ -765,6 +770,7 @@ VAE_Big_test_64:
     
     use_perceptual_loss:    true
     perceptual_weight:      1.0
+    perceptual_net:         vgg
 
     kl_beta: 0.000001
 
@@ -785,6 +791,52 @@ VAE_Big_test_64:
 
   Training:
     learning_rate: 0.0001
+
+VAE_EMA_test:
+  name: VAE_EMA_test
+  description: Trying to get a good vae to work off of here
+  
+  data_num_channels: 1
+  data_resolution_x: 32
+  data_resolution_y: 32
+
+  latent_num_channels: 4
+  latent_resolution_x: 8
+  latent_resolution_y: 8
+
+  EMA:
+    active: true
+    weight: 0.995
+    warm_up_steps: 2000
+
+  Loss:
+    use_discriminator:      true
+    discriminator_warm_up:  190
+    discriminator_weight:   0.5
+        
+    use_perceptual_loss:    true
+    perceptual_weight:      1.0
+    perceptual_net:         alex
+
+    kl_beta: 0.000001
+
+    use_class_weights: false
+
+  Architecture:
+    ResNet_blocks_per_layer: 2
+    starting_channels: 64
+    dropout: 0.0
+    non_linearity: SiLU
+    channel_multipliers:
+    - 1
+    - 2
+    
+    use_attention: true
+    attention_resolutions: []
+
+  Training:
+    learning_rate: 0.0001
+
 
 
 

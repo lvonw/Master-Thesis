@@ -26,6 +26,7 @@ class Printer():
 
     def __init__(self):
         self.line_count = 0
+        self.ping_counter = 0
     
     def __count_lines(self, message):
         return len(message.splitlines())
@@ -41,6 +42,11 @@ class Printer():
         value = input(prompt)
         self.__increase_counter(prompt)
         return value
+    
+    def ping(self):
+        self.print_log(self.ping_counter)
+        ping_counter += 1
+
     
     def clear_lines(self, amount):
         for _ in range(amount):

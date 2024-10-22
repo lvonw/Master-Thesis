@@ -3,7 +3,8 @@ import multiprocessing
 import os
 import torch
 
-import numpy            as np
+import numpy                                as np
+import torchvision.transforms.functional    as tf
 
 from concurrent.futures import ThreadPoolExecutor
 from configuration      import Section
@@ -21,7 +22,12 @@ class DatasetFactory():
         
         DEM_List_path = data_configuration["DEM_List"]
         printer.print_log(f"Using DEM-list: {DEM_List_path}")
-        DEM_List = DataAccessor.open_DEM_list(DEM_List_path)
+
+        dems_to_take = None
+        if data_configuration["amount_dems"] > 0:
+            dems_to_take = data_configuration["amount_dems"]
+        
+        DEM_List = DataAccessor.open_DEM_list(DEM_List_path)[:dems_to_take]
 
         if data_configuration["DEM_Dataset"]:
             source_dataset = os.path.join(constants.DATA_PATH_DEM,
@@ -58,6 +64,7 @@ class DatasetFactory():
         # This probably needs to be the very first operation
         if data_configuration["Resize"]["active"]:
             printer.print_log("Activating Resize transform")
+            
             transform_list.append(transforms.Resize(
                 size=data_configuration["Resize"]["size"]))
 
@@ -65,21 +72,16 @@ class DatasetFactory():
             printer.print_log("Activating RandomRotation transform")
             transform_list.append(transforms.RandomRotation())
 
+
         if data_configuration["RandomCrop"]["active"]:
             printer.print_log("Activating RandomCrop transform")
-            transform_list.append(transforms.RandomCrop(
-                size=data_configuration["RandomCrop"]["size"]))
+            # transform_list.append(transforms.RandomCrop(
+            #    size=data_configuration["RandomCrop"]["size"]))
             
-        if data_configuration["FiveCrop"]["active"]:
-            printer.print_log("Activating FiveCrop transform")
-            transform_list.append(transforms.FiveCrop(
-                size=data_configuration["FiveCrop"]["Size"]))
-            
-        if data_configuration["TenCrop"]["active"]:
-            printer.print_log("Activating TenCrop transform")
-            transform_list.append(transforms.TenCrop(
-                size=data_configuration["TenCrop"]["Size"]))
-            
+            random_crop = RandomCropWithFrame(
+                size=data_configuration["RandomCrop"]["size"])    
+
+
         if data_configuration["RandomHorizontalFlip"]["active"]:
             printer.print_log("Activating RandomHorizontalFlip transform")
             transform_list.append(transforms.RandomHorizontalFlip(
@@ -98,9 +100,10 @@ class DatasetFactory():
             transform,
             source_dataset,
             cache_dems=data_configuration["Cache_DEMs"],
-            amount_classes=amount_classes) 
+            amount_classes=amount_classes,
+            random_crop=random_crop) 
         
-        complete_dataset.prepare_dataset()
+        complete_dataset.prepare_dataset(data_configuration["loader_workers"])
 
         return complete_dataset, amount_classes
     
@@ -153,10 +156,11 @@ class TerrainDataset(Dataset):
                  transform=None,
                  source_dataset=constants.DATA_PATH_DEMS,
                  cache_dems = True,
-                 amount_classes = 0):
+                 amount_classes = 0,
+                 random_crop = None):
         self.printer                = Printer()
 
-        self.DEM_list               = DEM_list[:]
+        self.DEM_list               = DEM_list
         self.transform              = transform
         self.source_dataset         = source_dataset
         
@@ -172,8 +176,10 @@ class TerrainDataset(Dataset):
         self.shared_channel_cache   = None
         self.shared_label_cache     = None
         self.shared_dataset_cache   = None
-    
+
         self.loss_weights = {None: 1}
+
+        self.random_crop = random_crop
 
     def __len__(self):
         return len(self.DEM_list)
@@ -187,6 +193,7 @@ class TerrainDataset(Dataset):
         else:
             dem_tensor  = cache.dem_tensor 
 
+        # Channels ============================================================
         if cache.did_not_cache_channels:
             pass
         if cache.channel_tensor is not None:
@@ -195,11 +202,23 @@ class TerrainDataset(Dataset):
         else:
             data_entry = dem_tensor
 
+        
+        # Labels ==============================================================
         if cache.did_not_cache_labels:
             pass
         else:
-            label       = cache.label_tensor
+            label_frame = cache.label_frame
 
+        if self.random_crop is not None:
+                data_entry, label_frame = self.random_crop(data_entry, 
+                                                           label_frame)
+
+        if label_frame is not None and label_frame.size > 0:
+            label = torch.tensor(np.median(label_frame), dtype=torch.int32)
+        else:
+            label = cache.label_tensor
+
+        # Remaining Transforms ================================================
         if self.transform:
             data_entry = self.transform(data_entry)
 
@@ -211,7 +230,7 @@ class TerrainDataset(Dataset):
         for idx, cache in tqdm(enumerate(self.dataset_cache), 
                                total=len(self.dataset_cache),
                                desc="Analysing data"):
-            if cache is None: 
+            if cache is None or cache.label_tensor is None: 
                 continue
             label = cache.label_tensor.item()
             
@@ -222,8 +241,8 @@ class TerrainDataset(Dataset):
         analysis_result.post_process()
         return analysis_result
 
-    def prepare_dataset(self):
-        with ThreadPoolExecutor(max_workers=4) as executor:
+    def prepare_dataset(self, loader_workers=1):
+        with ThreadPoolExecutor(max_workers=loader_workers) as executor:
             indices = range(len(self.DEM_list))
             list(tqdm(executor.map(self.__prefetch_cache, indices),
                     total=len(indices), 
@@ -235,8 +254,10 @@ class TerrainDataset(Dataset):
 
         for label, label_amount in enumerate(analysis_result.label_bucket):
             # self.loss_weights[label] = len(self.DEM_list) / label_amount 
-            # self.loss_weights[label] = np.log(len(self.DEM_list) / label_amount) 
-            # self.loss_weights[label] = 1 + analysis_result.std_dev_bucket[label]
+            # self.loss_weights[label] = np.log(len(self.DEM_list) 
+            # / label_amount) 
+            # self.loss_weights[label] = 1 
+            # + analysis_result.std_dev_bucket[label]
             # self.loss_weights[label] = len(self.DEM_list) / (label_amount)
             pass
         self.loss_weights = None
@@ -256,6 +277,7 @@ class TerrainDataset(Dataset):
         metadata            = {"filename": filename}
         geo_cache.metadata  = metadata
 
+        # DEMs ================================================================
         dem_tensor, dem_shape, dem_dataset  = self.__load_dem(filename)  
         geo_cache.dem_tensor                = dem_tensor
 
@@ -268,6 +290,7 @@ class TerrainDataset(Dataset):
         else:
             return
         
+        # Channels ============================================================
         if self.channel_cache:
             channels            = []
             resize_to_dem_shape = transforms.Resize(dem_shape)
@@ -283,6 +306,7 @@ class TerrainDataset(Dataset):
             channels = torch.cat(channels, dim=0)
             geo_cache.channel_tensor = channels
 
+        # Labels ==============================================================
         if self.label_cache:
             for cache in self.label_cache:
                 label, label_data_frame = self.__load_label(cache, 
@@ -293,6 +317,7 @@ class TerrainDataset(Dataset):
                 geo_cache.label_tensor  = label
                 geo_cache.label_frame   = label_data_frame
 
+    
     def __load_dem(self, filename):
         dem_dataset = DataAccessor.open_DEM(filename, self.source_dataset) 
         
@@ -404,4 +429,37 @@ class GeoDatasetCache():
         self.uncached_labels        = []
 
 
+class RandomCropWithFrame():
+    def __init__(self, size):
+        self.cropped_size = size
 
+    def __call__(self, image_tensor, label_frame = None):
+        _, height, width = image_tensor.shape
+
+        top     = np.random.randint(0, height - self.cropped_size)
+        left    = np.random.randint(0, width  - self.cropped_size)
+
+        cropped_img = tf.crop(image_tensor, 
+                              top, 
+                              left, 
+                              self.cropped_size, 
+                              self.cropped_size)
+        
+        if label_frame is None:
+            return cropped_img, None
+
+        cropped_frame = np.array([left, 
+                                  top, 
+                                  left + self.cropped_size, 
+                                  top  + self.cropped_size])
+       
+        label_shape     = label_frame.shape 
+        scaling_factor  = label_shape[0] / height
+        cropped_frame   = (cropped_frame * scaling_factor).astype(np.int16)
+
+        label_frame = label_frame[cropped_frame[1]:min(cropped_frame[3], 
+                                                       label_shape[0]), 
+                                  cropped_frame[0]:min(cropped_frame[2],
+                                                       label_shape[1])]
+        
+        return cropped_img, label_frame
