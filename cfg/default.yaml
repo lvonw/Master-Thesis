@@ -15,7 +15,7 @@ Main:
 # TRAINING
 # =============================================================================
 Training:  
-  epochs:           1000
+  epochs:           200
   batch_size:       128
   learning_rate:    4.5e-6
   logging_steps:    10

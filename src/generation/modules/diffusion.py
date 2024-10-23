@@ -58,19 +58,7 @@ class Diffusion(nn.Module):
         x = timesteps.clone().detach().to(dtype=torch.float32).unsqueeze(-1)
         x = x * freqs[None]
         return torch.cat([torch.cos(x), torch.sin(x)], dim=-1)
-    
 
-class LabelEmbedding(nn.Module):
-    def __init__(self, amount_classes, embedding_dim):
-        super().__init__()
-
-        self.embedding = nn.Embedding(amount_classes, embedding_dim)
-    
-    def forward(self, x):
-        x = self.embedding(x)
-
-        return x
-    
     
 class TimeEmbedding(nn.Module):
     def __init__(self, num_embedding):
@@ -88,3 +76,41 @@ class TimeEmbedding(nn.Module):
 
         return x
 
+class LabelCombinationType(Enum):
+    CONCAT      = "Concat"
+    ADD         = "Add"
+    MULTIPLY    = "Multiply"
+
+class LabelEmbedding(nn.Module):
+    """
+    Expecting the labels to be in shape (batch, classes)
+    """
+    def __init__(self, 
+                 amounts_classes, 
+                 embedding_dim, 
+                 combination_type = LabelCombinationType.ADD):
+        super().__init__()
+
+        self.embeddings         = nn.ModuleList()
+        self.combination_type   = combination_type
+
+        for amount in amounts_classes:
+            self.embeddings.append(nn.Embedding(amount, embedding_dim))
+
+    
+    def forward(self, x):
+        embeddings = []
+        for idx, embedding in enumerate(self.embeddings):
+            embeddings.append(embedding(x[:, idx]))
+
+        match self.combination_type:
+            case LabelCombinationType.CONCAT:
+                # x = torch.cat(embeddings, dim=-1)
+                pass
+            case LabelCombinationType.ADD:
+                x = torch.stack(embeddings).sum(dim=0)
+            case LabelCombinationType.MULTIPLY:
+                x = torch.stack(embeddings).prod(dim=0)
+
+        return x
+    

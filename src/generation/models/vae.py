@@ -285,9 +285,7 @@ class VariationalAutoEncoder(nn.Module):
     
         # Discriminator Loss --------------------------------------------------
         discriminator_loss = 0.
-        if (self.use_discriminator 
-            and self.discriminator_weight > 0.
-            and epoch_idx >= self.discriminator_warmup):
+        if self.use_discriminator and epoch_idx >= self.discriminator_warmup:
 
             # Use discriminator as metric
             logits = self.discriminator(reconstructions.contiguous())
@@ -313,9 +311,17 @@ class VariationalAutoEncoder(nn.Module):
                       / (torch.norm(discriminator_gradients) + 1e-4))
             
             weight = torch.clamp(weight, 0.0, 1e4).detach()
+            print (weight)
+            print (discriminator_loss)
+
             discriminator_loss *= weight * self.discriminator_weight
 
+    
+
             self.loss_log.add_entry("Discrimination", discriminator_loss)
+
+        # TODO remove
+        discriminator_loss = 0.
             
         # Combine the losses --------------------------------------------------
         loss  = (reconstruction_loss 

@@ -855,8 +855,8 @@ VAE_EMA_test_new_attention:
     warm_up_steps: 2000
 
   Loss:
-    use_discriminator:      false # true
-    discriminator_warm_up:  50
+    use_discriminator:      true
+    discriminator_warm_up:  200
     discriminator_weight:   0.5
         
     use_perceptual_loss:    true
