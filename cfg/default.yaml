@@ -31,7 +31,7 @@ Training:
 # =============================================================================
 Model:
   external: cfg/vae/vae.yaml
-  selection: VAE_EMA_test
+  selection: VAE_EMA_test_new_attention
   # external: cfg/diffusion/ddpm.yaml
   # selection: ld_finer_classes
   only_load_selection: true
@@ -75,7 +75,7 @@ Data:
     size:           64
     interpolation:  bilinear 
   RandomRotation:
-    active:         false 
+    active:         true 
   RandomCrop:
     active:         true
     size:           32 

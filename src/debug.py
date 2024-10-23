@@ -79,6 +79,26 @@ class Printer():
     def print_headline(self, message):
         self.print(f"{constants.STYLE_BOLD}{message}{constants.STYLE_RESET}")
 
+class LossLog():
+    def __init__(self):
+        self.loss_log = {}
+        self.longest_category = 0
 
+    def add_entry(self, category, value):
+        if category not in self.loss_log:
+            self.loss_log[category] = []
+            if len(category) > self.longest_category:
+                self.longest_category = len(category)
 
+        self.loss_log[category].append(value.item())
+
+    def __str__(self, index=-1):
+        string = ""
+        for category, values in self.loss_log.items():
+            string += category + ":"
+            string += " " * (1 + self.longest_category - len(category))
+            string += str(values[index]) 
+            string += "\n"
+        
+        return string
 

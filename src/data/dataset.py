@@ -63,25 +63,19 @@ class DatasetFactory():
             
         # This probably needs to be the very first operation
         if data_configuration["Resize"]["active"]:
-            printer.print_log("Activating Resize transform")
-            
+            printer.print_log("Activating Resize transform")  
             transform_list.append(transforms.Resize(
                 size=data_configuration["Resize"]["size"]))
 
         if data_configuration["RandomRotation"]["active"]:
             printer.print_log("Activating RandomRotation transform")
-            transform_list.append(transforms.RandomRotation())
-
-
+            transform_list.append(Random90DegreeRotation())
+            
         if data_configuration["RandomCrop"]["active"]:
             printer.print_log("Activating RandomCrop transform")
-            # transform_list.append(transforms.RandomCrop(
-            #    size=data_configuration["RandomCrop"]["size"]))
-            
             random_crop = RandomCropWithFrame(
-                size=data_configuration["RandomCrop"]["size"])    
-
-
+                size=data_configuration["RandomCrop"]["size"])   
+             
         if data_configuration["RandomHorizontalFlip"]["active"]:
             printer.print_log("Activating RandomHorizontalFlip transform")
             transform_list.append(transforms.RandomHorizontalFlip(
@@ -209,18 +203,18 @@ class TerrainDataset(Dataset):
         else:
             label_frame = cache.label_frame
 
+        # Transforms ==========================================================
         if self.random_crop is not None:
-                data_entry, label_frame = self.random_crop(data_entry, 
-                                                           label_frame)
-
-        if label_frame is not None and label_frame.size > 0:
-            label = torch.tensor(np.median(label_frame), dtype=torch.int32)
+            data_entry, label_frame = self.random_crop(data_entry, 
+                                                        label_frame)
+        if self.transform:
+            data_entry  = self.transform(data_entry)
+            
+        if label_frame is not None and label_frame.numel() > 0:
+            label_frame = self.transform(label_frame)
+            label = torch.median(label_frame)
         else:
             label = cache.label_tensor
-
-        # Remaining Transforms ================================================
-        if self.transform:
-            data_entry = self.transform(data_entry)
 
         return data_entry, label, metadata
     
@@ -369,11 +363,12 @@ class TerrainDataset(Dataset):
         return data_tensor
 
     def __load_label(self, cache, top_left_geo, bot_right_geo):
-        data_frame = GeoUtil.get_geo_frame_array(cache[1], 
-                                                 cache[0],
-                                                 top_left_geo,
-                                                 bot_right_geo)
-        label = torch.tensor(np.median(data_frame), dtype=torch.int32)
+        data_frame  = GeoUtil.get_geo_frame_array(cache[1], 
+                                                  cache[0],
+                                                  top_left_geo,
+                                                  bot_right_geo)
+        label       = torch.tensor(np.median(data_frame), dtype=torch.int32)
+        data_frame  = torch.tensor(data_frame, dtype=torch.int32)
 
         return label, data_frame
 
@@ -447,19 +442,26 @@ class RandomCropWithFrame():
         
         if label_frame is None:
             return cropped_img, None
-
-        cropped_frame = np.array([left, 
-                                  top, 
-                                  left + self.cropped_size, 
-                                  top  + self.cropped_size])
-       
+        
         label_shape     = label_frame.shape 
         scaling_factor  = label_shape[0] / height
-        cropped_frame   = (cropped_frame * scaling_factor).astype(np.int16)
+        
+        top     *= scaling_factor
+        left    *= scaling_factor
+        size    = self.cropped_size * scaling_factor
+        height  = min(size, label_shape[0])
+        width   = min(size, label_shape[1])
 
-        label_frame = label_frame[cropped_frame[1]:min(cropped_frame[3], 
-                                                       label_shape[0]), 
-                                  cropped_frame[0]:min(cropped_frame[2],
-                                                       label_shape[1])]
+        label_frame = tf.crop(label_frame,
+                              int(top),
+                              int(left),
+                              int(height),
+                              int(width))
         
         return cropped_img, label_frame
+
+class Random90DegreeRotation():
+    def __call__(self, image_tensor):
+        angle = 90 * np.random.randint(0, 4)
+
+        return tf.rotate(image_tensor, angle)

@@ -4,12 +4,13 @@ import torch.nn.functional      as f
 import torch.optim              as optim
 
 from configuration                      import Section
-from debug                              import Printer, LogLevel
+from debug                              import Printer, LogLevel, LossLog
 from enum                               import Enum
 from generation.models.discriminator    import Discriminator
 from generation.modules.ema             import EMA
 from generation.modules.encoder         import Encoder, Decoder
 from torchmetrics.image.lpip            import LearnedPerceptualImagePatchSimilarity
+from lpips                              import LPIPS
 
 class LossMethod(Enum):
     BINARY_CROSS_ENTROPY    = "binary cross entropy"
@@ -93,9 +94,11 @@ class AutoEncoderFactory():
         perceptual_loss         = None
         if use_perceptual_loss:
             printer.print_log("Using Perceptual Loss")
-            perceptual_loss = LearnedPerceptualImagePatchSimilarity(
-                net_type    = loss["perceptual_net"], 
-                reduction   = "sum").eval()
+            # perceptual_loss = LearnedPerceptualImagePatchSimilarity(
+            #     net_type    = loss["perceptual_net"], 
+            #     reduction   = "sum").eval()
+            
+            perceptual_loss = LPIPS().eval()
             
         # EMA =================================================================
         # SDXL mentions that they use EMA
@@ -150,6 +153,7 @@ class VariationalAutoEncoder(nn.Module):
 
         self.model_family   = "vae"
         self.name           = name
+        self.loss_log       = LossLog()
         
         self.encoder        = encoder
         self.decoder        = decoder
@@ -174,6 +178,7 @@ class VariationalAutoEncoder(nn.Module):
         self.decoder_ema_model      = decoder_ema_model
 
         self.optimizers             = self.__get_optimizers()
+
         
 
     # =========================================================================
@@ -205,6 +210,7 @@ class VariationalAutoEncoder(nn.Module):
             
             loss = self.hinge_loss(input_logits, reconstruction_logits)
             
+            self.loss_log.add_entry("Discriminator", loss)
             return loss, None
 
         # VAE Training ========================================================
@@ -243,6 +249,8 @@ class VariationalAutoEncoder(nn.Module):
             perceptual_loss = self.perceptual_loss(lpips_inputs, 
                                                    lpips_reconstructions)
             
+            perceptual_loss = perceptual_loss.squeeze()
+            
             individual_reconstruction_loss += (self.perceptual_weight 
                                                * perceptual_loss)
         
@@ -258,8 +266,10 @@ class VariationalAutoEncoder(nn.Module):
                                                                     .item()]
 
         # Average losses
-        reconstruction_loss = (sum(individual_reconstruction_loss) 
-                               / len(individual_reconstruction_loss)) 
+        reconstruction_loss = torch.mean(individual_reconstruction_loss)
+        
+        self.loss_log.add_entry("Reconstruction", reconstruction_loss)
+
 
         # KL-Divergence between Posterior and Gaussian ------------------------
         mean            = latent_encoding.mean     
@@ -268,8 +278,10 @@ class VariationalAutoEncoder(nn.Module):
         
         individual_kl_divergence    = torch.sum(kl_divergence, dim=(1, 2, 3))
         
-        kl_divergence               = (torch.sum(individual_kl_divergence) 
-                                       / len(individual_kl_divergence))
+        kl_divergence = torch.mean(individual_kl_divergence)
+        kl_divergence *= self.beta
+        
+        self.loss_log.add_entry("KL-Divergence", kl_divergence)
     
         # Discriminator Loss --------------------------------------------------
         discriminator_loss = 0.
@@ -303,11 +315,14 @@ class VariationalAutoEncoder(nn.Module):
             weight = torch.clamp(weight, 0.0, 1e4).detach()
             discriminator_loss *= weight * self.discriminator_weight
 
-
+            self.loss_log.add_entry("Discrimination", discriminator_loss)
+            
         # Combine the losses --------------------------------------------------
         loss  = (reconstruction_loss 
-                 + self.beta * kl_divergence
-                 + discriminator_loss)     
+                 + kl_divergence
+                 + discriminator_loss)    
+
+        self.loss_log.add_entry("Total", loss)
 
         return loss, None
     

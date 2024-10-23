@@ -186,7 +186,7 @@ class Decoder(nn.Module):
         z = self.output_conv(z)
 
         # Need this for lpips
-        z = f.tanh(z)
+        # z = f.tanh(z)
 
         return z
 

@@ -112,6 +112,7 @@ def train(model,
                                             desc    = "Training Steps",
                                             disable = False,
                                             colour  = "red"):
+            inputs, labels, _ = __prepare_data(data)
             
             for optimizer_idx, optimizer in enumerate(model.optimizers):
                 # Smoother loss for monitoring, averaged over the epoch
@@ -119,8 +120,7 @@ def train(model,
                 
                 # Main training loop ==========================================
                 optimizer.zero_grad()
-                inputs, labels, _ = __prepare_data(data)
-
+                
                 loss, _ = model.training_step(inputs, 
                                               labels, 
                                               loss_weights,
@@ -140,11 +140,10 @@ def train(model,
                 running_loss                    += loss.item()
                 running_losses[optimizer_idx]   = running_loss 
 
-                if ((training_step_idx + 1) % logging_steps) == 0:
-                    monitoring_loss = running_loss / (training_step_idx + 1)
-                    print_to_log_file(
-                        f"{optimizer_idx}: {monitoring_loss}", 
-                        constants.TRAINING_LOSS_LOG)
+            if ((training_step_idx + 1) % logging_steps) == 0:
+                print_to_log_file(
+                    model.loss_log, 
+                    constants.TRAINING_LOSS_LOG)
                     
             # Post training step behaviour ====================================
             model.on_training_step_completed()

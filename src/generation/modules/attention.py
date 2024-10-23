@@ -9,51 +9,28 @@ from generation.modules.util_modules    import Normalize, NonLinearity
 class _Attention(nn.Module):
     def __init__(self, 
                  query_dimension, 
-                 num_heads=1, 
-                 cross_attention = False,
-                 context_dimension=-1,
-                 in_projection_bias=True, 
-                 out_projection_bias=True):
+                 num_heads              = 1, 
+                 cross_attention        = False,
+                 context_dimension      = -1,
+                 in_projection_bias     = True, 
+                 out_projection_bias    = True):
         super().__init__()
 
-        self.num_heads      = num_heads
-        self.head_dimension = query_dimension // num_heads
-
-        if not cross_attention:
-            context_dimension = query_dimension
-
-        self.query_matrix   = nn.Linear(query_dimension,    
-                                        query_dimension, 
-                                        bias=in_projection_bias)
-        self.key_matrix     = nn.Linear(context_dimension,  
-                                        query_dimension, 
-                                        bias=in_projection_bias)
-        self.value_matrix   = nn.Linear(context_dimension,  
-                                        query_dimension, 
-                                        bias=in_projection_bias)
         self.out_projection = nn.Linear(query_dimension,    
                                         query_dimension, 
                                         bias=out_projection_bias)
+        
+        self.attention = nn.MultiheadAttention(embed_dim= query_dimension, 
+                                               num_heads= num_heads, 
+                                               bias     = in_projection_bias,
+                                               batch_first=True)
 
     def compute_attention(self, query, context):
-        batch_size, num_channels, dimension = query.shape
-        
-        # possibly -1 for num_channels
-        interim_shape = (batch_size, 
-                           num_channels, 
-                           self.num_heads, 
-                           self.head_dimension)
+        query   = query
+        key     = context
+        value   = context
 
-        query   = self.query_matrix(query).view(interim_shape).transpose(1, 2)
-        key     = self.key_matrix(context).view(interim_shape).transpose(1, 2)
-        value   = self.value_matrix(context).view(interim_shape).transpose(1, 2)
-
-        weight  = query @ key.transpose(-1, -2) 
-        weight  = weight / math.sqrt(self.head_dimension)
-        weight  = f.softmax(weight, dim=-1)
-
-        output  = (weight @ value)
-        output  = output.transpose(1,2).contiguous().view(query.shape)
+        output  = self.attention(query, key, value)
         output  = self.out_projection(query)
 
         return output

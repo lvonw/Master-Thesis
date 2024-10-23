@@ -8,7 +8,7 @@ import torch.nn                     as nn
 import torch.nn.functional          as f
 import torch.optim                  as optim
 
-from debug                          import Printer, LogLevel
+from debug                          import Printer, LogLevel, LossLog
 from generation.models.vae          import AutoEncoderFactory
 from generation.modules.diffusion   import Diffusion
 from generation.modules.ema         import EMA
@@ -34,6 +34,7 @@ class DDPM(nn.Module):
         super().__init__()
         self.model_family   = "diffusion"
         self.name           = configuration["name"]
+        self.loss_log       = LossLog()
         self.device         = util.get_device()
         self.generator      = generator
         self.amount_classes = amount_classes
@@ -193,6 +194,8 @@ class DDPM(nn.Module):
         predicted_noise = self.model(noised_images, labels, timesteps)
 
         loss = f.mse_loss(noise, predicted_noise)
+
+        self.loss_log.add_entry("MSE", loss)
 
         return loss, None
     
