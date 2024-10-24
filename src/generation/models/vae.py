@@ -4,6 +4,7 @@ import torch.nn.functional      as f
 import torch.optim              as optim
 
 from configuration                      import Section
+from data.data_util                     import DataVisualizer
 from debug                              import Printer, LogLevel, LossLog
 from enum                               import Enum
 from generation.models.discriminator    import Discriminator
@@ -43,6 +44,8 @@ class AutoEncoderFactory():
         starting_channels   = architecture["starting_channels"]
 
         loss_method         = LossMethod.ABSOLUTE_DIFFERENCE
+        log_image_interval  = vae_configuration["log_image_interval"]
+
         
         channel_multipliers_encoder = architecture["channel_multipliers"]
         channel_multipliers_decoder = channel_multipliers_encoder[::-1]
@@ -85,7 +88,8 @@ class AutoEncoderFactory():
         discriminator           = None
         if use_discriminator:   
             printer.print_log("Using Discriminator")
-            discriminator = Discriminator(starting_channels=data_shape[0])
+            discriminator = Discriminator(starting_channels=data_shape[0],
+                                          amount_layers=2)
 
         # Perceptual Metric ===================================================
         use_perceptual_loss     = (loss["use_perceptual_loss"]
@@ -127,7 +131,8 @@ class AutoEncoderFactory():
             perceptual_weight       = perceptual_weight,
             use_ema                 = use_ema,
             encoder_ema_model       = encoder_ema_model,
-            decoder_ema_model       = decoder_ema_model)
+            decoder_ema_model       = decoder_ema_model,
+            log_image_interval      = log_image_interval)
 
 class VariationalAutoEncoder(nn.Module):
     def __init__(self, 
@@ -148,7 +153,8 @@ class VariationalAutoEncoder(nn.Module):
                  perceptual_weight,
                  use_ema,
                  encoder_ema_model,
-                 decoder_ema_model):
+                 decoder_ema_model,
+                 log_image_interval):
         super().__init__()
 
         self.model_family   = "vae"
@@ -179,7 +185,10 @@ class VariationalAutoEncoder(nn.Module):
 
         self.optimizers             = self.__get_optimizers()
 
-        
+        self.lp                     = LaplaceFilter()
+
+        self.log_image_interval     = log_image_interval
+        self.data_visualiser        = DataVisualizer()        
 
     # =========================================================================
     # Training
@@ -189,19 +198,20 @@ class VariationalAutoEncoder(nn.Module):
                       labels, 
                       loss_weights,
                       epoch_idx,
-                      training_step_idx, 
+                      total_training_step_idx, 
+                      relative_training_step_idx,
                       optimizer_idx):
         """ Inspired by Stable Diffusion autoencoder_kl and Taming LPIPS"""
-        
-        reconstructions, latent_encoding    = self(inputs)
-        train_discriminator                 = optimizer_idx == 1
+        train_discriminator = optimizer_idx == 1
 
         # Discriminator Training ==============================================
         if self.use_discriminator and train_discriminator:
-            if epoch_idx < self.discriminator_warmup:
+            if total_training_step_idx < self.discriminator_warmup:
                 # Zero loss
                 return torch.tensor(0.0), None
             
+            reconstructions, latent_encoding    = self(inputs)
+
             input_logits            = self.discriminator(
                 inputs.contiguous().detach())
             
@@ -214,6 +224,13 @@ class VariationalAutoEncoder(nn.Module):
             return loss, None
 
         # VAE Training ========================================================
+        reconstructions, latent_encoding    = self(inputs)
+
+        if total_training_step_idx % self.log_image_interval == 0:
+            self.__log_images(inputs.contiguous().detach(), 
+                              reconstructions.contiguous().detach(), 
+                              total_training_step_idx)
+        
         # Reconstruction Loss -------------------------------------------------
         match self.loss_method:
             case LossMethod.BINARY_CROSS_ENTROPY: 
@@ -285,7 +302,7 @@ class VariationalAutoEncoder(nn.Module):
     
         # Discriminator Loss --------------------------------------------------
         discriminator_loss = 0.
-        if self.use_discriminator and epoch_idx >= self.discriminator_warmup:
+        if self.use_discriminator and total_training_step_idx >= self.discriminator_warmup:
 
             # Use discriminator as metric
             logits = self.discriminator(reconstructions.contiguous())
@@ -304,24 +321,15 @@ class VariationalAutoEncoder(nn.Module):
                 self.decoder.output_conv.weight, 
                 retain_graph=True)[0]
 
-            # Larger weight when the gradient for the reconstruction is larger
-            # than for the descrimination loss 
-            # -> we likely have a good discriminator
             weight = (torch.norm(reconstruction_gradients) 
                       / (torch.norm(discriminator_gradients) + 1e-4))
             
             weight = torch.clamp(weight, 0.0, 1e4).detach()
-            print (weight)
-            print (discriminator_loss)
-
+            
             discriminator_loss *= weight * self.discriminator_weight
 
-    
-
+            self.loss_log.add_entry("Discriminator Weight", weight)
             self.loss_log.add_entry("Discrimination", discriminator_loss)
-
-        # TODO remove
-        discriminator_loss = 0.
             
         # Combine the losses --------------------------------------------------
         loss  = (reconstruction_loss 
@@ -356,6 +364,25 @@ class VariationalAutoEncoder(nn.Module):
         discriminator_optimizer = optim.Adam(self.discriminator.parameters(), 
                                              lr=4.5e-6)
         return [vae_optimizer, discriminator_optimizer]
+
+    def __log_images(self, 
+                     inputs, 
+                     reconstructions,
+                     training_step_idx,  
+                     amount_figures = 4):
+        for figure in range(amount_figures):
+            original_image = inputs[figure]
+            reconstruction = reconstructions[figure]
+
+            self.data_visualiser.create_image_tensor_tuple(
+                [original_image, reconstruction])
+
+        filename = f"step_{training_step_idx}"
+        self.data_visualiser.show_ensemble(save = True, 
+                                            save_only = True, 
+                                            clear_afterwards = True,
+                                            save_dir=self.name,
+                                            filename=filename)
 
 
     # =========================================================================
@@ -415,3 +442,15 @@ class LatentEncoding():
         self.latents        = latents
         self.mean           = mean
         self.log_variance   = log_variance
+
+import torch.nn.functional                  as f
+import util
+class LaplaceFilter():
+    def __init__(self):
+        self.kernel = torch.tensor([[0,  1, 0], 
+                                    [1, -4, 1], 
+                                    [0,  1, 0]],   
+                                    dtype=torch.float32).view(1, 1, 3, 3).to(util.get_device())
+
+    def __call__(self, x):
+        return f.conv2d(x, self.kernel, padding=0)

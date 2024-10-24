@@ -856,7 +856,7 @@ VAE_EMA_test_new_attention:
 
   Loss:
     use_discriminator:      true
-    discriminator_warm_up:  200
+    discriminator_warm_up:  20
     discriminator_weight:   0.5
         
     use_perceptual_loss:    true
@@ -882,6 +882,100 @@ VAE_EMA_test_new_attention:
   Training:
     learning_rate: 0.0001
 
+VAE_EMA_test_Laplace:
+  name: VAE_EMA_test_Laplace
+  description: Trying to get a good vae to work off of here
+
+  log_image_interval: 1000
+  
+  data_num_channels: 1
+  data_resolution_x: 32
+  data_resolution_y: 32
+
+  latent_num_channels: 4
+  latent_resolution_x: 8
+  latent_resolution_y: 8
+
+  EMA:
+    active: true
+    weight: 0.995
+    warm_up_steps: 2000
+
+  Loss:
+    use_discriminator:      true
+    discriminator_warm_up:  20
+    discriminator_weight:   0.5
+        
+    use_perceptual_loss:    true
+    perceptual_weight:      1.0
+    perceptual_net:         alex
+
+    kl_beta: 0.000001
+
+    use_class_weights: false
+
+  Architecture:
+    ResNet_blocks_per_layer: 2
+    starting_channels: 64
+    dropout: 0.0
+    non_linearity: SiLU
+    channel_multipliers:
+    - 1
+    - 2
+    
+    use_attention: true
+    attention_resolutions: []
+
+  Training:
+    learning_rate: 0.0001
+
+
+VAE_test_just_like_sd:
+  name: VAE_test_just_like_sd
+  description: Trying to get a good vae to work off of here
+
+  log_image_interval: 1000
+  
+  data_num_channels: 1
+  data_resolution_x: 32
+  data_resolution_y: 32
+
+  latent_num_channels: 8
+  latent_resolution_x: 8
+  latent_resolution_y: 8
+
+  EMA:
+    active: true
+    weight: 0.995
+    warm_up_steps: 2000
+
+  Loss:
+    use_discriminator:      true
+    discriminator_warm_up:  50000
+    discriminator_weight:   0.5
+        
+    use_perceptual_loss:    true
+    perceptual_weight:      1.0
+    perceptual_net:         alex
+
+    kl_beta: 0.000001
+
+    use_class_weights: false
+
+  Architecture:
+    ResNet_blocks_per_layer: 2
+    starting_channels: 64
+    dropout: 0.0
+    non_linearity: SiLU
+    channel_multipliers:
+    - 1
+    - 2
+    
+    use_attention: true
+    attention_resolutions: []
+
+  Training:
+    learning_rate: 0.0001
 
 
 

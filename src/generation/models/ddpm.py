@@ -173,7 +173,8 @@ class DDPM(nn.Module):
                       labels, 
                       loss_weights,
                       epoch_idx,
-                      training_step_idx,
+                      total_training_step_idx, 
+                      relative_training_step_idx,
                       optimizer_idx):
         
         if self.is_latent:

@@ -10,6 +10,7 @@ PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG_PATH            = os.path.join(PROJECT_PATH, "log")
 TRAINING_LOSS_LOG   = "training_loss.txt"
 VALIDATION_LOSS_LOG = "validation_loss.txt"
+IMAGE_LOG           = os.path.join(LOG_PATH, "images")
 
 # Config Paths
 CONFIG_PATH         = os.path.join(PROJECT_PATH, "cfg")
@@ -45,6 +46,7 @@ DEFAULT_DEM_LIST    = "SRTM_GL1_list.txt"
 MODEL_PATH_MASTER   = os.path.join(PROJECT_PATH, "models")
 MODEL_FILE_TYPE     = ".pth"
 MODEL_PATH_TEST     = os.path.join(MODEL_PATH_MASTER, "test.pth")
+
 
 
 # =============================================================================

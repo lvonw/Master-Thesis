@@ -1,4 +1,5 @@
 import constants
+import os
 
 import torch
 import matplotlib.pyplot    as plt
@@ -321,7 +322,9 @@ class DataVisualizer():
     def show_ensemble(self, 
                       save=False, 
                       save_only=False,
-                      clear_afterwards=True):
+                      clear_afterwards=True,
+                      save_dir = "default",
+                      filename = ""):
         
         amount_rows     = len(self.plot_tuples)
         amount_columns  = max(len(plots) for plots in self.plot_tuples)
@@ -376,8 +379,10 @@ class DataVisualizer():
         if not save_only:
             plt.show()
         if save or save_only:
-            save_path = "todo"
-            plt.savefig(save_path)
+            save_path = os.path.join(constants.IMAGE_LOG, save_dir)
+            os.makedirs(save_path, exist_ok=True)
+            save_file = os.path.join(save_path, filename + ".png")
+            plt.savefig(save_file)
         if clear_afterwards:
             self.plot_tuples.clear()
 

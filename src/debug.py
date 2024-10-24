@@ -2,6 +2,8 @@ import constants
 import sys
 import os
 
+import numpy    as np
+
 from datetime   import datetime
 from enum       import Enum
 
@@ -92,12 +94,14 @@ class LossLog():
 
         self.loss_log[category].append(value.item())
 
-    def __str__(self, index=-1):
+    def __str__(self, index=-1, average_over=200):
         string = ""
         for category, values in self.loss_log.items():
+            latest_losses = values[-average_over:]
+
             string += category + ":"
             string += " " * (1 + self.longest_category - len(category))
-            string += str(values[index]) 
+            string += str(np.mean(latest_losses)) 
             string += "\n"
         
         return string

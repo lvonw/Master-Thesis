@@ -66,6 +66,8 @@ def train(model,
             complete_dataset,
             configuration["Data_Split"])
 
+
+
     training_dataloader = DataLoader(training_dataset, 
                                      batch_size=batch_size, 
                                      shuffle=True,
@@ -88,10 +90,13 @@ def train(model,
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
     printer.print_log(f"GPU Amount: {torch.cuda.device_count()}")
+
+    
     
     # Training ================================================================
     print_to_log_file(f"\nModel: {model.name}", constants.TRAINING_LOSS_LOG)
     
+    total_training_step_idx = 0
     for epoch_idx in tqdm(range(starting_epoch, num_epochs),
                           total     = num_epochs,
                           initial   = starting_epoch,
@@ -113,7 +118,10 @@ def train(model,
                                             disable = False,
                                             colour  = "red"):
             inputs, labels, _ = __prepare_data(data)
-            
+            total_training_step_idx = (len(training_dataloader) * epoch_idx 
+                                       + training_step_idx)
+
+
             for optimizer_idx, optimizer in enumerate(model.optimizers):
                 # Smoother loss for monitoring, averaged over the epoch
                 running_loss = running_losses[optimizer_idx]
@@ -125,6 +133,7 @@ def train(model,
                                               labels, 
                                               loss_weights,
                                               epoch_idx,
+                                              total_training_step_idx,
                                               training_step_idx,
                                               optimizer_idx)
                 # Ignore irrelevant losses
@@ -164,8 +173,10 @@ def train(model,
     print_to_log_file("\n", constants.TRAINING_LOSS_LOG)
     
     # Post training evaluations =============================================== 
+    lp = LaplaceFilter()
+
     model.eval()
-    model.on_loaded_as_pretrained()
+    #model.on_loaded_as_pretrained()
     with torch.no_grad():
         for training_step_idx, data in tqdm(enumerate(training_dataloader, 0)):
             inputs, _, metadata = __prepare_data(data)
@@ -179,12 +190,47 @@ def train(model,
                 data_visualizer.create_image_tensor_tuple(
                     [original_image, reconstruction], 
                     title=metadata["filename"][image_idx])
+                
+                data_visualizer.create_image_tensor_tuple(
+                    [lp(original_image), lp(reconstruction)], 
+                    title=metadata["filename"][image_idx])
 
                 inputs  = inputs.to(util.get_device())
                 data_visualizer.show_ensemble()
 
 
             break    
+
+import torch.nn.functional                  as f
+class LaplaceFilter():
+    def __init__(self):
+        self.kernel = torch.tensor([[0,  1, 0], 
+                                    [1, -4, 1], 
+                                    [0,  1, 0]],   
+                                    dtype=torch.float32).view(1, 1, 3, 3).to(util.get_device())
+
+    def __call__(self, x):
+        return f.conv2d(x, self.kernel, padding=0)
+    
+
+class SobelFilter():
+    def __init__(self):
+        self.sobel_x_kernel = torch.tensor([[-1, 0, 1], 
+                               [-2, 0, 2], 
+                               [-1, 0, 1]], dtype=torch.float32)
+
+        self.sobel_y_kernel = torch.tensor([[-1, -2, -1], 
+                                    [ 0,  0,  0], 
+                                    [ 1,  2,  1]], dtype=torch.float32)
+
+        self.sobel_x_kernel = self.sobel_x_kernel.view(1, 1, 3, 3).to(util.get_device())
+        self.sobel_y_kernel = self.sobel_y_kernel.view(1, 1, 3, 3).to(util.get_device())
+        
+        #self.sobel_x_kernel /= 6
+        #self.sobel_y_kernel /= 6
+    def __call__(self, x):
+        return f.conv2d(f.conv2d(x, self.sobel_x_kernel, padding=0), 
+                        self.sobel_y_kernel, padding=0)
 
 def __validate(model, dataloader, configuration, batch_size):    
     model.eval()

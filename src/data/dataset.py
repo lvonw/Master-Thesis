@@ -414,7 +414,6 @@ class GeoDatasetCache():
         self.uncached_channels      = []        
         self.uncached_labels        = []
 
-
 class RandomCropWithFrame():
     def __init__(self, size):
         self.cropped_size = size
@@ -511,3 +510,5 @@ class CompositeMultiTensorTransform():
                                                   fast=fast)
 
         return image_tensor, label_frame
+    
+    
