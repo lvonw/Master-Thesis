@@ -35,6 +35,7 @@ class DDPM(nn.Module):
         self.model_family   = "diffusion"
         self.name           = configuration["name"]
         self.loss_log       = LossLog()
+        
         self.device         = util.get_device()
         self.generator      = generator
         self.amount_classes = amount_classes
@@ -54,6 +55,9 @@ class DDPM(nn.Module):
             self.latent_model   = AutoEncoderFactory.create_auto_encoder(
                 configuration["Latent"]["model"],
                 configuration["Latent"]["pre_trained"])
+            
+            # Latent diffusion paper
+            self.inverse_latent_std = 0.3576
             
             if (configuration["Latent"]["pre_trained"] 
                 and not util.load_checkpoint(self.latent_model, strict=False)):
@@ -108,63 +112,6 @@ class DDPM(nn.Module):
         state_dict.pop("latent_model")
         return state_dict
 
-
-    # =========================================================================
-    # Sampling
-    # =========================================================================
-    def generate(self, label=None):
-        if label is not None:
-            label = torch.tensor([label], device=self.device)
-        
-        return self.sample(1, label)
-
-    # TODO prediction Type and other enums as config param
-    @torch.no_grad()
-    def sample(self, 
-               amount_samples, 
-               control_signals, 
-               prediction_type= PredictionType.EPSILON_SIMPLE):
-        """ Algorithm 2 DDPM """
-
-        if self.use_ema:
-            self.ema_model.apply_to_model(self.model) 
-
-        x = torch.randn((amount_samples,) + self.input_shape, 
-                        device=self.device)
-
-        for _, timestep in tqdm(enumerate(self.sample_steps),
-                             total = self.amount_sample_steps,
-                             desc = "Generating Image"):
-            
-            
-            timesteps = torch.tensor([timestep] * amount_samples, 
-                                    device=self.device)
-            
-            model_output = self.model(x, control_signals, timesteps)
-            
-            if (self.use_classifier_free_guidance and control_signals != None):  
-                unconditional_model_output = self.model(x, None, timesteps)
-                model_output = torch.lerp(unconditional_model_output, 
-                                          model_output,
-                                          self.cfg_weight)
-
-            match prediction_type:
-                # As proposed by algorithm 2
-                case PredictionType.EPSILON_SIMPLE:
-                    x = self.__predict_epsilon_simple(timesteps, 
-                                                      x, 
-                                                      model_output)
-                case PredictionType.MEAN_VARIANCE:
-                    x = self.__predict_mean_variance(timesteps, 
-                                                     x, 
-                                                     model_output)
-
-        if self.is_latent:
-            self.latent_model.eval()
-            x = self.latent_model.decode(x)
-
-        return x
-    
     # =========================================================================
     # Training
     # =========================================================================
@@ -177,24 +124,27 @@ class DDPM(nn.Module):
                       relative_training_step_idx,
                       optimizer_idx):
         
+        # Latent Encoding =====================================================
         if self.is_latent:
             self.latent_model.eval()
             with torch.no_grad():
                 inputs = self.latent_model.encode(inputs).latents
+                inputs *= self.inverse_latent_std
 
-        inputs_shape    = inputs.shape
-        timesteps       = self.__sample_from_timesteps(
-            self.amount_training_steps, inputs_shape[0])
+        # Forward Process =====================================================
+        timesteps = self.__sample_from_timesteps(self.amount_training_steps, 
+                                                 inputs.shape[0])
         
         noised_images, noise = self.__add_noise(inputs, timesteps)
 
+        # Classifier Free Guidance ============================================
         if (self.use_classifier_free_guidance 
             and np.random.random() < self.no_class_probability):
             labels = None         
 
+        # Noise Predictionn ===================================================
         predicted_noise = self.model(noised_images, labels, timesteps)
-
-        loss = f.mse_loss(noise, predicted_noise)
+        loss            = f.mse_loss(noise, predicted_noise)
 
         self.loss_log.add_entry("MSE", loss)
 
@@ -209,21 +159,90 @@ class DDPM(nn.Module):
         return [optimizer]
 
     # =========================================================================
+    # Sampling
+    # =========================================================================
+    def generate(self, label=None, amount=1):
+        if label is not None:
+            label = torch.tensor([label], device=self.device).unsqueeze(dim=0)
+        
+        return self.sample(amount, label)
+
+    @torch.no_grad()
+    def sample(self, 
+               amount_samples, 
+               control_signals, 
+               prediction_type= PredictionType.EPSILON_SIMPLE):
+        """ Algorithm 2 DDPM """
+
+        if self.use_ema:
+            self.ema_model.apply_to_model(self.model) 
+
+        x = torch.randn((amount_samples,) + self.input_shape, 
+                        device=self.device)
+
+        for _, timestep in tqdm(enumerate(self.sample_steps),
+                                total = self.amount_sample_steps,
+                                desc = "Generating Image"):
+        
+            # Classifier Free Guidance ========================================
+            timesteps = torch.tensor([timestep] * amount_samples, 
+                                     device=self.device)
+
+            model_output = self.model(x, control_signals, timesteps)
+            
+            if (self.use_classifier_free_guidance and control_signals != None):  
+                unconditional_model_output = self.model(x, None, timesteps)
+                model_output = torch.lerp(unconditional_model_output, 
+                                          model_output,
+                                          self.cfg_weight)
+
+            # Denoising  ======================================================
+            match prediction_type:
+                # As proposed by algorithm 2
+                case PredictionType.EPSILON_SIMPLE:
+                    x = self.__predict_epsilon_simple(timestep, 
+                                                      x, 
+                                                      model_output)
+                case PredictionType.MEAN_VARIANCE:
+                    x = self.__predict_mean_variance(timestep, 
+                                                     x, 
+                                                     model_output)
+                    
+            x = torch.clamp(x, -1, 1)
+
+        # Decoding ============================================================
+        if self.is_latent:
+            self.latent_model.eval()
+            x /= self.inverse_latent_std
+            x = self.latent_model.decode(x)
+
+        return x
+    
+    # =========================================================================
     # Predict Epsilon
     # =========================================================================
     def __predict_epsilon_simple(self, timestep, x_t, model_output):
         """ Algorithm 2 DDPM """
-        noise = 0
         if timestep > 0:
             noise = torch.randn(model_output.shape, 
                                 generator=self.generator, 
                                 device=model_output.device, 
                                 dtype=model_output.dtype)
-        
-        return (self.one_over_sqrt_alphas[timestep] 
-                * (x_t - self.epsilon_coefficient[timestep] * model_output) 
-                + torch.sqrt(self.betas[timestep]) * noise)
+        else: 
+            noise = 0
+                        
+        x_t_minus_one = x_t - self.epsilon_coefficient[timestep] * model_output
+        x_t_minus_one *= self.one_over_sqrt_alphas[timestep]
+        x_t_minus_one += torch.sqrt(self.betas[timestep]) * noise
 
+        return x_t_minus_one
+
+    def __compute_epsilon_coefficients(self):
+        one_over_sqrt_alphas    = 1. / torch.sqrt(self.alphas)
+        epsilon_coefficient     = ((1. - self.alphas) 
+                                    / torch.sqrt(1. - self.alpha_bars))
+        
+        return one_over_sqrt_alphas, epsilon_coefficient
 
     # =========================================================================
     # Predict Mean and Variance
@@ -247,19 +266,12 @@ class DDPM(nn.Module):
                                 dtype=model_output.device)
             
             # can extract this
-            pred_variance_t = torch.clamp(self.pred_variance_t, min=1e-20) 
+            pred_variance_t = torch.clamp(self.variance_t, min=1e-20) 
             variance        = torch.sqrt(pred_variance_t) * noise
             
 
         x_t_prev = pred_mean_t + variance
         return x_t_prev
-    
-    def __compute_epsilon_coefficients(self):
-        one_over_sqrt_alphas    = 1. / torch.sqrt(self.alphas)
-        epsilon_coefficient     = ((1. - self.alphas) 
-                                   / torch.sqrt(1. - self.alpha_bars))
-        
-        return one_over_sqrt_alphas, epsilon_coefficient
             
     def __compute_mean_variance_coefficients(self):
         """ Formula 7 DDPM """
@@ -278,7 +290,6 @@ class DDPM(nn.Module):
 
         return x_zero_coefs, x_t_coefs, variance_t
     
-
 
     # =========================================================================
     # Noise and Noise schedules

@@ -379,10 +379,10 @@ class VariationalAutoEncoder(nn.Module):
 
         filename = f"step_{training_step_idx}"
         self.data_visualiser.show_ensemble(save = True, 
-                                            save_only = True, 
-                                            clear_afterwards = True,
-                                            save_dir=self.name,
-                                            filename=filename)
+                                           save_only = True, 
+                                           clear_afterwards = True,
+                                           save_dir=self.name,
+                                           filename=filename)
 
 
     # =========================================================================
@@ -398,6 +398,8 @@ class VariationalAutoEncoder(nn.Module):
         noise   = torch.randn(mu.shape).to(mu.device)
         x       = mu + sigma * noise
         
+        # print (1/torch.std(x))
+
         return LatentEncoding(x, mu, log_variance)
 
     def decode(self, z):

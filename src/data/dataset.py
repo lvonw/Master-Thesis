@@ -93,7 +93,7 @@ class DatasetFactory():
         
         complete_dataset.prepare_dataset(data_configuration["loader_workers"])
 
-        return complete_dataset, amount_classes
+        return complete_dataset, [amount_classes]
     
     def __pre_process_data_cache(data_cache):
         processed_cache = []
@@ -206,7 +206,7 @@ class TerrainDataset(Dataset):
         else:
             label = cache.label_tensor
 
-        return data_entry, label, metadata
+        return data_entry, label.unsqueeze(dim=0), metadata
     
     def analyse_dataset(self):
         analysis_result = AnalysisResult(self.amount_classes)

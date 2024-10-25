@@ -40,11 +40,11 @@ light_diffusion:
       - 0
       - 1
 
-latent_diffusion_test:
-  name: latent_diffusion_test
+latent_diffusion_test_new_scale:
+  name: latent_diffusion_test_new_scale
   description: Check if latent diffusion works
   
-  input_num_channels: 4
+  input_num_channels: 8
   input_resolution_x: 8
   input_resolution_y: 8
 
@@ -67,7 +67,7 @@ latent_diffusion_test:
     pre_trained: true
     model:
       external: cfg/vae/vae.yaml
-      selection: VAE_full_test
+      selection: VAE_test_just_like_sd
       only_load_selection: true
       read_only: true
 

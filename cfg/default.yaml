@@ -15,7 +15,7 @@ Main:
 # TRAINING
 # =============================================================================
 Training:  
-  epochs:           2000
+  epochs:           3000
   batch_size:       128
   learning_rate:    4.5e-6
   logging_steps:    10
@@ -30,10 +30,10 @@ Training:
 # MODEL
 # =============================================================================
 Model:
-  external: cfg/vae/vae.yaml
-  selection: VAE_test_just_like_sd
-  # external: cfg/diffusion/ddpm.yaml
-  # selection: ld_finer_classes
+  # external: cfg/vae/vae.yaml
+  # selection: VAE_test_just_like_sd
+  external: cfg/diffusion/ddpm.yaml
+  selection: latent_diffusion_test_new_scale
   only_load_selection: true
   read_only: true
 

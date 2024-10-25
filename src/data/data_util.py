@@ -385,6 +385,7 @@ class DataVisualizer():
             plt.savefig(save_file)
         if clear_afterwards:
             self.plot_tuples.clear()
+            plt.close()
 
 
 class PlotType(Enum):

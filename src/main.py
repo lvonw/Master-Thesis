@@ -81,7 +81,7 @@ def main():
     # Dataset
     # =========================================================================
     needs_dataset = config["Main"]["train"] or config["Main"]["test"]
-    amount_classes = 16
+    amount_classes = [16]
     if needs_dataset:
         printer.print_log("Creating Dataset...")
         if config["Main"]["use_MNIST"]:
@@ -99,8 +99,12 @@ def main():
     # =========================================================================
     model_name = config["Model"]["name"]
     printer.print_log(f"Creating Model {model_name}...")
-    # model = DDPM(config["Model"], amount_classes=amount_classes)
-    model = AutoEncoderFactory.create_auto_encoder(config["Model"])
+
+    try:
+        model = DDPM(config["Model"], amount_classes=amount_classes)
+    except TypeError:
+        model = AutoEncoderFactory.create_auto_encoder(config["Model"])
+
     printer.print_log("Finished.")
 
     starting_epoch = 0

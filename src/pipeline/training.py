@@ -176,7 +176,7 @@ def train(model,
     lp = LaplaceFilter()
 
     model.eval()
-    #model.on_loaded_as_pretrained()
+    model.on_loaded_as_pretrained()
     with torch.no_grad():
         for training_step_idx, data in tqdm(enumerate(training_dataloader, 0)):
             inputs, _, metadata = __prepare_data(data)

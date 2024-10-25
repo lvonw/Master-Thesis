@@ -13,16 +13,16 @@ DEM_LIST_POSTFIX         = "_list.txt"
 
 # Determines which dataset we are analysing
 DATA_PATH_SOURCE_DEMs   = os.path.join(DATA_PATH_DEM, "SRTM_GL1_64x64")
-DATA_PATH_DEM_LIST      = os.path.join(DATA_PATH_DEM, "SRTM_GL1_list.txt")
+DATA_PATH_DEM_LIST      = os.path.join(DATA_PATH_DEM, "SRTM_GL1_50_over_list.txt")
 
-PLOT_SIGMA              = False
+PLOT_SIGMA              = True
 PLOT_RANGES             = False
 
-PRINT_SIGMA_LIST        = False
+PRINT_SIGMA_LIST        = True
 PRINT_RANGE_LIST        = False
 
 SEA_LEVEL               = 1
-SIGMA_THRESHOLD         = 10
+SIGMA_THRESHOLD         = 20
 
 RANGE_MIN               = 0 #-2
 RANGE_MAX               = 3213 #4993 
@@ -192,6 +192,7 @@ def analyze_DEMs(dems):
         "max_range": np.max(all_ranges),
         "amount_in_range": len(all_files_within_range),
         #"all_affected_by_range": len(all_affected_by_range),
+        "all_over_min_sigma": len(all_min_sigma_files),
         "all_unaffected_by_range": len(all_unaffected_by_range),
         "all_excluded_by_range": len(all_excluded_by_range),
         "amount_50_percent_over_sea_level": amount_50_percent_over_sea_level,
@@ -233,7 +234,7 @@ def analyze_DEMs(dems):
             for name in all_files_within_range:
                 file.write(f"{name}\n")
 
-    if True:
+    if False:
         dem_list_path = os.path.join(DATA_PATH_DEM, 
                                     (DEM_LIST_PREFIX 
                                      + f"50_over"
