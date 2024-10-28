@@ -47,7 +47,7 @@ class Printer():
     
     def ping(self):
         self.print_log(self.ping_counter)
-        ping_counter += 1
+        self.ping_counter += 1
 
     
     def clear_lines(self, amount):

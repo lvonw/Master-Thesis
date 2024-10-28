@@ -12,7 +12,7 @@ def generate(model):
         for i in range(10):
             label = i #% 2 + 1
             
-            samples = model.generate(None, 4)
+            samples = model.generate(i, 4)
 
             data_visualizer.create_image_tensor_tuple(samples, title=str(label)) 
             

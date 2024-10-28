@@ -14,8 +14,8 @@ from generation.models.vae  import AutoEncoderFactory
 from generation.models.ddpm import DDPM
 from data.data_util         import DataVisualizer
 
-from torchvision.datasets   import MNIST
 from torchvision            import transforms
+
 
 def prepare_arg_parser():
     parser = argparse.ArgumentParser(prog="Diffusion",
@@ -35,26 +35,13 @@ def prepare_arg_parser():
     
     return parser
 
-# Helper to see if my models work
-def get_mnist():
-    training_set = MNIST(root=constants.DATA_PATH_MASTER, 
-                         train=True, 
-                         download=False, 
-                         transform=transforms.ToTensor())
-
-    validation_set = MNIST(root=constants.DATA_PATH_MASTER, 
-                           train=False, 
-                           download=False, 
-                           transform=transforms.ToTensor())
-    
-
-    return training_set, validation_set
-
-
 def main():
     parser      = prepare_arg_parser()
     arguments   = parser.parse_args()
     printer     = Printer()
+
+    local_rank  = int(os.environ["LOCAL_RANK"])
+    global_rank = int(os.environ["RANK"])
 
     # =========================================================================
     # Configuration
@@ -80,33 +67,29 @@ def main():
     # =========================================================================
     # Dataset
     # =========================================================================
-    needs_dataset = config["Main"]["train"] or config["Main"]["test"]
-    amount_classes = [16]
+    needs_dataset   = config["Main"]["train"] or config["Main"]["test"]
+    amount_classes  = [16]
     if needs_dataset:
-        printer.print_log("Creating Dataset...")
-        if config["Main"]["use_MNIST"]:
-            printer.print_log("Using MNIST")
-            training_set, validation_set = get_mnist()
-            amount_classes = 10
-        else:
-            printer.print_log("Using DEMs")
-            complete_dataset, amount_classes = DatasetFactory.create_dataset(
-                config["Data"])
+        printer.print_log("Loading Dataset...")
+        dataset_wrapper = DatasetFactory.create_dataset(config["Data"])
+        amount_classes = dataset_wrapper.amount_classes
         printer.print_log("Finished.")
 
     # =========================================================================
     # Model
     # =========================================================================
     model_name = config["Model"]["name"]
+    
+    # Initialize Model ========================================================
     printer.print_log(f"Creating Model {model_name}...")
-
     try:
         model = DDPM(config["Model"], amount_classes=amount_classes)
-    except TypeError:
-        model = AutoEncoderFactory.create_auto_encoder(config["Model"])
+    except TypeError as e:
+       model = AutoEncoderFactory.create_auto_encoder(config["Model"])
 
     printer.print_log("Finished.")
-
+    
+    # Load Checkpoint =========================================================
     starting_epoch = 0
     if config["Main"]["load_model"]:
         printer.print_log("Loading state dict...")
@@ -123,6 +106,8 @@ def main():
     # =========================================================================
     total_params = sum(p.numel() for p in model.parameters())
     printer.print_log(f"Total amount of parameters: {total_params:,}")
+    estimated_vram = 4. * total_params / 1000000000.
+    printer.print_log(f"Estimated VRAM: {estimated_vram:,.2f} GB")
     printer.print_log(f"Using device: {util.get_device()}")
     printer.print_log(f"Core count: {os.cpu_count()}")
     printer.print_log(f"Amount Classes: {amount_classes}")
@@ -132,7 +117,7 @@ def main():
     # =========================================================================
     if config["Main"]["train"]:        
         training.train(model, 
-                       complete_dataset, 
+                       dataset_wrapper, 
                        config["Training"], 
                        starting_epoch=starting_epoch)
 

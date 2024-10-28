@@ -5,18 +5,16 @@ Main:
   train:      true
   validate:   false
   test:       false
-  generate:   true
+  generate:   0 #true
 
   load_model: true
-
-  use_MNIST:  false
 
 # =============================================================================
 # TRAINING
 # =============================================================================
 Training:  
   epochs:           3000
-  batch_size:       128
+  batch_size:       6 #128
   learning_rate:    4.5e-6
   logging_steps:    10
   num_workers:      2
@@ -30,10 +28,10 @@ Training:
 # MODEL
 # =============================================================================
 Model:
-  # external: cfg/vae/vae.yaml
-  # selection: VAE_test_just_like_sd
-  external: cfg/diffusion/ddpm.yaml
-  selection: latent_diffusion_test_new_scale
+  external: cfg/vae/vae.yaml
+  selection: VAE_1x256x256_4x32x32
+  # external: cfg/diffusion/ddpm.yaml
+  # selection: latent_diffusion_test_new_scale
   only_load_selection: true
   read_only: true
 
@@ -41,8 +39,10 @@ Model:
 # DATA
 # =============================================================================
 Data:
+  use_MNIST:  false
+
   DEM_List:       SRTM_GL1_50_over_list.txt
-  DEM_Dataset:    SRTM_GL1_64x64
+  DEM_Dataset:    SRTM_GL1_512x512
   Cache_DEMs:     true
   loader_workers: 2
   # < 1 -> We take all in the specified list
@@ -62,23 +62,19 @@ Data:
     use_as_channel: false
     cache:          false
   GTC:
-    use_as_label:   true
+    use_as_label:   false
     use_as_channel: false
-    cache:          true
+    cache:          false
     # use_as_label:   false
     # use_as_channel: false
     # cache:          false
   
   # Data transforms
-  Resize:
-    active:         false
-    size:           64
-    interpolation:  bilinear 
-  RandomRotation:
-    active:         true 
   RandomCrop:
     active:         true
-    size:           32 
+    size:           256 
+  RandomRotation:
+    active:         true 
   RandomHorizontalFlip:
     active:         true 
     probability:    0.5

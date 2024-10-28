@@ -138,21 +138,32 @@ MNIST_cfg_diffusion:
   name: MNIST_cfg_diffusion
   description: Diffusion for the mnist dataset using classes
   
-  use_control_signal: false
-  use_ema: true
+  input_num_channels: 4
+  input_resolution_x: 8
+  input_resolution_y: 8
 
-  input_num_channels: 1
-  input_resolution_x: 28
-  input_resolution_y: 28
+  time_embedding_size:  320
+  training_steps:       1000
+  sample_steps:         1000
 
-  time_embedding_size: 320
+  Classifier_free_guidance:
+    active:               true
+    no_class_probability: 0.1
+    weight:               3.0
 
-  latent: false
-  latent_model:
-    external: cfg/vae/vae.yaml
-    selection: VAE_MNIST
-    only_load_selection: true
-    read_only: true
+  EMA:
+    active:         true
+    weight:         0.995
+    warm_up_steps:  2000
+
+  Latent:
+    active:       true
+    pre_trained:  true
+    model:
+      external: cfg/vae/vae.yaml
+      selection: VAE_test_just_like_sd_mnist
+      only_load_selection:  true
+      read_only:            true
 
   unet_architecture:
     ResNet_blocks_per_level: 2
@@ -168,4 +179,5 @@ MNIST_cfg_diffusion:
     attention_levels:
       - 0
       - 1
+
     

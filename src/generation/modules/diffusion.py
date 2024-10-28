@@ -100,8 +100,11 @@ class LabelEmbedding(nn.Module):
     
     def forward(self, x):
         embeddings = []
-        for idx, embedding in enumerate(self.embeddings):
-            embeddings.append(embedding(x[:, idx]))
+        if len(x.shape) > 1: 
+            for idx, embedding in enumerate(self.embeddings):
+                embeddings.append(embedding(x[:, idx]))
+        else: 
+            embeddings.append(self.embeddings[0](x))
 
         match self.combination_type:
             case LabelCombinationType.CONCAT:

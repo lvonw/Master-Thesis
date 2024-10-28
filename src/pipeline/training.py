@@ -7,10 +7,14 @@ import torch.nn             as nn
 import util
 import os
 
-from data.data_util     import DataVisualizer
-from debug              import Printer, print_to_log_file
-from torch.utils.data   import DataLoader, random_split
-from tqdm               import tqdm
+from data.data_util                 import DataVisualizer
+from debug                          import Printer, print_to_log_file
+from torch.utils.data               import DataLoader
+from torch.utils.data.distributed   import DistributedSampler
+from tqdm                           import tqdm
+
+import torch.distributed    as distributed 
+from torch.nn.parallel      import DistributedDataParallel
 
 def print_loss_graph(losses):
     plt.plot(losses)
@@ -32,23 +36,17 @@ def __prepare_data(data):
 
     return inputs, labels, metadata
 
-def __get_data_splits(dataset, training_data_split):
-        total_data      = len(dataset)
-        training_split  = math.ceil( total_data * training_data_split)
-        
-        return random_split(dataset, 
-                            [training_split, total_data - training_split],
-                            generator=torch.Generator()
-                                .manual_seed(constants.DATALOADER_SEED))
-
 def train(model, 
-          complete_dataset, 
+          dataset_wrapper, 
           configuration,
-          starting_epoch = 0):
+          starting_epoch = 0,
+          local_rank = 0,
+          global_rank = 0):
     
     printer         = Printer()
     data_visualizer = DataVisualizer()
-    
+
+    # Training Parameters =====================================================
     batch_size      = configuration["batch_size"]
     num_epochs      = configuration["epochs"]
     logging_steps   = configuration["logging_steps"]
@@ -60,39 +58,37 @@ def train(model,
     data_loader_generator = torch.Generator()
     data_loader_generator.manual_seed(constants.DATALOADER_SEED)
 
-    loss_weights = complete_dataset.loss_weights
+    # Loss Weights ============================================================
+    loss_weights = {}
+    loss_weights = dataset_wrapper.loss_weights
+    training_dataset, validation_dataset = dataset_wrapper.get_splits(
+        split=configuration["Data_Split"])
 
-    training_dataset, validation_dataset = __get_data_splits(
-            complete_dataset,
-            configuration["Data_Split"])
-
-
-
-    training_dataloader = DataLoader(training_dataset, 
-                                     batch_size=batch_size, 
-                                     shuffle=True,
-                                     generator=data_loader_generator,
-                                     num_workers=cpu_count,
-                                     persistent_workers=True,
-                                     pin_memory=True,
-                                     pin_memory_device=str(util.get_device()))
+    # Data Loaders ============================================================
+    training_dataloader = DataLoader(
+        training_dataset, 
+        batch_size=batch_size, 
+        shuffle=False,
+        generator=data_loader_generator,
+        num_workers=cpu_count,
+        persistent_workers=True,
+        sampler=DistributedSampler(training_dataset, shuffle=True)
+    )
     
-    validation_dataloader = DataLoader(validation_dataset, 
-                                       batch_size=batch_size, 
-                                       shuffle=False,
-                                       generator=data_loader_generator,
-                                       num_workers=cpu_count)
+    validation_dataloader = DataLoader(
+        validation_dataset, 
+        batch_size=batch_size, 
+        shuffle=False,
+        generator=data_loader_generator,
+        num_workers=cpu_count)
             
-    training_losses     = []
     validation_losses   = []
             
-    model.to(util.get_device()) 
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
-    printer.print_log(f"GPU Amount: {torch.cuda.device_count()}")
+    # Distribution ============================================================
+    distributed.init_process_group(backend="nccl")
+    torch.cuda.set_device(local_rank)
+    model = DistributedDataParallel(model, device_ids=[local_rank])
 
-    
-    
     # Training ================================================================
     print_to_log_file(f"\nModel: {model.name}", constants.TRAINING_LOSS_LOG)
     
@@ -109,7 +105,6 @@ def train(model,
 
         print_to_log_file(f"Epoch: {epoch_idx+1}", constants.TRAINING_LOSS_LOG)
 
-        running_losses = [0.] * len(model.optimizers)
         for training_step_idx, data in tqdm(enumerate(training_dataloader, 0), 
                                             total   = len(training_dataloader),
                                             position= 1,
@@ -120,49 +115,42 @@ def train(model,
             inputs, labels, _ = __prepare_data(data)
             total_training_step_idx = (len(training_dataloader) * epoch_idx 
                                        + training_step_idx)
-
-
-            for optimizer_idx, optimizer in enumerate(model.optimizers):
-                # Smoother loss for monitoring, averaged over the epoch
-                running_loss = running_losses[optimizer_idx]
+            
+            
+            # Main training loop over all optimizers ==========================
+            for optimizer_idx, optimizer in enumerate(model.module.optimizers):                
+                optimizer.zero_grad()   
+                loss, _ = model.module.training_step(inputs, 
+                                                     labels, 
+                                                     loss_weights,
+                                                     epoch_idx,
+                                                     total_training_step_idx,
+                                                     training_step_idx,
+                                                     optimizer_idx)
                 
-                # Main training loop ==========================================
-                optimizer.zero_grad()
-                
-                loss, _ = model.training_step(inputs, 
-                                              labels, 
-                                              loss_weights,
-                                              epoch_idx,
-                                              total_training_step_idx,
-                                              training_step_idx,
-                                              optimizer_idx)
                 # Ignore irrelevant losses
                 if loss.item() == 0:  
                     continue
-
+                    
                 loss.backward()
                 optimizer.step()
 
-                # Loss monitoring =============================================
-                training_losses.append(loss.item())
-                
-                running_loss                    += loss.item()
-                running_losses[optimizer_idx]   = running_loss 
 
-            if ((training_step_idx + 1) % logging_steps) == 0:
+            # Loss monitoring =================================================
+            if ((training_step_idx + 1) % logging_steps) == 0 and global_rank == 0:
                 print_to_log_file(
-                    model.loss_log, 
+                    model.module.loss_log, 
                     constants.TRAINING_LOSS_LOG)
                     
             # Post training step behaviour ====================================
-            model.on_training_step_completed()
+            model.module.on_training_step_completed()
 
         # Post epoch behaviour ================================================
-        if configuration["Save_after_epoch"]:
+        if configuration["Save_after_epoch"] and global_rank == 0:
             util.save_checkpoint(model, epoch_idx)
         
         # Validation ==========================================================
-        if len(validation_dataloader):
+        if False and len(validation_dataloader):
             validation_loss = __validate(model,
                                             validation_dataloader, 
                                             configuration["Validation"],

@@ -196,6 +196,7 @@ class DDPM(nn.Module):
                                           model_output,
                                           self.cfg_weight)
 
+
             # Denoising  ======================================================
             match prediction_type:
                 # As proposed by algorithm 2
@@ -208,7 +209,7 @@ class DDPM(nn.Module):
                                                      x, 
                                                      model_output)
                     
-            x = torch.clamp(x, -1, 1)
+            x = torch.clamp(x, -1.0, 1.0)
 
         # Decoding ============================================================
         if self.is_latent:

@@ -7,20 +7,27 @@ import torch
 import numpy                                as np
 import torchvision.transforms.functional    as tf
 
-from concurrent.futures import ThreadPoolExecutor
-from configuration      import Section
-from data.data_access   import DataAccessor
-from data.data_util     import GeoUtil, NoDataBehaviour, NormalizationMethod
-from debug              import Printer
-from torchvision        import transforms
-from torch.utils.data   import Dataset
-from tqdm               import tqdm
+from concurrent.futures     import ThreadPoolExecutor
+from configuration          import Section
+from data.data_access       import DataAccessor
+from data.data_util         import GeoUtil, NoDataBehaviour, NormalizationMethod
+from debug                  import Printer
+from torchvision            import transforms
+from torchvision.datasets   import MNIST
+from torch.utils.data       import Dataset, random_split
+from tqdm                   import tqdm
 
 
 class DatasetFactory():
     def create_dataset(data_configuration: Section):
         printer = Printer()
+
+        if data_configuration["use_MNIST"]:
+            printer.print_log("Using MNIST")
+            return DatasetFactory.__get_mnist()
         
+        printer.print_log("Using DEMs")
+
         DEM_List_path = data_configuration["DEM_List"]
         printer.print_log(f"Using DEM-list: {DEM_List_path}")
 
@@ -60,7 +67,7 @@ class DatasetFactory():
     
   
         channel_cache   = DatasetFactory.__pre_process_data_cache(channel_cache)
-        amount_classes  = DatasetFactory.__get_amount_classes(label_cache)
+        amount_classes  = [16] #DatasetFactory.__get_amount_classes(label_cache)
                 
         if data_configuration["RandomCrop"]["active"]:
             printer.print_log("Activating RandomCrop transform")
@@ -82,7 +89,7 @@ class DatasetFactory():
                 p=data_configuration["RandomVerticalFlip"]["probability"]))
         
         transform           = CompositeMultiTensorTransform(transform_list)
-        complete_dataset    = TerrainDataset(
+        terrain_dataset     = TerrainDataset(
             DEM_List, 
             channel_cache,
             label_cache, 
@@ -91,9 +98,12 @@ class DatasetFactory():
             cache_dems=data_configuration["Cache_DEMs"],
             amount_classes=amount_classes) 
         
-        complete_dataset.prepare_dataset(data_configuration["loader_workers"])
+        loss_weights        = terrain_dataset.prepare_dataset(
+            data_configuration["loader_workers"])
 
-        return complete_dataset, [amount_classes]
+        return DatasetWrapper(dataset           = terrain_dataset, 
+                              amount_classes    = amount_classes,
+                              loss_weights      = loss_weights)
     
     def __pre_process_data_cache(data_cache):
         processed_cache = []
@@ -134,7 +144,54 @@ class DatasetFactory():
             amount_classes += len(np.unique(geo_array))            
 
         return amount_classes
+    
+    def __get_mnist():
+        mnist_transform = transforms.Compose([transforms.ToTensor(),
+                                              transforms.Resize(size=32)])
 
+        training_set    = MNIST(root=constants.DATA_PATH_MASTER, 
+                                train=True, 
+                                download=False, 
+                                transform=mnist_transform)
+
+        validation_set  = MNIST(root=constants.DATA_PATH_MASTER, 
+                                train=False, 
+                                download=False, 
+                                transform=mnist_transform)
+        
+        return DatasetWrapper(training_dataset      = training_set, 
+                              validation_dataset    = validation_set,
+                              amount_classes        = [10])
+
+class DatasetWrapper():
+    def __init__(self, 
+                 dataset            = None,
+                 amount_classes     = 0,
+                 loss_weights       = {},
+                 training_dataset   = None,
+                 validation_dataset = None):
+        
+        self.dataset            = dataset
+        self.amount_classes     = amount_classes
+        self.loss_weights       = loss_weights
+
+        self.training_dataset   = training_dataset
+        self.validation_dataset = validation_dataset
+
+    def get_splits(self, split=0.95):
+        if self.dataset is None:
+            return self.training_dataset, self.validation_dataset
+        else:
+            return self.__get_data_splits(self.dataset, split)
+
+    def __get_data_splits(self, dataset, training_data_split):
+        total_data      = len(dataset)
+        training_split  = math.ceil( total_data * training_data_split)
+        
+        return random_split(dataset, 
+                            [training_split, total_data - training_split],
+                            generator=torch.Generator()
+                                .manual_seed(constants.DATALOADER_SEED))
 
 class TerrainDataset(Dataset): 
     def __init__(self, 
@@ -164,8 +221,6 @@ class TerrainDataset(Dataset):
         self.shared_label_cache     = None
         self.shared_dataset_cache   = None
 
-        self.loss_weights = {None: 1}
-
     def __len__(self):
         return len(self.DEM_list)
 
@@ -181,7 +236,7 @@ class TerrainDataset(Dataset):
         # Channels ============================================================
         if cache.did_not_cache_channels:
             pass
-        if cache.channel_tensor is not None:
+        if len(cache.channel_tensor) > 0:
             channels    = [dem_tensor, cache.label_tensor]        
             data_entry = torch.cat(channels, dim=0)
         else:
@@ -202,28 +257,12 @@ class TerrainDataset(Dataset):
         
         # Label ===============================================================
         if label_frame is not None and label_frame.numel() > 0:
-            label = torch.median(label_frame)
+            label = torch.median(label_frame).unsqueeze(dim=0)
         else:
             label = cache.label_tensor
 
-        return data_entry, label.unsqueeze(dim=0), metadata
+        return data_entry, label, metadata
     
-    def analyse_dataset(self):
-        analysis_result = AnalysisResult(self.amount_classes)
-        
-        for idx, cache in tqdm(enumerate(self.dataset_cache), 
-                               total=len(self.dataset_cache),
-                               desc="Analysing data"):
-            if cache is None or cache.label_tensor is None: 
-                continue
-            label = cache.label_tensor.item()
-            
-            analysis_result.label_bucket[label] += 1
-            analysis_result.std_devs[label].append(
-                np.std(cache.dem_tensor.numpy()))
-            
-        analysis_result.post_process()
-        return analysis_result
 
     def prepare_dataset(self, loader_workers=1):
         with ThreadPoolExecutor(max_workers=loader_workers) as executor:
@@ -233,7 +272,7 @@ class TerrainDataset(Dataset):
                     desc="Preparing Dataset"))
             
 
-        # analysis_result = self.analyse_dataset()
+        # analysis_result = self.__analyse_dataset()
         # self.printer.print_log(analysis_result)
 
         # for label, label_amount in enumerate(analysis_result.label_bucket):
@@ -244,15 +283,17 @@ class TerrainDataset(Dataset):
             # + analysis_result.std_dev_bucket[label]
             # self.loss_weights[label] = len(self.DEM_list) / (label_amount)
             # pass
-        self.loss_weights = None
+        loss_weights = None
 
         # Transfer our single process cache to the shared cache
+        self.printer.print_log("Transferring to shared cache...")
         manager                     = multiprocessing.Manager()
         self.shared_dataset_cache   = manager.list(self.dataset_cache)
         self.dataset_cache.clear()
+        self.printer.print_log("Finished")
 
+        return loss_weights
         
-            
     def __prefetch_cache(self, index):
         filename                    = self.DEM_list[index]
         geo_cache                   = GeoDatasetCache()
@@ -362,6 +403,24 @@ class TerrainDataset(Dataset):
                                    dtype=torch.int32).unsqueeze(dim=0)
 
         return label, data_frame
+      
+    def __analyse_dataset(self):
+        analysis_result = AnalysisResult(self.amount_classes[0])
+        
+        for idx, cache in tqdm(enumerate(self.dataset_cache), 
+                               total=len(self.dataset_cache),
+                               desc="Analysing data"):
+            if cache is None or cache.label_tensor is None: 
+                continue
+            label = cache.label_tensor.item()
+            
+            analysis_result.label_bucket[label] += 1
+            analysis_result.std_devs[label].append(
+                np.std(cache.dem_tensor.numpy()))
+            
+        analysis_result.post_process()
+        return analysis_result
+
 
 class AnalysisResult():
     def __init__(self, amount_classes):
@@ -388,9 +447,9 @@ class GeoDatasetCache():
                  dem_geo_transform      = None,
                  dem_geo_coordinates    = None,
                  label_geo_transforms   = [],
-                 label_tensor           = None, 
+                 label_tensor           = [], 
                  channel_geo_transforms = [],
-                 channel_tensor         = None,
+                 channel_tensor         = [],
                  metadata               = {}):
         
         self.metadata               = metadata
