@@ -1,0 +1,1 @@
+torchrun --standalone --nnodes=1 --nproc-per-node=1 --use-env src/main.py --distributed

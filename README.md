@@ -37,3 +37,5 @@ you can install the following packages manually:
 - GDAL
 - MatPlotLib
 - tqdm
+- pyyaml
+- lpips

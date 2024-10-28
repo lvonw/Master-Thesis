@@ -19,7 +19,7 @@ from tqdm                   import tqdm
 
 
 class DatasetFactory():
-    def create_dataset(data_configuration: Section):
+    def create_dataset(data_configuration: Section, prepare = False):
         printer = Printer()
 
         if data_configuration["use_MNIST"]:
@@ -98,8 +98,9 @@ class DatasetFactory():
             cache_dems=data_configuration["Cache_DEMs"],
             amount_classes=amount_classes) 
         
-        loss_weights        = terrain_dataset.prepare_dataset(
-            data_configuration["loader_workers"])
+        if prepare:
+            loss_weights        = terrain_dataset.prepare_dataset(
+                data_configuration["loader_workers"]) 
 
         return DatasetWrapper(dataset           = terrain_dataset, 
                               amount_classes    = amount_classes,
@@ -216,10 +217,10 @@ class TerrainDataset(Dataset):
         self.channel_cache          = channel_cache
         self.label_cache            = label_cache
 
-        # Thread-Safe cache, introduces massive overheads        
-        self.shared_channel_cache   = None
-        self.shared_label_cache     = None
-        self.shared_dataset_cache   = None
+        # # Thread-Safe cache, introduces massive overheads        
+        # self.shared_channel_cache   = None
+        # self.shared_label_cache     = None
+        # self.shared_dataset_cache   = None
 
     def __len__(self):
         return len(self.DEM_list)

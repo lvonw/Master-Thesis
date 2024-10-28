@@ -1,20 +1,22 @@
 import argparse
 import constants
 import os
+import platform
 import torch
 import util                   
+
+import torch.distributed    as distributed 
 
 from cli.cli                import CLI
 from configuration          import Configuration
 from data.dataset           import DatasetFactory
-
-from pipeline               import generate, training
+from data.data_util         import DataVisualizer
 from debug                  import Printer, LogLevel
 from generation.models.vae  import AutoEncoderFactory
 from generation.models.ddpm import DDPM
-from data.data_util         import DataVisualizer
-
+from pipeline               import generate, training
 from torchvision            import transforms
+from torch.nn.parallel      import DistributedDataParallel
 
 
 def prepare_arg_parser():
@@ -33,15 +35,41 @@ def prepare_arg_parser():
                         action="store_true",
                         help="")
     
+    parser.add_argument("--distributed", 
+                        dest="distributed", 
+                        action="store_true")
+    
     return parser
+
+def get_backend():
+    system = platform.system()
+    if system == "Windows":
+        return "GLOO"
+    elif system == "Linux":
+        return "nccl"
 
 def main():
     parser      = prepare_arg_parser()
     arguments   = parser.parse_args()
     printer     = Printer()
 
-    local_rank  = int(os.environ["LOCAL_RANK"])
-    global_rank = int(os.environ["RANK"])
+    # Distribution ============================================================    
+    is_distributed  = arguments.distributed
+    global_rank     = 0
+    local_rank      = 0
+    
+    if is_distributed: 
+        global_rank  = int(os.environ["RANK"])
+        local_rank   = int(os.environ["LOCAL_RANK"])    
+        printer.rank = local_rank
+        
+        backend = get_backend()
+        printer.print_log(f"Using backend: {backend}")
+        distributed.init_process_group(backend="gloo")
+        torch.cuda.set_device(local_rank)
+        printer.print_log(f"Successfully Initialized, logging from: {local_rank}")
+    else: 
+        printer.print_log("Running on single Machine")
 
     # =========================================================================
     # Configuration
@@ -71,7 +99,15 @@ def main():
     amount_classes  = [16]
     if needs_dataset:
         printer.print_log("Loading Dataset...")
-        dataset_wrapper = DatasetFactory.create_dataset(config["Data"])
+        if local_rank == 0:
+            dataset_wrapper = DatasetFactory.create_dataset(config["Data"], 
+                                                            True)
+            if is_distributed: 
+                distributed.barrier()
+        else: 
+            distributed.barrier()
+            dataset_wrapper = DatasetFactory.create_dataset(config["Data"])
+
         amount_classes = dataset_wrapper.amount_classes
         printer.print_log("Finished.")
 
@@ -86,7 +122,6 @@ def main():
         model = DDPM(config["Model"], amount_classes=amount_classes)
     except TypeError as e:
        model = AutoEncoderFactory.create_auto_encoder(config["Model"])
-
     printer.print_log("Finished.")
     
     # Load Checkpoint =========================================================
@@ -101,6 +136,11 @@ def main():
             
         printer.print_log(f"Finished, starting at epoch: {starting_epoch}.")
 
+    if is_distributed:
+        model = DistributedDataParallel(model, device_ids=[local_rank])
+    else: 
+        model.to(util.get_device())
+    
     # =========================================================================
     # Stats
     # =========================================================================
@@ -115,17 +155,30 @@ def main():
     # =========================================================================
     # Training
     # =========================================================================
-    if config["Main"]["train"]:        
-        training.train(model, 
-                       dataset_wrapper, 
-                       config["Training"], 
-                       starting_epoch=starting_epoch)
-
+    if config["Main"]["train"]:      
+        if is_distributed:
+            training.train(model.module, 
+                           dataset_wrapper, 
+                           config["Training"], 
+                           starting_epoch,
+                           is_distributed = True,
+                           distributed_model = model,
+                           global_rank = global_rank,
+                           local_rank = local_rank)
+        else: 
+            training.train(model, 
+                           dataset_wrapper, 
+                           config["Training"], 
+                           starting_epoch)
+    
     # =========================================================================
     # Generation
     # =========================================================================
     if config["Main"]["generate"]:
         generate.generate(model)
+
+    if is_distributed:
+        distributed.destroy_process_group()
 
 if __name__ == "__main__":
     main()

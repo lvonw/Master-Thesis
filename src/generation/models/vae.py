@@ -10,7 +10,7 @@ from enum                               import Enum
 from generation.models.discriminator    import Discriminator
 from generation.modules.ema             import EMA
 from generation.modules.encoder         import Encoder, Decoder
-from torchmetrics.image.lpip            import LearnedPerceptualImagePatchSimilarity
+# from torchmetrics.image.lpip            import LearnedPerceptualImagePatchSimilaritys
 from lpips                              import LPIPS
 
 class LossMethod(Enum):
