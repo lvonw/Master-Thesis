@@ -152,12 +152,12 @@ class DatasetFactory():
 
         training_set    = MNIST(root=constants.DATA_PATH_MASTER, 
                                 train=True, 
-                                download=False, 
+                                download=True, 
                                 transform=mnist_transform)
 
         validation_set  = MNIST(root=constants.DATA_PATH_MASTER, 
                                 train=False, 
-                                download=False, 
+                                download=True, 
                                 transform=mnist_transform)
         
         return DatasetWrapper(training_dataset      = training_set, 
