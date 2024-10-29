@@ -4,8 +4,10 @@
 run.bat
 
 *__pycache__
-*.pth
 
 log/*
 resources/*/*
 data/*/*
+!data/Dems/*.txt
+models/vae/*
+models/diffusion/*

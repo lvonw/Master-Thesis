@@ -27,7 +27,7 @@ Guidance on implementing Diffusion Models:
 - https://github.com/Stability-AI/stablediffusion
 
 
-## Dependancies
+## Dependencies
 
 Should installing the dependancies via the provided `environment.yaml` not work
 you can install the following packages manually:
