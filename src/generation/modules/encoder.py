@@ -64,7 +64,6 @@ class Encoder(nn.Module):
         self.norm = Normalize(current_channel_amount, 32)
         self.non_linearity = nn.SiLU()
 
-        # TODO this probably makes more sense in the VAE 
         self.output_conv_1 = nn.Conv2d(current_channel_amount, 
                                        latent_channel_amount * 2, 
                                        kernel_size=3, 
@@ -184,9 +183,6 @@ class Decoder(nn.Module):
         z = self.norm(z)
         z = self.non_linearity(z)
         z = self.output_conv(z)
-
-        # Need this for lpips
-        # z = f.tanh(z)
 
         return z
 

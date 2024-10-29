@@ -7,14 +7,14 @@ Main:
   test:       false
   generate:   0 #true
 
-  load_model: true
+  load_model: 0 #true
 
 # =============================================================================
 # TRAINING
 # =============================================================================
 Training:  
   epochs:           3000
-  batch_size:       6 #128
+  batch_size:       128
   learning_rate:    4.5e-6
   logging_steps:    10
   num_workers:      2
@@ -29,7 +29,7 @@ Training:
 # =============================================================================
 Model:
   external: cfg/vae/vae.yaml
-  selection: VAE_1x256x256_4x32x32
+  selection: VAE_test_just_like_sd_mnist
   # external: cfg/diffusion/ddpm.yaml
   # selection: latent_diffusion_test_new_scale
   only_load_selection: true
@@ -39,7 +39,7 @@ Model:
 # DATA
 # =============================================================================
 Data:
-  use_MNIST:  false
+  use_MNIST:  true
 
   DEM_List:       SRTM_GL1_50_over_list.txt
   DEM_Dataset:    SRTM_GL1_512x512

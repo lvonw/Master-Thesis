@@ -32,13 +32,14 @@ def get_model_file_path(model):
 def save_model(model):
     torch.save(model.state_dict(), get_model_file_path(model))
 
-def load_model(model):
+def load_model(model, strict=True):
     model_path = get_model_file_path(model)
     if not os.path.exists(model_path):
         return False
 
     model.load_state_dict(torch.load(model_path, 
-                                     weights_only=False))
+                                     weights_only=False),
+                          strict=strict)
     return True
 
 def save_checkpoint(model, epoch_idx):

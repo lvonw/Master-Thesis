@@ -11,7 +11,7 @@ from generation.models.discriminator    import Discriminator
 from generation.modules.ema             import EMA
 from generation.modules.encoder         import Encoder, Decoder
 # from torchmetrics.image.lpip            import LearnedPerceptualImagePatchSimilaritys
-from lpips                              import LPIPS
+from generation.modules.lpips           import LPIPS
 
 class LossMethod(Enum):
     BINARY_CROSS_ENTROPY    = "binary cross entropy"
@@ -25,8 +25,6 @@ class AutoEncoderFactory():
 
     def create_auto_encoder(vae_configuration: Section,
                             pre_trained = False):
-        #print (vae_configuration)
-
         printer         = Printer()
 
         architecture    = vae_configuration["Architecture"]
@@ -105,7 +103,7 @@ class AutoEncoderFactory():
             #     net_type    = loss["perceptual_net"], 
             #     reduction   = "sum").eval()
             
-            perceptual_loss = LPIPS().eval()
+            perceptual_loss = LPIPS(loss["perceptual_net"]).eval()
             
         # EMA =================================================================
         # SDXL mentions that they use EMA
@@ -209,7 +207,6 @@ class VariationalAutoEncoder(nn.Module):
         printer = Printer()
 
         # Discriminator Training ==============================================
-        #printer.print_log(0)
         if self.use_discriminator and train_discriminator:
             if total_training_step_idx < self.discriminator_warmup:
                 # Zero loss
@@ -229,7 +226,6 @@ class VariationalAutoEncoder(nn.Module):
             return loss, None
 
         # VAE Training ========================================================
-        #printer.print_log(1)
         reconstructions, latent_encoding    = self(inputs)
 
         if total_training_step_idx % self.log_image_interval == 0:
@@ -237,9 +233,7 @@ class VariationalAutoEncoder(nn.Module):
                               reconstructions.contiguous().detach(), 
                               total_training_step_idx)
         
-
         # Reconstruction Loss -------------------------------------------------
-        #printer.print_log(2)
         match self.loss_method:
             case LossMethod.BINARY_CROSS_ENTROPY: 
                 reconstruction_loss = f.binary_cross_entropy(
@@ -255,35 +249,11 @@ class VariationalAutoEncoder(nn.Module):
             case LossMethod.ABSOLUTE_DIFFERENCE:
                 reconstruction_loss = torch.abs(reconstructions - inputs)   
 
-        #printer.print_log(3)
-        individual_reconstruction_loss = torch.sum(reconstruction_loss, 
-                                                   dim=(1, 2, 3))
-        #printer.print_log(4)
-        
         # Perceptual Loss -----------------------------------------------------
-        # assumes we only have one channel, at some point it will have to be 
-        # more dynamic
-        if self.use_perceptual_loss:
-            lpips_inputs            = (inputs
-                                       .repeat(1, 3, 1, 1)
-                                       .contiguous())
-            lpips_reconstructions   = (reconstructions
-                                       .repeat(1, 3, 1, 1)
-                                       .contiguous()) 
-            #printer.print_log(5)
-            
-            
-            # Currently this is the mean, so adding to individual doesnt make 
-            # too much semantic sense
-            perceptual_loss = self.perceptual_loss(lpips_inputs, 
-                                                   lpips_reconstructions)
-            #printer.print_log(6)    
-
-            perceptual_loss = perceptual_loss.squeeze()
-            #printer.print_log(7)
-            
-            individual_reconstruction_loss += (self.perceptual_weight 
-                                               * perceptual_loss)
+        if self.use_perceptual_loss:            
+            perceptual_loss = self.perceptual_loss(inputs, 
+                                                   reconstructions)
+            reconstruction_loss += self.perceptual_weight * perceptual_loss
         
         # Class weights if necessary ------------------------------------------
         # Not entirely sure what makes more sense, to have this here or at the 
@@ -292,13 +262,12 @@ class VariationalAutoEncoder(nn.Module):
             and labels          is not None 
             and loss_weights    is not None):
             
-            for idx in range(len(individual_reconstruction_loss)):
-                individual_reconstruction_loss[idx] *= loss_weights[labels[idx]
-                                                                    .item()]
+            for idx in range(len(reconstruction_loss)):
+                reconstruction_loss[idx] *= loss_weights[labels[idx].item()]
 
         # Average losses
-        reconstruction_loss = torch.mean(individual_reconstruction_loss)
-        #printer.print_log(8)
+        reconstruction_loss = (reconstruction_loss.sum() 
+                               / reconstruction_loss.shape[0])
         self.loss_log.add_entry("Reconstruction", reconstruction_loss)
 
 
@@ -307,13 +276,10 @@ class VariationalAutoEncoder(nn.Module):
         log_var         = latent_encoding.log_variance
         kl_divergence   = -0.5 * (1 + log_var - mean.pow(2) - log_var.exp())
         
-        individual_kl_divergence    = torch.sum(kl_divergence, dim=(1, 2, 3))
-        
-        kl_divergence = torch.mean(individual_kl_divergence)
+        kl_divergence = kl_divergence.sum() - kl_divergence.shape[0]
         kl_divergence *= self.beta
         
         self.loss_log.add_entry("KL-Divergence", kl_divergence)
-        #printer.print_log(9)
     
         # Discriminator Loss --------------------------------------------------
         discriminator_loss = 0.
@@ -351,7 +317,6 @@ class VariationalAutoEncoder(nn.Module):
                  + kl_divergence
                  + discriminator_loss)    
 
-        #printer.print_log(10)
 
         self.loss_log.add_entry("Total", loss)
 
@@ -434,7 +399,7 @@ class VariationalAutoEncoder(nn.Module):
             return x, None
         
         latent_encoding = self.encode(x)
-
+        
         z = latent_encoding.latents
         
         x = self.decode(z)

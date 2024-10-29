@@ -9,7 +9,7 @@ class EMA(nn.Module):
         self.ema_weight             = configuration["weight"]
         self.one_minus_ema_weight   = 1 - self.ema_weight 
         self.warmup_steps           = configuration["warm_up_steps"]
-        self._current_step           = 0
+        self._current_step          = 0
 
     def ema_step(self, model):
         self._current_step += 1

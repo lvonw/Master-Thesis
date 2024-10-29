@@ -1000,10 +1000,11 @@ VAE_test_just_like_sd_mnist:
     use_discriminator:      true
     discriminator_warm_up:  5000
     discriminator_weight:   0.5
+    discriminator_layers:   2
         
     use_perceptual_loss:    true
     perceptual_weight:      1.0
-    perceptual_net:         alex
+    perceptual_net:         vgg
 
     kl_beta: 0.000001
 

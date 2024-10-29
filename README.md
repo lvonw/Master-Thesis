@@ -38,4 +38,3 @@ you can install the following packages manually:
 - MatPlotLib
 - tqdm
 - pyyaml
-- lpips
