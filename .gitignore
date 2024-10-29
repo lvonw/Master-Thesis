@@ -8,6 +8,6 @@ run.bat
 log/*
 resources/*/*
 data/*/*
-!data/Dems/*.txt
+# !data/Dems/*.txt
 models/vae/*
 models/diffusion/*

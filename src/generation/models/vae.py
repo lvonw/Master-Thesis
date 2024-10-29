@@ -10,7 +10,6 @@ from enum                               import Enum
 from generation.models.discriminator    import Discriminator
 from generation.modules.ema             import EMA
 from generation.modules.encoder         import Encoder, Decoder
-# from torchmetrics.image.lpip            import LearnedPerceptualImagePatchSimilaritys
 from generation.modules.lpips           import LPIPS
 
 class LossMethod(Enum):
@@ -212,7 +211,7 @@ class VariationalAutoEncoder(nn.Module):
         if self.use_discriminator and train_discriminator:
             if total_training_step_idx < self.discriminator_warmup:
                 # Zero loss
-                return torch.tensor(0.0), None
+                return torch.tensor(0.0, requires_grad=True), None
             
             reconstructions, latent_encoding    = self(inputs)
 
@@ -287,7 +286,8 @@ class VariationalAutoEncoder(nn.Module):
     
         # Discriminator Loss --------------------------------------------------
         discriminator_loss = 0.
-        if self.use_discriminator and total_training_step_idx >= self.discriminator_warmup:
+        if (self.use_discriminator 
+            and total_training_step_idx >= self.discriminator_warmup):
 
             # Use discriminator as metric
             logits = self.discriminator(reconstructions.contiguous())

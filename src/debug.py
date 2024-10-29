@@ -30,7 +30,7 @@ class Printer():
     def __init__(self):
         self.line_count = 0
         self.ping_counter = 0
-
+        self.print_only_rank_0 = False
         self.rank = 0
     
     def __count_lines(self, message):
@@ -40,15 +40,17 @@ class Printer():
         self.line_count += self.__count_lines(message)
         
     def print(self, message):
-        if self.rank == 0:
-            print(message)
-            self.__increase_counter(message)
+        if self.rank != 0 and self.print_only_rank_0:
+            return
+        print(f"[{self.rank}] {message}")
+        self.__increase_counter(message)
 
     def input(self, prompt):
-        if self.rank == 0:
-            value = input(prompt)
-            self.__increase_counter(prompt)
-            return value
+        if self.rank != 0 and self.print_only_rank_0:
+            return
+        value = input(prompt)
+        self.__increase_counter(prompt)
+        return value
     
     def ping(self):
         self.print_log(self.ping_counter)

@@ -70,6 +70,8 @@ def main():
         config.load(arguments.config)
     else:
         config.load_defaults()
+
+    printer.print_only_rank_0 = config["Debug"]["print_only_rank_zero"]
     printer.print_log("Finished.")
 
     # =========================================================================
@@ -127,7 +129,7 @@ def main():
         printer.print_log(f"Finished, starting at epoch: {starting_epoch}.")
 
     if is_distributed:
-        model = DistributedDataParallel(model, device_ids=[local_rank])
+        model = DDPTrainingDecorator(model, device_ids=[local_rank])
     else: 
         model.to(util.get_device())
     
@@ -154,7 +156,8 @@ def main():
                            starting_epoch,
                            is_distributed       = True,
                            global_rank          = global_rank,
-                           local_rank           = local_rank)
+                           local_rank           = local_rank,
+                           local_amount         = torch.cuda.device_count())
         else: 
             training.train(model,
                            model, 

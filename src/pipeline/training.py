@@ -30,7 +30,8 @@ def train(model,
           starting_epoch = 0,
           is_distributed = False,
           global_rank = 0,
-          local_rank = 0):
+          local_rank = 0,
+          local_amount = 1):
     
     printer         = Printer()
     data_visualizer = DataVisualizer()
@@ -56,25 +57,27 @@ def train(model,
                       constants.TRAINING_LOSS_LOG)
     
     total_training_step_idx = 0
-    for epoch_idx in tqdm(range(starting_epoch, num_epochs),
-                          total     = num_epochs,
-                          initial   = starting_epoch,
-                          position  = 0,
-                          leave     = True, 
-                          desc      = "Epochs",
-                          disable   = False,
-                          colour    = "magenta"):
+    for epoch_idx in tqdm(
+        range(starting_epoch, num_epochs),
+        total     = num_epochs,
+        initial   = starting_epoch,
+        position  = local_rank,
+        leave     = True, 
+        desc      = f"[{local_rank}] Epochs",
+        disable   = False,
+        colour    = "magenta"):
         model.train()
 
         print_to_log_file(f"Epoch: {epoch_idx+1}", constants.TRAINING_LOSS_LOG)
 
-        for training_step_idx, data in tqdm(enumerate(training_dataloader, 0), 
-                                            total   = len(training_dataloader),
-                                            position= 1,
-                                            leave   = False,
-                                            desc    = "Training Steps",
-                                            disable = False,
-                                            colour  = "red"):
+        for training_step_idx, data in tqdm(
+            enumerate(training_dataloader, 0), 
+            total   = len(training_dataloader),
+            position= local_amount + local_rank,
+            leave   = False,
+            desc    = f"[{local_rank}] Training Steps",
+            disable = False,
+            colour  = "red"):
             inputs, labels, _ = __prepare_data(data)
             total_training_step_idx = (len(training_dataloader) * epoch_idx 
                                        + training_step_idx)
@@ -97,10 +100,11 @@ def train(model,
                 optimizer.step()
 
             # Loss monitoring =================================================
-            if ((training_step_idx + 1) % logging_steps) == 0 and global_rank == 0:
-                print_to_log_file(
-                    model_state, 
-                    constants.TRAINING_LOSS_LOG)
+            if ((training_step_idx + 1) % logging_steps == 0 
+                and global_rank == 0):
+
+                print_to_log_file(model_state.loss_log, 
+                                  constants.TRAINING_LOSS_LOG)
                     
             # Post training step behaviour ====================================
             model.on_training_step_completed()
