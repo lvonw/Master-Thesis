@@ -35,8 +35,16 @@ def prepare_arg_parser():
     parser.add_argument("--distributed", 
                         dest="distributed", 
                         action="store_true")
+
     
     return parser
+
+def __get_backend():
+    system = platform.system()
+    if system == "Windows":
+        return "GLOO"
+    elif system == "Linux":
+        return "nccl"
 
 def main():
     parser      = prepare_arg_parser()
@@ -176,10 +184,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-def __get_backend():
-    system = platform.system()
-    if system == "Windows":
-        return "GLOO"
-    elif system == "Linux":
-        return "nccl"

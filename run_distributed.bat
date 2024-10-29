@@ -1,1 +1,1 @@
-torchrun --standalone --nnodes=1 --nproc-per-node=1 --use-env src/main.py --distributed
+torchrun --standalone --nproc_per_node=2 --nnodes=1 --rdzv_id=456 --rdzv_backend=c10d --rdzv_endpoint=127.0.0.1:48123 src/main.py --distributed
