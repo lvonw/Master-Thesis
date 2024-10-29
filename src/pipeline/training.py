@@ -24,11 +24,11 @@ def print_loss_graph(losses):
         
 
 def train(model, 
+          model_state,
           dataset_wrapper, 
           configuration,
           starting_epoch = 0,
           is_distributed = False,
-          distributed_model = None,
           global_rank = 0,
           local_rank = 0):
     
@@ -52,7 +52,8 @@ def train(model,
     validation_losses   = []
             
     # Training ================================================================
-    print_to_log_file(f"\nModel: {model.name}", constants.TRAINING_LOSS_LOG)
+    print_to_log_file(f"\nModel: {model_state.name}", 
+                      constants.TRAINING_LOSS_LOG)
     
     total_training_step_idx = 0
     for epoch_idx in tqdm(range(starting_epoch, num_epochs),
@@ -80,7 +81,7 @@ def train(model,
             
             
             # Main training loop over all optimizers ==========================
-            for optimizer_idx, optimizer in enumerate(model.optimizers):                
+            for optimizer_idx, optimizer in enumerate(model_state.optimizers):                
                 optimizer.zero_grad()   
                 loss, _ = model.training_step(inputs, 
                                               labels, 
@@ -88,20 +89,17 @@ def train(model,
                                               epoch_idx,
                                               total_training_step_idx,
                                               training_step_idx,
-                                              optimizer_idx)
-                
-                # Ignore irrelevant losses
-                if loss.item() == 0:  
-                    continue
+                                              optimizer_idx,
+                                              global_rank,
+                                              local_rank)
                     
                 loss.backward()
                 optimizer.step()
 
-
             # Loss monitoring =================================================
             if ((training_step_idx + 1) % logging_steps) == 0 and global_rank == 0:
                 print_to_log_file(
-                    model.loss_log, 
+                    model_state, 
                     constants.TRAINING_LOSS_LOG)
                     
             # Post training step behaviour ====================================
@@ -109,7 +107,7 @@ def train(model,
 
         # Post epoch behaviour ================================================
         if configuration["Save_after_epoch"] and global_rank == 0:
-            util.save_checkpoint(model, epoch_idx)
+            util.save_checkpoint(model_state, epoch_idx)
         
         # Validation ==========================================================
         if False and len(validation_dataloader):

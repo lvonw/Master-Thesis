@@ -201,7 +201,9 @@ class VariationalAutoEncoder(nn.Module):
                       epoch_idx,
                       total_training_step_idx, 
                       relative_training_step_idx,
-                      optimizer_idx):
+                      optimizer_idx,
+                      global_rank,
+                      local_rank):
         """ Inspired by Stable Diffusion autoencoder_kl and Taming LPIPS"""
         train_discriminator = optimizer_idx == 1
         printer = Printer()
@@ -228,7 +230,9 @@ class VariationalAutoEncoder(nn.Module):
         # VAE Training ========================================================
         reconstructions, latent_encoding    = self(inputs)
 
-        if total_training_step_idx % self.log_image_interval == 0:
+        if (global_rank == 0 
+            and total_training_step_idx % self.log_image_interval == 0):
+            
             self.__log_images(inputs.contiguous().detach(), 
                               reconstructions.contiguous().detach(), 
                               total_training_step_idx)

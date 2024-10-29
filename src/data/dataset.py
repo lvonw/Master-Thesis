@@ -217,10 +217,11 @@ class TerrainDataset(Dataset):
         self.channel_cache          = channel_cache
         self.label_cache            = label_cache
 
-        # # Thread-Safe cache, introduces massive overheads        
+        # # Thread-Safe cache, introduces massive overheads
+        manager                     = multiprocessing.Manager()
+        self.shared_dataset_cache   = manager.list()        
         # self.shared_channel_cache   = None
         # self.shared_label_cache     = None
-        # self.shared_dataset_cache   = None
 
     def __len__(self):
         return len(self.DEM_list)
@@ -288,8 +289,7 @@ class TerrainDataset(Dataset):
 
         # Transfer our single process cache to the shared cache
         self.printer.print_log("Transferring to shared cache...")
-        manager                     = multiprocessing.Manager()
-        self.shared_dataset_cache   = manager.list(self.dataset_cache)
+        self.shared_dataset_cache.extend(self.dataset_cache)        
         self.dataset_cache.clear()
         self.printer.print_log("Finished")
 

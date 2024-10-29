@@ -1,5 +1,4 @@
 import argparse
-import constants
 import os
 import platform
 import torch
@@ -7,21 +6,19 @@ import util
 
 import torch.distributed    as distributed 
 
-from cli.cli                import CLI
-from configuration          import Configuration
-from data.dataset           import DatasetFactory
-from data.data_util         import DataVisualizer
-from debug                  import Printer, LogLevel
-from generation.models.vae  import AutoEncoderFactory
-from generation.models.ddpm import DDPM
-from pipeline               import generate, training
-from torchvision            import transforms
-from torch.nn.parallel      import DistributedDataParallel
+from cli.cli                        import CLI
+from configuration                  import Configuration
+from data.dataset                   import DatasetFactory
+from debug                          import Printer, LogLevel
+from generation.models.vae          import AutoEncoderFactory
+from generation.models.ddpm         import DDPM
+from generation.models.DDPDecorator import DDPTrainingDecorator
+from pipeline                       import generate, training
+from torch.nn.parallel              import DistributedDataParallel
 
 
 def prepare_arg_parser():
-    parser = argparse.ArgumentParser(prog="Diffusion",
-                                     
+    parser = argparse.ArgumentParser(prog="Diffusion",        
                                      description="Description")
     parser.add_argument("-cfg",
                         "--config",
@@ -41,13 +38,6 @@ def prepare_arg_parser():
     
     return parser
 
-def get_backend():
-    system = platform.system()
-    if system == "Windows":
-        return "GLOO"
-    elif system == "Linux":
-        return "nccl"
-
 def main():
     parser      = prepare_arg_parser()
     arguments   = parser.parse_args()
@@ -63,7 +53,7 @@ def main():
         local_rank   = int(os.environ["LOCAL_RANK"])    
         printer.rank = local_rank
         
-        backend = get_backend()
+        backend = __get_backend()
         printer.print_log(f"Using backend: {backend}")
         distributed.init_process_group(backend="gloo")
         torch.cuda.set_device(local_rank)
@@ -85,10 +75,10 @@ def main():
     # =========================================================================
     # CLI
     # =========================================================================
-    if arguments.cli:
+    if arguments.cli and global_rank == 0:
         config.load_usages()
         cli = CLI(config);
-        config, should_quit = cli.cli_loop();
+        config, should_quit = cli.cli_loop()
         if should_quit:
             quit()
 
@@ -101,7 +91,7 @@ def main():
         printer.print_log("Loading Dataset...")
         if local_rank == 0:
             dataset_wrapper = DatasetFactory.create_dataset(config["Data"], 
-                                                            True)
+                                                            prepare=True)
             if is_distributed: 
                 distributed.barrier()
         else: 
@@ -157,16 +147,17 @@ def main():
     # =========================================================================
     if config["Main"]["train"]:      
         if is_distributed:
-            training.train(model.module, 
+            training.train(model,
+                           model.module, 
                            dataset_wrapper, 
                            config["Training"], 
                            starting_epoch,
-                           is_distributed = True,
-                           distributed_model = model,
-                           global_rank = global_rank,
-                           local_rank = local_rank)
+                           is_distributed       = True,
+                           global_rank          = global_rank,
+                           local_rank           = local_rank)
         else: 
-            training.train(model, 
+            training.train(model,
+                           model, 
                            dataset_wrapper, 
                            config["Training"], 
                            starting_epoch)
@@ -182,3 +173,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+def __get_backend():
+    system = platform.system()
+    if system == "Windows":
+        return "GLOO"
+    elif system == "Linux":
+        return "nccl"

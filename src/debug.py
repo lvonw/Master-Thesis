@@ -14,6 +14,7 @@ class LogLevel(Enum):
     ERROR   = ("ERROR",     constants.COLOUR_RED) 
 
 def print_to_log_file(data, filename):
+    os.makedirs(constants.LOG_PATH, exist_ok=True)
     file_path = os.path.join(constants.LOG_PATH, filename)
     with open(file_path, 'a') as file:
         file.write(f"{data}\n")

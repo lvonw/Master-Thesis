@@ -122,7 +122,9 @@ class DDPM(nn.Module):
                       epoch_idx,
                       total_training_step_idx, 
                       relative_training_step_idx,
-                      optimizer_idx):
+                      optimizer_idx,
+                      global_rank,
+                      local_rank):
         
         # Latent Encoding =====================================================
         if self.is_latent:

@@ -24,9 +24,12 @@ def get_model_family(model):
 
 def get_model_file_path(model):
     model_family = get_model_family(model)
+
+    model_dir = os.path.join(constants.MODEL_PATH_MASTER,
+                        model_family)
+    os.makedirs(model_dir, exist_ok=True)
     
-    return os.path.join(constants.MODEL_PATH_MASTER,
-                        model_family,
+    return os.path.join(model_dir,
                         model.name + constants.MODEL_FILE_TYPE)
     
 def save_model(model):
