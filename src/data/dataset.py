@@ -98,9 +98,12 @@ class DatasetFactory():
             cache_dems=data_configuration["Cache_DEMs"],
             amount_classes=amount_classes) 
         
+        # TODO
         if prepare:
             loss_weights        = terrain_dataset.prepare_dataset(
-                data_configuration["loader_workers"]) 
+                data_configuration["loader_workers"])
+        else: 
+            loss_weights        = {}
 
         return DatasetWrapper(dataset           = terrain_dataset, 
                               amount_classes    = amount_classes,
