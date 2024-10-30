@@ -6,8 +6,10 @@ import enum
 # =============================================================================
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+DATA_PATH_MASTER    = os.path.join(PROJECT_PATH, "data")
+
 # Log Paths
-LOG_PATH            = os.path.join(PROJECT_PATH, "log")
+LOG_PATH            = os.path.join(DATA_PATH_MASTER, "log")
 TRAINING_LOSS_LOG   = "training_loss.txt"
 VALIDATION_LOSS_LOG = "validation_loss.txt"
 IMAGE_LOG           = os.path.join(LOG_PATH, "images")
@@ -19,31 +21,36 @@ CONFIG_DEFAULT_FILE = "default" + CONFIG_FILE_FORMAT
 USAGES_FILE         = os.path.join(CONFIG_PATH, "usages" + CONFIG_FILE_FORMAT)
 
 # Data Paths
-DATA_PATH_MASTER    = os.path.join(PROJECT_PATH,        "data")
-DATA_PATH_DEM       = os.path.join(DATA_PATH_MASTER,    "DEMs")
+DATASET_PATH_MASTER = os.path.join(DATA_PATH_MASTER,    "datasets")
+DATA_PATH_DEM       = os.path.join(DATASET_PATH_MASTER, "DEMs")
 DATA_PATH_DEM_LIST  = os.path.join(DATA_PATH_DEM,       "SRTM_GL1_list.txt")
 DATA_PATH_DEMS      = os.path.join(DATA_PATH_DEM,       "SRTM_GL1_srtm")
-DATA_PATH_GLIM      = os.path.join(DATA_PATH_MASTER, 
-                                   "GLiM", 
-                                   "hartmann-moosdorf_2012", 
-                                   "glim_wgs84_0point5deg.txt.asc")
-DATA_PATH_CLIMATE   = os.path.join(DATA_PATH_MASTER, 
-                                   "Climate", 
-                                   "peel-et-al_2007", 
-                                   "koeppen_wgs84_0point1deg.txt.asc")
-DATA_PATH_DSMW      = os.path.join(DATA_PATH_MASTER, 
-                                   "DSMW",
-                                   "dsmw-fao",
-                                   "dmsw_wgs84_0point08deg.txt.asc")
-DATA_PATH_GTC       = os.path.join(DATA_PATH_MASTER, 
-                                   "GTC",
-                                   "Iwahashi_etal_2018",
-                                   "3600x1800_GlobalTerrainClassification_Iwahashi_etal_2018.tif")
+DATA_PATH_GLIM      = os.path.join(
+    DATASET_PATH_MASTER, 
+    "GLiM", 
+    "hartmann-moosdorf_2012", 
+    "glim_wgs84_0point5deg.txt.asc")
+DATA_PATH_CLIMATE   = os.path.join(
+    DATASET_PATH_MASTER, 
+    "Climate", 
+    "peel-et-al_2007", 
+    "koeppen_wgs84_0point1deg.txt.asc")
+DATA_PATH_DSMW      = os.path.join(
+    DATASET_PATH_MASTER, 
+    "DSMW",
+    "dsmw-fao",
+    "dmsw_wgs84_0point08deg.txt.asc")
+DATA_PATH_GTC       = os.path.join(
+    DATASET_PATH_MASTER, 
+    "GTC",
+    "Iwahashi_etal_2018",
+    "3600x1800_GlobalTerrainClassification_Iwahashi_etal_2018.tif")
 
 DEFAULT_DEM_LIST    = "SRTM_GL1_list.txt"
 
 # Model Paths
-MODEL_PATH_MASTER   = os.path.join(PROJECT_PATH, "models")
+MODEL_PATH_MASTER   = os.path.join(DATA_PATH_MASTER,
+                                   "models")
 MODEL_FILE_TYPE     = ".pth"
 MODEL_PATH_TEST     = os.path.join(MODEL_PATH_MASTER, "test.pth")
 

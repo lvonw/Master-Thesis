@@ -45,3 +45,13 @@ sudo nano /etc/fstab
 
 verify with 
 df -h
+
+### Access Data
+Download data 
+
+scp paperspace@host-ip:complete-host-path path-to-copy-to
+
+Upload Data
+scp path-to-upload paperspace@host-ip:complete-host-path 
+
+you can get the full path via pwd

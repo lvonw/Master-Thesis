@@ -150,12 +150,12 @@ class DatasetFactory():
         mnist_transform = transforms.Compose([transforms.ToTensor(),
                                               transforms.Resize(size=32)])
 
-        training_set    = MNIST(root=constants.DATA_PATH_MASTER, 
+        training_set    = MNIST(root=constants.DATASET_PATH_MASTER, 
                                 train=True, 
                                 download=True, 
                                 transform=mnist_transform)
 
-        validation_set  = MNIST(root=constants.DATA_PATH_MASTER, 
+        validation_set  = MNIST(root=constants.DATASET_PATH_MASTER, 
                                 train=False, 
                                 download=True, 
                                 transform=mnist_transform)

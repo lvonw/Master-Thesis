@@ -53,8 +53,9 @@ def train(model,
     validation_losses   = []
             
     # Training ================================================================
-    print_to_log_file(f"\nModel: {model_state.name}", 
-                      constants.TRAINING_LOSS_LOG)
+    if global_rank == 0:
+        print_to_log_file(f"\nModel: {model_state.name}", 
+                        constants.TRAINING_LOSS_LOG)
     
     total_training_step_idx = 0
     for epoch_idx in tqdm(
@@ -68,7 +69,9 @@ def train(model,
         colour    = "magenta"):
         model.train()
 
-        print_to_log_file(f"Epoch: {epoch_idx+1}", constants.TRAINING_LOSS_LOG)
+        if global_rank == 0:
+            print_to_log_file(f"Epoch: {epoch_idx+1}", 
+                              constants.TRAINING_LOSS_LOG)
 
         for training_step_idx, data in tqdm(
             enumerate(training_dataloader, 0), 
@@ -124,7 +127,8 @@ def train(model,
             validation_losses.append(validation_loss)
             printer.print_log(f"Validation Loss: {validation_loss:.4f}")
 
-    print_to_log_file("\n", constants.TRAINING_LOSS_LOG)
+    if global_rank == 0:
+        print_to_log_file("\n", constants.TRAINING_LOSS_LOG)
     
     # Post training evaluations =============================================== 
     lp = LaplaceFilter()
