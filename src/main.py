@@ -46,6 +46,10 @@ def __get_backend():
     elif system == "Linux":
         return "nccl"
 
+import multiprocessing
+
+
+
 def main():
     parser      = prepare_arg_parser()
     arguments   = parser.parse_args()
@@ -59,11 +63,19 @@ def main():
     if is_distributed: 
         global_rank  = int(os.environ["RANK"])
         local_rank   = int(os.environ["LOCAL_RANK"])    
+
+        abc = multiprocessing.Manager().list()
+        if local_rank == 0:
+            abc.extend([1,2,3])
+        
+        print (f"1 {len(abc)}")
         printer.rank = local_rank
         
         backend = __get_backend()
-        distributed.init_process_group(backend="gloo")
+        distributed.init_process_group(backend)
         torch.cuda.set_device(local_rank)
+
+        print (f"2 {len(abc)}")
 
         printer.print_log(f"Global Rank: {global_rank}")
         printer.print_log(f"Local Rank: {local_rank}")
