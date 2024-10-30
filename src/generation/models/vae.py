@@ -257,7 +257,7 @@ class VariationalAutoEncoder(nn.Module):
             perceptual_loss = self.perceptual_loss(inputs, 
                                                    reconstructions)
             
-            printer.print_log(perceptual_loss)
+            #printer.print_log(perceptual_loss)
             reconstruction_loss += self.perceptual_weight * perceptual_loss
         
         # Class weights if necessary ------------------------------------------

@@ -950,7 +950,7 @@ VAE_test_just_like_sd:
     warm_up_steps: 2000
 
   Loss:
-    use_discriminator:      false
+    use_discriminator:      true
     discriminator_warm_up:  50000
     discriminator_weight:   0.5
     discriminator_layers:   2

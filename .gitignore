@@ -6,5 +6,12 @@ run.bat
 *__pycache__
 
 resources/*/*
+
+# It is beyond silly that i have to do this
+!data/
 data/*
-# !data/Dems/*.txt
+!data/models
+data/models/*
+!data/models/lpips
+data/models/lpips/*
+!data/models/lpips/vgg.pth
