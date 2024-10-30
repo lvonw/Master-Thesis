@@ -86,7 +86,9 @@ def train(model,
             # Main training loop over all optimizers ==========================
             for optimizer_idx, optimizer in enumerate(model_state.optimizers):                
                 optimizer.zero_grad()   
-                loss, _ = model(inputs, 
+                loss, _ = model(None,
+                                True,
+                                inputs, 
                                 labels, 
                                 loss_weights,
                                 epoch_idx,
