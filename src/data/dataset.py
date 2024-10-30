@@ -104,6 +104,9 @@ class DatasetFactory():
                 data_configuration["loader_workers"])
         else: 
             loss_weights        = {}
+        
+        printer.print_log(
+            f"AAAAAAA cache things {len(terrain_dataset.shared_dataset_cache)}")
 
         return DatasetWrapper(dataset           = terrain_dataset, 
                               amount_classes    = amount_classes,
