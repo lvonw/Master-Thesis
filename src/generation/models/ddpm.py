@@ -163,6 +163,10 @@ class DDPM(nn.Module):
     # =========================================================================
     # Sampling
     # =========================================================================
+    def forward(self, x, training=False, *args, **kwargs):
+        if training:
+            return self.training_step(*args, **kwargs)
+
     def generate(self, label=None, amount=1):
         if label is not None:
             label = torch.tensor([label], device=self.device).unsqueeze(dim=0)

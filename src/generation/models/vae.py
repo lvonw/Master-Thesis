@@ -396,7 +396,10 @@ class VariationalAutoEncoder(nn.Module):
         noise   = torch.randn((1,) + self.latent_shape)
         return self.decode(noise)
     
-    def forward(self, x):
+    def forward(self, x, training=False, *args, **kwargs):
+        if training:
+            return self.training_step(*args, **kwargs)
+
         if x.shape[1:] != self.data_shape:
             Printer().print_log("Data shape does not match specified shape!",
                                 LogLevel.ERROR)

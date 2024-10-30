@@ -86,15 +86,15 @@ def train(model,
             # Main training loop over all optimizers ==========================
             for optimizer_idx, optimizer in enumerate(model_state.optimizers):                
                 optimizer.zero_grad()   
-                loss, _ = model.training_step(inputs, 
-                                              labels, 
-                                              loss_weights,
-                                              epoch_idx,
-                                              total_training_step_idx,
-                                              training_step_idx,
-                                              optimizer_idx,
-                                              global_rank,
-                                              local_rank)
+                loss, _ = model(inputs, 
+                                labels, 
+                                loss_weights,
+                                epoch_idx,
+                                total_training_step_idx,
+                                training_step_idx,
+                                optimizer_idx,
+                                global_rank,
+                                local_rank)
                     
                 loss.backward()
                 optimizer.step()

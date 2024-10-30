@@ -12,9 +12,9 @@ from data.dataset                   import DatasetFactory
 from debug                          import Printer, LogLevel
 from generation.models.vae          import AutoEncoderFactory
 from generation.models.ddpm         import DDPM
-from generation.models.DDPDecorator import DDPTrainingDecorator
+from generation.models.DDPDecorator import DDPTrainingDecorator     
 from pipeline                       import generate, training
-from torch.nn.parallel              import DistributedDataParallel
+from torch.nn.parallel              import DistributedDataParallel  as DDP
 
 
 def prepare_arg_parser():
@@ -142,7 +142,7 @@ def main():
 
     model.to(util.get_device())
     if is_distributed:
-        model = DDPTrainingDecorator(model, device_ids=[local_rank])        
+        model = DDP(model, device_ids=[local_rank])        
     
     # =========================================================================
     # Stats
