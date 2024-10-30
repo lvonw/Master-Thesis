@@ -5,9 +5,6 @@ run.bat
 
 *__pycache__
 
-log/*
 resources/*/*
-data/*/*
+data/*
 # !data/Dems/*.txt
-models/vae/*
-models/diffusion/*

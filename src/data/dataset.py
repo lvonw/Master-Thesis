@@ -272,7 +272,8 @@ class TerrainDataset(Dataset):
             list(tqdm(executor.map(self.__prefetch_cache, indices),
                     total=len(indices), 
                     desc="Preparing Dataset"))
-            
+        
+        self.printer.print_log(f"Cached {len(self.dataset_cache)} Items")
 
         # analysis_result = self.__analyse_dataset()
         # self.printer.print_log(analysis_result)
