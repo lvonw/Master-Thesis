@@ -109,7 +109,7 @@ def train(model,
                                   constants.TRAINING_LOSS_LOG)
                     
             # Post training step behaviour ====================================
-            model.on_training_step_completed()
+            model_state.on_training_step_completed()
 
         # Post epoch behaviour ================================================
         if configuration["Save_after_epoch"] and global_rank == 0:
