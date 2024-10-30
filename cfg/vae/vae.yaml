@@ -956,7 +956,7 @@ VAE_test_just_like_sd:
     discriminator_layers:   2
 
         
-    use_perceptual_loss:    false
+    use_perceptual_loss:    true
     perceptual_weight:      1.0
     perceptual_net:         vgg
 
