@@ -47,6 +47,7 @@ def __get_backend():
         return "nccl"
 
 import multiprocessing
+import torch.multiprocessing as mp
 
 
 
@@ -64,10 +65,11 @@ def main():
         global_rank  = int(os.environ["RANK"])
         local_rank   = int(os.environ["LOCAL_RANK"])    
 
-        abc = multiprocessing.Manager().list()
+        abc = mp.Manager().list()
         if local_rank == 0:
             abc.extend([1,2,3])
         
+
         print (f"1 {len(abc)}")
         printer.rank = local_rank
         
