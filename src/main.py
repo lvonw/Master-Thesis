@@ -4,7 +4,7 @@ import platform
 import torch
 import util                   
 
-import torch.distributed    as distributed 
+import torch.distributed            as distributed 
 
 from cli.cli                        import CLI
 from configuration                  import Configuration
@@ -36,7 +36,6 @@ def prepare_arg_parser():
                         dest="distributed", 
                         action="store_true")
 
-    
     return parser
 
 def __get_backend():
@@ -52,7 +51,7 @@ def main():
     printer     = Printer()
 
     # Distribution ============================================================    
-    is_distributed  = arguments.distributed
+    is_distributed  = arguments.distributed and torch.cuda.device_count() > 1
     global_rank     = 0
     local_rank      = 0
     
@@ -62,10 +61,12 @@ def main():
         printer.rank = local_rank
         
         backend = __get_backend()
-        printer.print_log(f"Using backend: {backend}")
         distributed.init_process_group(backend="gloo")
         torch.cuda.set_device(local_rank)
-        printer.print_log(f"Successfully Initialized, logging from: {local_rank}")
+
+        printer.print_log(f"Global Rank: {global_rank}")
+        printer.print_log(f"Local Rank: {local_rank}")
+        printer.print_log(f"Using backend: {backend}")
     else: 
         printer.print_log("Running on single Machine")
 
@@ -104,8 +105,11 @@ def main():
                                                             prepare=True)
             if is_distributed: 
                 distributed.barrier()
-        else: 
+                printer.print_log(f"Lifting barrier") 
+        else:
+            printer.print_log(f"Waiting for barrier to be lifted") 
             distributed.barrier()
+            printer.print_log(f"Barrier was lifted, continuing") 
             dataset_wrapper = DatasetFactory.create_dataset(config["Data"])
 
         amount_classes = dataset_wrapper.amount_classes
@@ -136,10 +140,9 @@ def main():
             
         printer.print_log(f"Finished, starting at epoch: {starting_epoch}.")
 
+    model.to(util.get_device())
     if is_distributed:
-        model = DDPTrainingDecorator(model, device_ids=[local_rank])
-    else: 
-        model.to(util.get_device())
+        model = DDPTrainingDecorator(model, device_ids=[local_rank])        
     
     # =========================================================================
     # Stats
