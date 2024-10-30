@@ -143,7 +143,9 @@ def main():
 
     model.to(util.get_device())
     if is_distributed:
-        model = DDP(model, device_ids=[local_rank])        
+        model = DDP(model, 
+                    device_ids=[local_rank], 
+                    find_unused_parameters=True)        
     
     # =========================================================================
     # Stats

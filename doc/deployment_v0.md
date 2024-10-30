@@ -33,6 +33,8 @@ git clone https://github.com/lvonw/Master-Thesis.git
 user 
 access token
 
+git config --global credential.helper 'cache --timeout=3600'
+
 if running doesnt work then do whereis torchrun and copy the absolute path of 
 the conda env
 
