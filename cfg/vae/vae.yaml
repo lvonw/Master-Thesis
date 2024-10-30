@@ -950,13 +950,13 @@ VAE_test_just_like_sd:
     warm_up_steps: 2000
 
   Loss:
-    use_discriminator:      true
+    use_discriminator:      false
     discriminator_warm_up:  50000
     discriminator_weight:   0.5
     discriminator_layers:   2
 
         
-    use_perceptual_loss:    true
+    use_perceptual_loss:    false
     perceptual_weight:      1.0
     perceptual_net:         vgg
 
