@@ -5,6 +5,7 @@ import os
 import torch
 
 import numpy                                as np
+import torch.distributed                    as distributed 
 import torchvision.transforms.functional    as tf
 
 from concurrent.futures     import ThreadPoolExecutor
@@ -105,9 +106,6 @@ class DatasetFactory():
         else: 
             loss_weights        = {}
         
-        printer.print_log(
-            f"AAAAAAA cache things {len(terrain_dataset.shared_dataset_cache)}")
-
         return DatasetWrapper(dataset           = terrain_dataset, 
                               amount_classes    = amount_classes,
                               loss_weights      = loss_weights)
@@ -199,7 +197,7 @@ class DatasetWrapper():
                             [training_split, total_data - training_split],
                             generator=torch.Generator()
                                 .manual_seed(constants.DATALOADER_SEED))
-
+    
 class TerrainDataset(Dataset): 
     def __init__(self, 
                  DEM_list, 

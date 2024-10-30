@@ -16,6 +16,8 @@ from generation.models.DDPDecorator import DDPTrainingDecorator
 from pipeline                       import generate, training
 from torch.nn.parallel              import DistributedDataParallel  as DDP
 
+import tempfile
+
 
 def prepare_arg_parser():
     parser = argparse.ArgumentParser(prog="Diffusion",        
@@ -46,15 +48,13 @@ def __get_backend():
     elif system == "Linux":
         return "nccl"
 
-import multiprocessing
-import torch.multiprocessing as mp
-
-
 
 def main():
     parser      = prepare_arg_parser()
     arguments   = parser.parse_args()
     printer     = Printer()
+    # TODO possibly try to get this to work
+    share_data  = False
 
     # Distribution ============================================================    
     is_distributed  = arguments.distributed and torch.cuda.device_count() > 1
@@ -65,19 +65,12 @@ def main():
         global_rank  = int(os.environ["RANK"])
         local_rank   = int(os.environ["LOCAL_RANK"])    
 
-        abc = mp.Manager().list()
-        if local_rank == 0:
-            abc.extend([1,2,3])
-        
-
-        print (f"1 {len(abc)}")
         printer.rank = local_rank
-        
+        distributed.scatter_object_list
+
         backend = __get_backend()
         distributed.init_process_group(backend)
         torch.cuda.set_device(local_rank)
-
-        print (f"2 {len(abc)}")
 
         printer.print_log(f"Global Rank: {global_rank}")
         printer.print_log(f"Local Rank: {local_rank}")
@@ -115,12 +108,12 @@ def main():
     amount_classes  = [16]
     if needs_dataset:
         printer.print_log("Loading Dataset...")
-        if local_rank == 0:
+        if local_rank == 0 or not share_data:
             dataset_wrapper = DatasetFactory.create_dataset(config["Data"], 
                                                             prepare=True)
-            if is_distributed: 
+            if is_distributed and share_data: 
                 distributed.barrier()
-                printer.print_log(f"Lifting barrier") 
+                printer.print_log(f"Lifting barrier")
         else:
             printer.print_log(f"Waiting for barrier to be lifted") 
             distributed.barrier()
