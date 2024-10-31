@@ -1048,7 +1048,7 @@ VAE_1x256x256_4x32x32:
 
   Loss:
     use_discriminator:      true
-    discriminator_warm_up:  5000
+    discriminator_warm_up:  50000
     discriminator_weight:   0.5
     discriminator_layers:   3
         

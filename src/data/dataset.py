@@ -294,11 +294,13 @@ class TerrainDataset(Dataset):
 
         # Transfer our single process cache to the shared cache
         self.printer.print_log("Transferring to shared cache...")
-        for idx in tqdm(range(len(self.dataset_cache)),
-                        total=len(self.dataset_cache),
-                        desc="Transferring cache"):
-            self.shared_dataset_cache.append(self.dataset_cache[idx])
-            self.dataset_cache[idx] = None
+        # for idx in tqdm(range(len(self.dataset_cache)),
+        #                 total=len(self.dataset_cache),
+        #                 desc="Transferring cache"):
+        #     self.shared_dataset_cache.append(self.dataset_cache[idx])
+        #     self.dataset_cache[idx] = None
+
+        self.shared_dataset_cache.extend(self.dataset_cache)
         self.dataset_cache.clear()
         self.printer.print_log("Finished")
 
