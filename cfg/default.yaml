@@ -30,7 +30,7 @@ Training:
 # =============================================================================
 Model:
   external: cfg/vae/vae.yaml
-  selection: VAE_test_just_like_sd
+  selection: VAE_1x256x256_4x32x32
   # external: cfg/diffusion/ddpm.yaml
   # selection: latent_diffusion_test_new_scale
   only_load_selection: true
@@ -43,7 +43,7 @@ Data:
   use_MNIST:      false
 
   DEM_List:       SRTM_GL1_50_over_list.txt
-  DEM_Dataset:    SRTM_GL1_64x64
+  DEM_Dataset:    SRTM_GL1_512x512
   Cache_DEMs:     true
   loader_workers: 2
   # < 1 -> We take all in the specified list
@@ -73,7 +73,7 @@ Data:
   # Data transforms
   RandomCrop:
     active:         true
-    size:           32 
+    size:           256 
   RandomRotation:
     active:         true 
   RandomHorizontalFlip:
