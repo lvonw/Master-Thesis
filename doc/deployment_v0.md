@@ -140,8 +140,16 @@ sudo nano /etc/fstab
 ```
 
 Simply add this command at the bottom
+
 ```
 //your-shared-drive-ip-address/your-shared-drive-name /home/paperspace/Master-Thesis/data   cifs  username=your-username,password=your-password,uid=1000,gid=1000,rw,user  0  0
+```
+
+Lastly now you can mount the directory you want with the call. Simply add the
+same file you wrote into /etc/fstab 
+
+```
+mount /home/paperspace/Master-Thesis/data
 ```
 
 You can verify whether this worked with  `df -h`
@@ -173,3 +181,13 @@ tar -xzvf filename.tar.gz
 
 If running doesnt work then do `whereis torchrun` and copy the absolute path of 
 the conda env instance of torchrun
+
+### Monitoring
+
+You can do `ls -l` to check when the files in the current directory where last 
+changed 
+
+You can see a file updating real time while looking at the bottom lines using
+`tail -f -n 20 ./`
+
+Check what processes are running with `htop`

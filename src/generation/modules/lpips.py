@@ -33,7 +33,10 @@ class LPIPS(nn.Module):
         self.lin4 = NetLinLayer(self.channels[4])
         
         Printer().print_log(f"Loading LPIPS with: {net_type}")
-        util.load_model(self, strict=False)
+        if not util.load_model(self, strict=False):
+            Printer().print_log(f"Could not load net {net_type}",
+                                LogLevel.ERROR)
+            return
 
         self.linear_layers = [
             self.lin0, self.lin1, self.lin2, self.lin3, self.lin4]

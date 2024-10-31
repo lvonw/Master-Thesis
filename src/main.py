@@ -178,7 +178,8 @@ def main():
                            is_distributed       = True,
                            global_rank          = global_rank,
                            local_rank           = local_rank,
-                           local_amount         = torch.cuda.device_count())
+                           local_amount         = torch.cuda.device_count(),
+                           global_amount        = torch.cuda.device_count())
         else: 
             training.train(model,
                            model, 

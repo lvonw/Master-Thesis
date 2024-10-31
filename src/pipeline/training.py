@@ -31,7 +31,8 @@ def train(model,
           is_distributed = False,
           global_rank = 0,
           local_rank = 0,
-          local_amount = 1):
+          local_amount = 1,
+          gloabl_amount = 1):
     
     printer         = Printer()
     data_visualizer = DataVisualizer()
@@ -83,7 +84,7 @@ def train(model,
             colour  = "red"):
             inputs, labels, _ = __prepare_data(data)
             total_training_step_idx = (len(training_dataloader) * epoch_idx 
-                                       + training_step_idx)
+                                       + training_step_idx) * gloabl_amount
             
             
             # Main training loop over all optimizers ==========================
