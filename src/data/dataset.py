@@ -300,10 +300,6 @@ class TerrainDataset(Dataset):
                         desc="Transferring cache"):
             self.shared_dataset_cache.append(self.dataset_cache[idx])
             self.dataset_cache[idx] = None
-
-            # Periodic throttles because we may be too fast
-            if idx % 1000 == 0:
-                time.sleep(0.5)
         
         self.dataset_cache.clear()
         self.printer.print_log("Finished")
