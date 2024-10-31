@@ -7,7 +7,7 @@ Main:
   test:       false
   generate:   0 #true
 
-  load_model: 0 # true
+  load_model: true
 
 
 # =============================================================================
@@ -18,7 +18,7 @@ Training:
   batch_size:       16
   learning_rate:    4.5e-6
   logging_steps:    10
-  num_workers:      4
+  num_workers:      10
   Save_after_epoch: true
   Data_Split:       1.0
 
