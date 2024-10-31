@@ -15,10 +15,10 @@ Main:
 # =============================================================================
 Training:  
   epochs:           3000
-  batch_size:       32
+  batch_size:       16
   learning_rate:    4.5e-6
   logging_steps:    10
-  num_workers:      10
+  num_workers:      4
   Save_after_epoch: true
   Data_Split:       1.0
 
