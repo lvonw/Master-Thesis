@@ -167,28 +167,47 @@ class DDPM(nn.Module):
         if training:
             return self.training_step(*args, **kwargs)
 
-    def generate(self, label=None, amount=1):
+    def generate(self, label=None, amount=1, input_tensor=None):
         if label is not None:
             label = torch.tensor([label], device=self.device).unsqueeze(dim=0)
         
-        return self.sample(amount, label)
+        return self.sample(amount, label, input_tensor=input_tensor)
 
     @torch.no_grad()
     def sample(self, 
                amount_samples, 
                control_signals, 
-               prediction_type= PredictionType.EPSILON_SIMPLE):
+               prediction_type= PredictionType.EPSILON_SIMPLE,
+               input_tensor=None):
         """ Algorithm 2 DDPM """
 
         if self.use_ema:
             self.ema_model.apply_to_model(self.model) 
 
-        x = torch.randn((amount_samples,) + self.input_shape, 
-                        device=self.device)
+        starting_offset = 0
+        if input_tensor is None:
+            x = torch.randn((amount_samples,) + self.input_shape, 
+                            device=self.device)
+        else: 
+            input_batch = input_tensor.repeat(amount_samples, 1, 1, 1)
+            starting_offset = 800
 
-        for _, timestep in tqdm(enumerate(self.sample_steps),
-                                total = self.amount_sample_steps,
-                                desc = "Generating Image"):
+            timesteps   = torch.tensor(
+                [self.sample_steps[starting_offset]] 
+                * amount_samples).to(input_tensor.device)
+            
+            x           = self.latent_model.encode(input_batch).latents
+            x           *= self.inverse_latent_std
+
+            x, _        = self.__add_noise(x, timesteps)
+
+
+
+        for _, timestep in tqdm(
+            enumerate(self.sample_steps[starting_offset:], starting_offset),
+            total = self.amount_sample_steps,
+            desc = "Generating Image",
+            initial = starting_offset):
         
             # Classifier Free Guidance ========================================
             timesteps = torch.tensor([timestep] * amount_samples, 

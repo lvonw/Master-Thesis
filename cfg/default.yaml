@@ -2,12 +2,15 @@
 # MAIN
 # =============================================================================
 Main:
-  train:      true
+  train:      #true
   validate:   false
   test:       false
-  generate:   0 #true
+  generate:   true
 
-  load_model: true
+  load_model: true #false
+
+  img2img: true
+  test_image: test_image2.png
 
 
 # =============================================================================
@@ -15,10 +18,10 @@ Main:
 # =============================================================================
 Training:  
   epochs:           3000
-  batch_size:       16
+  batch_size:       4
   learning_rate:    4.5e-6
   logging_steps:    10
-  num_workers:      10
+  num_workers:      2
   Save_after_epoch: true
   Data_Split:       1.0
 
@@ -29,10 +32,10 @@ Training:
 # MODEL
 # =============================================================================
 Model:
-  external: cfg/vae/vae.yaml
-  selection: VAE_1x256x256_4x32x32
-  # external: cfg/diffusion/ddpm.yaml
-  # selection: latent_diffusion_test_new_scale
+  # external: cfg/vae/vae.yaml
+  # selection: VAE_1x256x256_4x32x32_167k
+  external: cfg/diffusion/ddpm.yaml
+  selection: latent_terrain_diffusion_mini
   only_load_selection: true
   read_only: true
 
@@ -63,9 +66,9 @@ Data:
     use_as_channel: false
     cache:          false
   GTC:
-    use_as_label:   false
+    use_as_label:   true
     use_as_channel: false
-    cache:          false
+    cache:          true
     # use_as_label:   false
     # use_as_channel: false
     # cache:          false

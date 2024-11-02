@@ -186,8 +186,25 @@ class GeoUtil():
                 np.copyto(band_array, 
                           global_min, 
                           where=(band_array == nodata_value))
-                
-        band_tensor = torch.tensor(band_array, dtype=torch.float32)
+        
+        band_tensor = GeoUtil.get_normalized_array(band_array,
+                                                   normalization_method,
+                                                   global_min,
+                                                   global_max,
+                                                   new_min,
+                                                   new_max)
+
+        return band_tensor
+        
+    def get_normalized_array(
+            array,
+            normalization_method    = NormalizationMethod.LINEAR,
+            global_min              = None, 
+            global_max              = None,
+            new_min                 = -1.,
+            new_max                 = 1.):
+        
+        band_tensor = torch.tensor(array, dtype=torch.float32)
 
         match normalization_method:
             case NormalizationMethod.NONE:
@@ -212,7 +229,7 @@ class GeoUtil():
 
         range_mulitplier = new_max - new_min
         return band_tensor * range_mulitplier + new_min
-        
+
 
 class DataVisualizer():
     def __init__(self):

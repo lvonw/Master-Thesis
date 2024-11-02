@@ -382,6 +382,7 @@ class VariationalAutoEncoder(nn.Module):
         mu, log_variance = torch.chunk(x, 2, dim=1) 
         
         sigma   = torch.clamp(log_variance, -30, 20).exp().sqrt()
+        
         # Reparameterization where noise ~ N(0,I)
         noise   = torch.randn(mu.shape).to(mu.device)
         x       = mu + sigma * noise

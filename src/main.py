@@ -191,7 +191,11 @@ def main():
     # Generation
     # =========================================================================
     if config["Main"]["generate"]:
-        generate.generate(model)
+        do_img2img = config["Main"]["img2img"]
+        if do_img2img:
+            generate.generate(model, 4, 10, config["Main"]["test_image"])
+        else:
+            generate.generate(model, 4, 10)
 
     if is_distributed:
         distributed.destroy_process_group()

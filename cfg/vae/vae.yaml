@@ -1022,13 +1022,13 @@ VAE_test_just_like_sd_mnist:
     - 2
     
     use_attention: true
-    attention_resolutions: []
+  attention_resolutions: []
 
   Training:
     learning_rate: 0.0001
 
-VAE_1x256x256_4x32x32:
-  name: VAE_1x256x256_4x32x32
+VAE_1x256x256_4x32x32_167k:
+  name: VAE_1x256x256_4x32x32_167k
   description: Trying to get a good vae to work off of here
 
   log_image_interval: 1000
