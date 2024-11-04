@@ -1,4 +1,5 @@
 import argparse
+import constants
 import os
 import platform
 import torch
@@ -12,12 +13,8 @@ from data.dataset                   import DatasetFactory
 from debug                          import Printer, LogLevel
 from generation.models.vae          import AutoEncoderFactory
 from generation.models.ddpm         import DDPM
-from generation.models.DDPDecorator import DDPTrainingDecorator     
 from pipeline                       import generate, training
 from torch.nn.parallel              import DistributedDataParallel  as DDP
-
-import tempfile
-
 
 def prepare_arg_parser():
     parser = argparse.ArgumentParser(prog="Diffusion",        
@@ -105,7 +102,6 @@ def main():
     # Dataset
     # =========================================================================
     needs_dataset   = config["Main"]["train"] or config["Main"]["test"]
-    amount_classes  = [16]
     if needs_dataset:
         printer.print_log("Loading Dataset...")
         if local_rank == 0 or not share_data:
@@ -122,6 +118,12 @@ def main():
 
         amount_classes = dataset_wrapper.amount_classes
         printer.print_log("Finished.")
+    else:
+        # TODO this should really be done differently, probably another static
+        # function in datasetfactory that takes the config and determines the
+        # necessary constants
+        amount_classes  = [constants.LABEL_AMOUNT_GTC,
+                       constants.LABEL_AMOUNT_CLIMATE]
 
     # =========================================================================
     # Model

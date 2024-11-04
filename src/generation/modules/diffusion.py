@@ -7,20 +7,33 @@ import torch.nn.functional  as f
 
 from enum                       import Enum
 from generation.modules.unet    import UNETFactory
+from generation.modules.dit     import DiT
 
 class ControlSignalIntegration(Enum):
       NONE              = "None"
       ADD_TO_TIME       = "Add to Time"
       CROSS_ATTENTION   = "Cross Attention"
 
+class ModelType(Enum):
+      UNET  = "UNET"
+      DIT   = "Diffusion Transformer"
+
 
 class Diffusion(nn.Module):
-    def __init__(self, configuration, amount_classes):
+    def __init__(self, 
+                 configuration, 
+                 amount_classes, 
+                 model_type=ModelType.UNET):
         super().__init__()
 
         self.time_embedding_size = configuration["time_embedding_size"]
         self.time_embedding = TimeEmbedding(self.time_embedding_size)
-        self.unet = UNETFactory.create_unet(configuration)
+
+        match model_type:
+            case ModelType.UNET:
+                self.model = UNETFactory.create_unet(configuration)
+            case ModelType.DIT:
+                self.model = DiT()
 
         if amount_classes:
             self.control_signal_integration = ControlSignalIntegration.ADD_TO_TIME
@@ -36,14 +49,15 @@ class Diffusion(nn.Module):
 
         if control_signal is not None:
             match self.control_signal_integration:
-                case ControlSignalIntegration.ADD_TO_TIME:
-                    timestep += self.label_embedding(control_signal)
-                case ControlSignalIntegration.CROSS_ATTENTION:
-                    control_signal = self.label_embedding(control_signal)
                 case ControlSignalIntegration.NONE:
                     control_signal = None
+                case ControlSignalIntegration.ADD_TO_TIME:
+                    timestep += self.label_embedding(control_signal)
+                    control_signal = None
+                case ControlSignalIntegration.CROSS_ATTENTION:
+                    control_signal = self.label_embedding(control_signal)
 
-        x = self.unet(x, control_signal, timestep)
+        x = self.model(x, control_signal, timestep)
 
         return x
     
@@ -93,6 +107,9 @@ class LabelEmbedding(nn.Module):
 
         self.embeddings         = nn.ModuleList()
         self.combination_type   = combination_type
+
+        if combination_type == LabelCombinationType.CONCAT:
+            embedding_dim = embedding_dim // len(amounts_classes)
 
         for amount in amounts_classes:
             self.embeddings.append(nn.Embedding(amount, embedding_dim))

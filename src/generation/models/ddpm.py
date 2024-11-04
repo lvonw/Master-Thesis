@@ -190,7 +190,7 @@ class DDPM(nn.Module):
                             device=self.device)
         else: 
             input_batch = input_tensor.repeat(amount_samples, 1, 1, 1)
-            starting_offset = 800
+            starting_offset = 750
 
             timesteps   = torch.tensor(
                 [self.sample_steps[starting_offset]] 

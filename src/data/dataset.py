@@ -51,26 +51,31 @@ class DatasetFactory():
         label_cache     = []
         transform_list  = []
 
-        DatasetFactory.__append_to_cache(data_configuration["GLiM"], 
-                                         channel_cache, 
-                                         label_cache)
-
-        DatasetFactory.__append_to_cache(data_configuration["Climate"], 
+        DatasetFactory.__append_to_cache(data_configuration["GLiM"],
+                                         constants.DATA_PATH_GLIM,
                                          channel_cache, 
                                          label_cache)
 
         DatasetFactory.__append_to_cache(data_configuration["DSMW"], 
+                                         constants.DATA_PATH_DSMW,
                                          channel_cache, 
                                          label_cache)
         
         DatasetFactory.__append_to_cache(data_configuration["GTC"], 
+                                         constants.DATA_PATH_GTC,
                                          channel_cache, 
                                          label_cache)
-    
+        
+        DatasetFactory.__append_to_cache(data_configuration["Climate"], 
+                                         constants.DATA_PATH_CLIMATE,
+                                         channel_cache, 
+                                         label_cache)    
   
         channel_cache   = DatasetFactory.__pre_process_data_cache(channel_cache)
-        amount_classes  = [16] #DatasetFactory.__get_amount_classes(label_cache)
-                
+        # amount_classes  = [16] #DatasetFactory.__get_amount_classes(label_cache)
+        amount_classes  = [constants.LABEL_AMOUNT_GTC,
+                           constants.LABEL_AMOUNT_CLIMATE]
+
         if data_configuration["RandomCrop"]["active"]:
             printer.print_log("Activating RandomCrop transform")
             transform_list.append(RandomCropWithFrame(
@@ -127,21 +132,22 @@ class DatasetFactory():
 
         return processed_cache
     
-    def __append_to_cache(dataset_configuration, channel_cache, label_cache):
+    def __append_to_cache(dataset_configuration, 
+                          dataset_path,
+                          channel_cache, 
+                          label_cache):
         if not dataset_configuration["cache"]:
             return 
 
         if dataset_configuration["use_as_channel"]:
-            channel_cache.append(DataAccessor.open_gdal_dataset(
-                constants.DATA_PATH_GTC))
+            channel_cache.append(DataAccessor.open_gdal_dataset(dataset_path))
         elif dataset_configuration["use_as_label"]:
-            dataset = DataAccessor.open_gdal_dataset(constants.DATA_PATH_GTC)
+            dataset = DataAccessor.open_gdal_dataset(dataset_path)
             geo_transform   = dataset.GetGeoTransform()
             geo_array       = dataset.GetRasterBand(1).ReadAsArray()
 
             label_cache.append((geo_transform, geo_array))
 
-    # TODO Multilabel will not work with this
     def __get_amount_classes(label_cache):
         amount_classes = 0
         
@@ -225,8 +231,6 @@ class TerrainDataset(Dataset):
         # # Thread-Safe cache, introduces massive overheads
         manager                     = multiprocessing.Manager()
         self.shared_dataset_cache   = manager.list()        
-        # self.shared_channel_cache   = None
-        # self.shared_label_cache     = None
 
     def __len__(self):
         return len(self.DEM_list)
@@ -254,17 +258,24 @@ class TerrainDataset(Dataset):
         if cache.did_not_cache_labels:
             pass
         else:
-            label_frame = cache.label_frame
+            label_frames = cache.label_frames
 
         # Transforms ==========================================================
         if self.transform:
-            data_entry, label_frame = self.transform(data_entry, 
-                                                     label_frame,
-                                                     fast=True)
+            data_entry, label_frames = self.transform(data_entry, 
+                                                      label_frames,
+                                                      fast=True)
         
         # Label ===============================================================
-        if label_frame is not None and label_frame.numel() > 0:
-            label = torch.median(label_frame).unsqueeze(dim=0)
+        if label_frames is not None and len(label_frames) > 0:
+            labels = []
+            for _, label_frame in enumerate(label_frames):
+                # TODO bit of a workaround, but low prio for now
+                label = torch.median(label_frame)
+                label = torch.tensor(0) if label.item() < 0 else label
+                labels.append(label)
+            label = torch.stack(labels, dim=0)
+            
         else:
             label = cache.label_tensor
 
@@ -282,15 +293,9 @@ class TerrainDataset(Dataset):
 
         # analysis_result = self.__analyse_dataset()
         # self.printer.print_log(analysis_result)
-
         # for label, label_amount in enumerate(analysis_result.label_bucket):
-            # self.loss_weights[label] = len(self.DEM_list) / label_amount 
-            # self.loss_weights[label] = np.log(len(self.DEM_list) 
-            # / label_amount) 
-            # self.loss_weights[label] = 1 
-            # + analysis_result.std_dev_bucket[label]
             # self.loss_weights[label] = len(self.DEM_list) / (label_amount)
-            # pass
+        
         loss_weights = None
 
         # Transfer our single process cache to the shared cache
@@ -352,9 +357,8 @@ class TerrainDataset(Dataset):
 
                 geo_cache.label_geo_transforms.append(cache[0]) 
                 geo_cache.label_tensor  = label
-                geo_cache.label_frame   = label_data_frame
+                geo_cache.label_frames.append(label_data_frame)
 
-    
     def __load_dem(self, filename):
         dem_dataset = DataAccessor.open_DEM(filename, self.source_dataset) 
         
@@ -471,7 +475,7 @@ class GeoDatasetCache():
         self.dem_geo_coordinates    = dem_geo_coordinates
 
         self.label_geo_transforms   = label_geo_transforms
-        self.label_frame            = None
+        self.label_frames           = []
         self.label_tensor           = label_tensor
 
         self.channel_geo_transforms = channel_geo_transforms
@@ -489,7 +493,7 @@ class RandomCropWithFrame():
     def __init__(self, size):
         self.cropped_size = size
 
-    def __call__(self, image_tensor, label_frame = None, fast=False):
+    def __call__(self, image_tensor, label_frames = None, fast=False):
         _, height, width = image_tensor.shape
 
         top     = np.random.randint(0, height - self.cropped_size)
@@ -501,85 +505,93 @@ class RandomCropWithFrame():
                               self.cropped_size, 
                               self.cropped_size)
         
-        if label_frame is None:
-            return cropped_img, None
+        if label_frames is None or not len(label_frames):
+            return cropped_img, res_label_frames
         
-        label_shape     = label_frame.shape 
-        scaling_factor  = label_shape[0] / height
-        
-        top     *= scaling_factor
-        left    *= scaling_factor
-        size    = math.ceil(self.cropped_size * scaling_factor)
-        height  = min(size, label_shape[0])
-        width   = min(size, label_shape[1])
+        res_label_frames = [None] * len(label_frames)
+        for idx, label_frame in enumerate(label_frames):
+            label_shape     = label_frame.shape 
+            scaling_factor  = label_shape[0] / height
+            
+            top     *= scaling_factor
+            left    *= scaling_factor
+            size    = math.ceil(self.cropped_size * scaling_factor)
+            height  = min(size, label_shape[0])
+            width   = min(size, label_shape[1])
 
-        label_frame = tf.crop(label_frame,
-                              int(top),
-                              int(left),
-                              height,
-                              width)
+            res_label_frames[idx] = tf.crop(label_frame,
+                                            int(top),
+                                            int(left),
+                                            height,
+                                            width)
         
-        return cropped_img, label_frame
+        return cropped_img, res_label_frames
 
 class Random90DegreeRotation():
-    def __call__(self, image_tensor, label_frame = None, fast=False):
+    def __call__(self, image_tensor, label_frames = None, fast=False):
         angle = 90 * np.random.randint(0, 4)
 
         image_tensor = tf.rotate(image_tensor, angle)
 
-        if fast or label_frame is None:
-            return image_tensor, label_frame
+        if fast or label_frames is None or not len(label_frames):
+            return image_tensor, label_frames
         
-        label_frame = tf.rotate(label_frame, angle=angle)
+        res_label_frames = [None] * len(label_frames)
+        for idx, label_frame in enumerate(label_frames):
+            res_label_frames[idx] = tf.rotate(label_frame, angle=angle)
 
-        return image_tensor, label_frame
+        return image_tensor, res_label_frames
         
 class RandomHorizontalFlip():
     def __init__(self, p=0.5):
         self.probability = p
 
-    def __call__(self, image_tensor, label_frame = None, fast=False):
+    def __call__(self, image_tensor, label_frames = None, fast=False):
         should_flip = np.random.rand()
 
         if should_flip < self.probability:
             image_tensor = tf.hflip(image_tensor)
         
-        if fast or label_frame is None:
-            return image_tensor, label_frame
+        if fast or label_frames is None or not len(label_frames):
+            return image_tensor, label_frames
         
-        if should_flip < self.probability:
-            label_frame = tf.hflip(label_frame)
+        res_label_frames = [None] * len(label_frames)
+        for idx, label_frame in enumerate(label_frames):
+            if should_flip < self.probability:
+                res_label_frames[idx] = tf.hflip(label_frame)
 
-        return image_tensor, label_frame
+        return image_tensor, res_label_frames
     
 class RandomVerticalFlip():
     def __init__(self, p=0.5):
         self.probability = p
 
-    def __call__(self, image_tensor, label_frame = None, fast=False):
+    def __call__(self, image_tensor, label_frames = None, fast=False):
         should_flip = np.random.rand()
 
         if should_flip < self.probability:
             image_tensor = tf.vflip(image_tensor)
         
-        if fast or label_frame is None:
-            return image_tensor, label_frame
+        if fast or label_frames is None or not len(label_frames):
+            return image_tensor, label_frames
         
-        if should_flip < self.probability:
-            label_frame = tf.vflip(label_frame)
+        res_label_frames = [None] * len(label_frames)
+        for idx, label_frame in enumerate(label_frames):
+            if should_flip < self.probability:
+                res_label_frames[idx] = tf.vflip(label_frame)
 
-        return image_tensor, label_frame
+        return image_tensor, res_label_frames
     
 class CompositeMultiTensorTransform():
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, image_tensor, label_frame = None, fast=False):
+    def __call__(self, image_tensor, label_frames = None, fast=False):
         for transform in self.transforms:
-            image_tensor, label_frame = transform(image_tensor, 
-                                                  label_frame,
+            image_tensor, label_frames = transform(image_tensor, 
+                                                  label_frames,
                                                   fast=fast)
 
-        return image_tensor, label_frame
+        return image_tensor, label_frames
     
     

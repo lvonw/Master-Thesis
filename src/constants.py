@@ -59,6 +59,11 @@ RESOURCE_PATH_MASTER        = os.path.join(PROJECT_PATH, "resources")
 RESOURCE_PATH_IMAGES        = os.path.join(RESOURCE_PATH_MASTER, "images")
 RESOURCE_PATH_TEST_IMAGES   = os.path.join(RESOURCE_PATH_IMAGES, "test_images")
 
+# =============================================================================
+# Label Amounts
+# =============================================================================
+LABEL_AMOUNT_GTC = 16
+LABEL_AMOUNT_CLIMATE = 33
 
 # =============================================================================
 # Configs
