@@ -44,7 +44,6 @@ class Diffusion(nn.Module):
                                  2, 
                                  4*self.time_embedding_size, 
                                  16)
-                #self.model = DiT((4, 32, 32), 28, 2, 4*self.time_embedding_size)
 
         if not amount_classes:
             self.control_signal_integration = ControlSignalIntegration.NONE
