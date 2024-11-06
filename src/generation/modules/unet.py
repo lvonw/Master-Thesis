@@ -46,6 +46,8 @@ class UNETFactory():
         num_heads                   = architecture["num_heads"]
         embedding_channels          = architecture["embedding_channels"]
 
+        time_embedding_size         = configuration["time_embedding_size"] * 4
+
         return UNET(input_shape,
                     starting_channels,
                     channel_multipliers_encoder,
@@ -54,7 +56,8 @@ class UNETFactory():
                     resNet_per_level_decoder,
                     attention_levels,
                     num_heads,
-                    embedding_channels)
+                    embedding_channels,
+                    time_embedding_size)
 
 
 class UNET(nn.Module):
@@ -67,7 +70,8 @@ class UNET(nn.Module):
                  resNet_per_level_decoder,
                  attention_levels,
                  num_heads = 8,
-                 embedding_channels = 40):
+                 embedding_channels = 40,
+                 time_embedding_size = 1280):
         super().__init__()
 
         self.input_shape        = input_shape
@@ -96,7 +100,8 @@ class UNET(nn.Module):
 
                 current_block.append(
                     ResNetBlock(previous_channel_amount, 
-                                current_channel_amount)
+                                current_channel_amount,
+                                time_embedding_channels = time_embedding_size)
                 )
 
                 if level in attention_levels:
@@ -118,11 +123,15 @@ class UNET(nn.Module):
         
         # Bottleneck
         self.bottleneck = SwitchSequential(
-            ResNetBlock(current_channel_amount, current_channel_amount),
+            ResNetBlock(current_channel_amount, 
+                        current_channel_amount,
+                        time_embedding_channels = time_embedding_size),
             self.__get_attention_block(current_channel_amount,
                                        current_embed,
                                        num_heads),
-            ResNetBlock(current_channel_amount, current_channel_amount)
+            ResNetBlock(current_channel_amount, 
+                        current_channel_amount,
+                        time_embedding_channels = time_embedding_size)
         )
 
         # Decoder 
@@ -142,7 +151,8 @@ class UNET(nn.Module):
                 # ResNet
                 current_block.append(
                     ResNetBlock(current_skip_channel + previous_channel_amount, 
-                                current_channel_amount)
+                                current_channel_amount,
+                                time_embedding_channels = time_embedding_size)
                 )
                 # Attention
                 if level in attention_levels:

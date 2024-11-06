@@ -18,12 +18,18 @@ class ModelType(Enum):
       UNET  = "UNET"
       DIT   = "Diffusion Transformer"
 
+class LabelCombinationType(Enum):
+    CONCAT      = "Concat"
+    ADD         = "Add"
+    MULTIPLY    = "Multiply"
+
 
 class Diffusion(nn.Module):
     def __init__(self, 
                  configuration, 
                  amount_classes, 
-                 model_type=ModelType.UNET):
+                 model_type=ModelType.DIT,
+                 control_signal_integration=ControlSignalIntegration.NONE):
         super().__init__()
 
         self.time_embedding_size = configuration["time_embedding_size"]
@@ -33,12 +39,17 @@ class Diffusion(nn.Module):
             case ModelType.UNET:
                 self.model = UNETFactory.create_unet(configuration)
             case ModelType.DIT:
-                self.model = DiT()
+                self.model = DiT((1, 32, 32), 
+                                 12, 
+                                 2, 
+                                 4*self.time_embedding_size, 
+                                 16)
+                #self.model = DiT((4, 32, 32), 28, 2, 4*self.time_embedding_size)
 
-        if amount_classes:
-            self.control_signal_integration = ControlSignalIntegration.ADD_TO_TIME
-        else:
+        if not amount_classes:
             self.control_signal_integration = ControlSignalIntegration.NONE
+        else:
+            self.control_signal_integration = control_signal_integration
             
         self.label_embedding = LabelEmbedding(amount_classes, 
                                               self.time_embedding.output_dim)
@@ -47,15 +58,14 @@ class Diffusion(nn.Module):
         timestep = self.get_time_embedding(timestep, self.time_embedding_size)
         timestep = self.time_embedding(timestep)
 
-        if control_signal is not None:
-            match self.control_signal_integration:
-                case ControlSignalIntegration.NONE:
-                    control_signal = None
-                case ControlSignalIntegration.ADD_TO_TIME:
-                    timestep += self.label_embedding(control_signal)
-                    control_signal = None
-                case ControlSignalIntegration.CROSS_ATTENTION:
-                    control_signal = self.label_embedding(control_signal)
+        match self.control_signal_integration:
+            case ControlSignalIntegration.NONE:
+                control_signal = self.label_embedding(control_signal)
+            case ControlSignalIntegration.ADD_TO_TIME:
+                timestep += self.label_embedding(control_signal)
+                control_signal = None
+            case ControlSignalIntegration.CROSS_ATTENTION:
+                control_signal = self.label_embedding(control_signal)
 
         x = self.model(x, control_signal, timestep)
 
@@ -90,11 +100,6 @@ class TimeEmbedding(nn.Module):
 
         return x
 
-class LabelCombinationType(Enum):
-    CONCAT      = "Concat"
-    ADD         = "Add"
-    MULTIPLY    = "Multiply"
-
 class LabelEmbedding(nn.Module):
     """
     Expecting the labels to be in shape (batch, classes)
@@ -102,7 +107,7 @@ class LabelEmbedding(nn.Module):
     def __init__(self, 
                  amounts_classes, 
                  embedding_dim, 
-                 combination_type = LabelCombinationType.ADD):
+                 combination_type = LabelCombinationType.CONCAT):
         super().__init__()
 
         self.embeddings         = nn.ModuleList()
@@ -112,21 +117,22 @@ class LabelEmbedding(nn.Module):
             embedding_dim = embedding_dim // len(amounts_classes)
 
         for amount in amounts_classes:
-            self.embeddings.append(nn.Embedding(amount, embedding_dim))
+            # Plus one for null label
+            self.embeddings.append(nn.Embedding(amount + 1, embedding_dim))
 
     
     def forward(self, x):
         embeddings = []
-        if len(x.shape) > 1: 
-            for idx, embedding in enumerate(self.embeddings):
-                embeddings.append(embedding(x[:, idx]))
-        else: 
-            embeddings.append(self.embeddings[0](x))
-
+        for idx, embedding in enumerate(self.embeddings):
+            label = x[:, idx] if len(x.shape) > 1 else x
+            label = torch.where(label < 0, 
+                                embedding.num_embeddings-1, 
+                                label)
+            embeddings.append(embedding(label))
+    
         match self.combination_type:
             case LabelCombinationType.CONCAT:
-                # x = torch.cat(embeddings, dim=-1)
-                pass
+                x = torch.cat(embeddings, dim=-1)
             case LabelCombinationType.ADD:
                 x = torch.stack(embeddings).sum(dim=0)
             case LabelCombinationType.MULTIPLY:

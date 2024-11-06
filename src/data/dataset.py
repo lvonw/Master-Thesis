@@ -159,6 +159,7 @@ class DatasetFactory():
     
     def __get_mnist():
         mnist_transform = transforms.Compose([transforms.ToTensor(),
+                                              transforms.Normalize(1, 0.5),
                                               transforms.Resize(size=32)])
 
         training_set    = MNIST(root=constants.DATASET_PATH_MASTER, 

@@ -33,10 +33,12 @@ def generate(model,
         
     with torch.no_grad():
         for i in range(iterations):
-            label = i #% 2 + 1
+            label = [i]*amount_samples# i #% 2 + 1
             
-            samples = model.generate(i, amount_samples, input_tensor)
-            samples = torch.cat((input_tensor, samples), dim=0)
+            samples = model.generate(label, amount_samples, input_tensor)
+
+            if input_tensor is not None:
+                samples = torch.cat((input_tensor, samples), dim=0)
 
             data_visualizer.create_image_tensor_tuple(samples, title=str(label)) 
             

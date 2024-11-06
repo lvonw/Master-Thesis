@@ -70,7 +70,6 @@ class SelfAttention(_Attention):
     def forward(self, x):
         return self.compute_attention(x, x)
 
-
 class AttentionBlock(nn.Module):
     def __init__(self, channels):
         super().__init__()

@@ -324,3 +324,143 @@ ltd_multi_label:
     attention_levels:
       - 0
       - 1
+
+ltd_dit_multi_label:
+  name: ltd_dit_multi_label
+  description: 
+  
+  input_num_channels: 4
+  input_resolution_x: 32
+  input_resolution_y: 32
+
+  time_embedding_size: 160 #320
+  training_steps: 1000
+  sample_steps: 1000
+
+  Classifier_free_guidance:
+    active: true
+    no_class_probability: 0.1
+    weight: 3.0
+
+  EMA:
+    active: true
+    weight: 0.995
+    warm_up_steps: 2000
+
+  Latent:
+    active: true
+    pre_trained: true
+    model:
+      external: cfg/vae/vae.yaml
+      selection: VAE_1x256x256_4x32x32_167k
+      only_load_selection: true
+      read_only: true
+
+  unet_architecture:
+    ResNet_blocks_per_level: 2
+    starting_channels: 320
+    num_heads: 8
+    embedding_channels: 40
+
+    channel_multipliers:
+      - 1
+      - 2
+      - 2
+
+    attention_levels:
+      - 0
+      - 1
+
+
+ltd_dit_mnist:
+  name: ltd_dit_mnist
+  description: 
+  
+  input_num_channels: 1
+  input_resolution_x: 32
+  input_resolution_y: 32
+
+  time_embedding_size: 160 #320
+  training_steps: 1000
+  sample_steps: 1000
+
+  Classifier_free_guidance:
+    active: true
+    no_class_probability: 0.1
+    weight: 3.0
+
+  EMA:
+    active: true
+    weight: 0.995
+    warm_up_steps: 2000
+
+  Latent:
+    active: false
+    pre_trained: true
+    model:
+      external: cfg/vae/vae.yaml
+      selection: VAE_1x256x256_4x32x32_167k
+      only_load_selection: true
+      read_only: true
+
+  unet_architecture:
+    ResNet_blocks_per_level: 2
+    starting_channels: 320
+    num_heads: 8
+    embedding_channels: 40
+
+    channel_multipliers:
+      - 1
+      - 2
+      - 2
+
+    attention_levels:
+      - 0
+      - 1
+
+
+ltd_mnist:
+  name: ltd_mnist
+  description: 
+  
+  input_num_channels: 1
+  input_resolution_x: 32
+  input_resolution_y: 32
+
+  time_embedding_size: 80 #320
+  training_steps: 1000
+  sample_steps: 1000
+
+  Classifier_free_guidance:
+    active: true
+    no_class_probability: 0.1
+    weight: 3.0
+
+  EMA:
+    active: true
+    weight: 0.995
+    warm_up_steps: 2000
+
+  Latent:
+    active: false
+    pre_trained: true
+    model:
+      external: cfg/vae/vae.yaml
+      selection: VAE_1x256x256_4x32x32_167k
+      only_load_selection: true
+      read_only: true
+
+  unet_architecture:
+    ResNet_blocks_per_level: 2
+    starting_channels: 128
+    num_heads: 8
+    embedding_channels: 40
+
+    channel_multipliers:
+      - 1
+      - 2
+      - 2
+
+    attention_levels:
+      - 0
+      - 1

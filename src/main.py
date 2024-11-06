@@ -122,8 +122,8 @@ def main():
         # TODO this should really be done differently, probably another static
         # function in datasetfactory that takes the config and determines the
         # necessary constants
-        amount_classes  = [constants.LABEL_AMOUNT_GTC,
-                       constants.LABEL_AMOUNT_CLIMATE]
+        amount_classes  = [10]#[constants.LABEL_AMOUNT_GTC,
+                       #constants.LABEL_AMOUNT_CLIMATE]
 
     # =========================================================================
     # Model
@@ -135,6 +135,7 @@ def main():
     try:
         model = DDPM(config["Model"], amount_classes=amount_classes)
     except TypeError as e:
+       print (e)
        model = AutoEncoderFactory.create_auto_encoder(config["Model"])
     printer.print_log("Finished.")
     

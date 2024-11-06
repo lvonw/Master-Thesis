@@ -14,6 +14,7 @@ from generation.modules.diffusion   import Diffusion
 from generation.modules.ema         import EMA
 from tqdm                           import tqdm
 
+NULL_LABEL = -1
 
 class BetaSchedules(enum.Enum):
     LINEAR  = "Linear"
@@ -140,9 +141,16 @@ class DDPM(nn.Module):
         noised_images, noise = self.__add_noise(inputs, timesteps)
 
         # Classifier Free Guidance ============================================
-        if (self.use_classifier_free_guidance 
-            and np.random.random() < self.no_class_probability):
-            labels = None         
+        if self.use_classifier_free_guidance: 
+            # Perhaps we could try setting each entry independantly
+            mask = torch.rand(
+                labels.shape[0],
+                device=labels.device) < self.no_class_probability
+            
+            if len(self.amount_classes) > 1:
+                mask = mask.unsqueeze(1).repeat(1, labels.shape[1])
+
+            labels = torch.where(mask, NULL_LABEL, labels)   
 
         # Noise Predictionn ===================================================
         predicted_noise = self.model(noised_images, labels, timesteps)
@@ -167,11 +175,24 @@ class DDPM(nn.Module):
         if training:
             return self.training_step(*args, **kwargs)
 
-    def generate(self, label=None, amount=1, input_tensor=None):
-        if label is not None:
-            label = torch.tensor([label], device=self.device).unsqueeze(dim=0)
+    def generate(self, labels=None, amount=1, input_tensor=None):
+
+        if labels is None:
+            labels = []
+        elif issubclass(int, type(labels)):
+            labels = [labels] * amount
+
+
+        for idx in range(len(labels)):
+            if labels[idx] is None:
+                labels[idx] = NULL_LABEL
         
-        return self.sample(amount, label, input_tensor=input_tensor)
+        for idx in range(len(labels), amount):
+            labels.append(NULL_LABEL)
+
+        labels = torch.tensor(labels, device=self.device)
+
+        return self.sample(amount, labels, input_tensor=input_tensor)
 
     @torch.no_grad()
     def sample(self, 
@@ -181,6 +202,8 @@ class DDPM(nn.Module):
                input_tensor=None):
         """ Algorithm 2 DDPM """
 
+
+
         if self.use_ema:
             self.ema_model.apply_to_model(self.model) 
 
@@ -188,7 +211,8 @@ class DDPM(nn.Module):
         if input_tensor is None:
             x = torch.randn((amount_samples,) + self.input_shape, 
                             device=self.device)
-        else: 
+        else:
+            # Encoding input if sketch guided ================================= 
             input_batch = input_tensor.repeat(amount_samples, 1, 1, 1)
             starting_offset = 750
 
@@ -196,10 +220,10 @@ class DDPM(nn.Module):
                 [self.sample_steps[starting_offset]] 
                 * amount_samples).to(input_tensor.device)
             
-            x           = self.latent_model.encode(input_batch).latents
-            x           *= self.inverse_latent_std
+            x   = self.latent_model.encode(input_batch).latents
+            x   *= self.inverse_latent_std
 
-            x, _        = self.__add_noise(x, timesteps)
+            x, _= self.__add_noise(x, timesteps)
 
 
 
@@ -209,14 +233,19 @@ class DDPM(nn.Module):
             desc = "Generating Image",
             initial = starting_offset):
         
-            # Classifier Free Guidance ========================================
             timesteps = torch.tensor([timestep] * amount_samples, 
                                      device=self.device)
 
             model_output = self.model(x, control_signals, timesteps)
-            
+
+            # Classifier Free Guidance ========================================
             if (self.use_classifier_free_guidance and control_signals != None):  
-                unconditional_model_output = self.model(x, None, timesteps)
+                
+                null_labels = torch.full_like(control_signals, NULL_LABEL)
+                unconditional_model_output = self.model(x, 
+                                                        null_labels, 
+                                                        timesteps)
+
                 model_output = torch.lerp(unconditional_model_output, 
                                           model_output,
                                           self.cfg_weight)
