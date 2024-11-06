@@ -7,9 +7,9 @@ Main:
   test:       false
   generate:   true
 
-  load_model: #true
+  load_model: false
 
-  img2img: #true
+  img2img: true
   test_image: test_image.png
 
 
@@ -18,7 +18,7 @@ Main:
 # =============================================================================
 Training:  
   epochs:           3000
-  batch_size:       32
+  batch_size:       16
   learning_rate:    4.5e-6
   logging_steps:    10
   num_workers:      2
@@ -35,7 +35,7 @@ Model:
   # external: cfg/vae/vae.yaml
   # selection: VAE_1x256x256_4x32x32_167k
   external: cfg/diffusion/ddpm.yaml
-  selection: ltd_dit_mnist
+  selection: latent_terrain_diffusion_max
   only_load_selection: true
   read_only: true
 
@@ -43,14 +43,14 @@ Model:
 # DATA
 # =============================================================================
 Data:
-  use_MNIST:      true
+  use_MNIST:      false
 
   DEM_List:       SRTM_GL1_50_over_list.txt
   DEM_Dataset:    SRTM_GL1_512x512
   Cache_DEMs:     true
   loader_workers: 2
   # < 1 -> We take all in the specified list
-  amount_dems:    0
+  amount_dems:    128 #0
 
   # Datasets
   GLiM:

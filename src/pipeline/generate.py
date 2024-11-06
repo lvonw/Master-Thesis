@@ -33,7 +33,7 @@ def generate(model,
         
     with torch.no_grad():
         for i in range(iterations):
-            label = [i]*amount_samples# i #% 2 + 1
+            label = [[i, 1],[i, 10],[i, 20],[i, 30]]
             
             samples = model.generate(label, amount_samples, input_tensor)
 

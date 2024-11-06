@@ -28,8 +28,8 @@ class Diffusion(nn.Module):
     def __init__(self, 
                  configuration, 
                  amount_classes, 
-                 model_type=ModelType.DIT,
-                 control_signal_integration=ControlSignalIntegration.NONE):
+                 model_type=ModelType.UNET,
+                 control_signal_integration=ControlSignalIntegration.ADD_TO_TIME):
         super().__init__()
 
         self.time_embedding_size = configuration["time_embedding_size"]
