@@ -23,6 +23,7 @@ Training:
   logging_steps:    10
   num_workers:      2
   Save_after_epoch: true
+  save_after_n:     10
   Data_Split:       1.0
 
   Validation:

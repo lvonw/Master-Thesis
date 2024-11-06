@@ -116,7 +116,10 @@ def train(model,
             model_state.on_training_step_completed()
 
         # Post epoch behaviour ================================================
-        if configuration["Save_after_epoch"] and global_rank == 0:
+        if (configuration["Save_after_epoch"] 
+            and (epoch_idx + 1) % configuration["save_after_n"] == 0 
+            and global_rank == 0):
+            
             util.save_checkpoint(model_state, epoch_idx)
         
         # Validation ==========================================================
