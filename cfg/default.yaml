@@ -48,7 +48,7 @@ Data:
   DEM_List:       SRTM_GL1_50_over_list.txt
   DEM_Dataset:    SRTM_GL1_512x512
   Cache_DEMs:     true
-  loader_workers: 2
+  loader_workers: 8
   # < 1 -> We take all in the specified list
   amount_dems:    0
 
