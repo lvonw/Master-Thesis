@@ -182,6 +182,19 @@ tar -xzvf filename.tar.gz
 If running doesnt work then do `whereis torchrun` and copy the absolute path of 
 the conda env instance of torchrun
 
+This might require a higher file access limit which you can set with 
+`ulimit -n 100000` 
+
+You might even have to adjust the limit in `nano /etc/sysctl.conf`
+
+Add this line to set the maximum number of open file descriptors:
+
+```
+fs.file-max = 12000
+```
+Save the file, then apply the changes with: `sudo sysctl -p`
+
+
 ### Monitoring
 
 You can do `ls -l` to check when the files in the current directory where last 

@@ -50,7 +50,7 @@ Data:
   Cache_DEMs:     true
   loader_workers: 2
   # < 1 -> We take all in the specified list
-  amount_dems:    128 #0
+  amount_dems:    0
 
   # Datasets
   GLiM:
