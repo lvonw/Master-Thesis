@@ -1,3 +1,12 @@
+"""
+Implementation guided by:
+https://github.com/openai/improved-diffusion
+https://github.com/hkproj/pytorch-stable-diffusion
+https://github.com/Stability-AI/stablediffusion
+https://github.com/dome272/Diffusion-Models-pytorch
+https://github.com/gmongaras/Diffusion_models_from_scratch
+"""
+
 import constants
 import enum
 import torch
@@ -14,15 +23,13 @@ from generation.modules.diffusion   import Diffusion
 from generation.modules.ema         import EMA
 from tqdm                           import tqdm
 
-NULL_LABEL = -1
-
 class BetaSchedules(enum.Enum):
     LINEAR  = "Linear"
     COSINE  = "Cosine"
 
 class PredictionType(enum.Enum):
-    MEAN_VARIANCE   = "Mean_Variance"
-    EPSILON_SIMPLE  = "Epsilon_Simple"
+    L_HYBRID        = "Mean_Variance"
+    L_SIMPLE        = "Epsilon_Simple"
 
 class DDPM(nn.Module):
     def __init__(self, 
@@ -31,24 +38,30 @@ class DDPM(nn.Module):
                  beta_start=0.00085,
                  beta_end = 0.0120, 
                  amount_classes=0):
-        
         super().__init__()
-        self.model_family   = "diffusion"
-        self.name           = configuration["name"]
-        self.loss_log       = LossLog()
-        
-        self.device         = util.get_device()
-        self.generator      = generator
-        self.amount_classes = amount_classes
 
-        self.amount_training_steps     = configuration["training_steps"]
-        self.amount_sample_steps       = configuration["sample_steps"]
-        self.sample_steps = self.__get_sampling_timesteps(
+        self.model_family           = "diffusion"
+        self.name                   = configuration["name"]
+        self.loss_log               = LossLog()
+        self.can_save               = True
+
+        if not configuration.predict_variance:
+            self.prediction_type    = PredictionType.L_SIMPLE
+        else:
+            self.prediction_type    = PredictionType.L_HYBRID
+            
+        self.device                 = util.get_device()
+        self.generator              = generator
+        self.amount_classes         = amount_classes
+
+        self.amount_training_steps  = configuration["training_steps"]
+        self.amount_sample_steps    = configuration["sample_steps"]
+        self.sample_steps           = self.__get_sampling_timesteps(
             self.amount_sample_steps)
         
-        self.input_shape    = (configuration["input_num_channels"], 
-                               configuration["input_resolution_x"],
-                               configuration["input_resolution_y"])
+        self.input_shape            = (configuration["input_num_channels"], 
+                                       configuration["input_resolution_x"],
+                                       configuration["input_resolution_y"])
         
         # LATENT ==============================================================
         self.is_latent          = configuration["Latent"]["active"]
@@ -94,11 +107,15 @@ class DDPM(nn.Module):
 
         self.register_buffer("alphas",          1.0 - self.betas)
         self.register_buffer("alpha_bars",      torch.cumprod(self.alphas, 0))
+        self.register_buffer("sqrt_alpha_bars", torch.sqrt(self.alpha_bars))
 
-        mean_variance_coefficients = self.__compute_mean_variance_coefficients()
-        self.register_buffer("x_zero_coefs",    mean_variance_coefficients[0])
-        self.register_buffer("x_t_coefs",       mean_variance_coefficients[1])
-        self.register_buffer("variance_t",      mean_variance_coefficients[2])
+        vlb_coefficients = self.__compute_vlb_coefficients()
+        self.register_buffer("x_zero_coefs",            vlb_coefficients[0])
+        self.register_buffer("x_t_coefs",               vlb_coefficients[1])
+        self.register_buffer("variance_t",              vlb_coefficients[2])
+        self.register_buffer("log_variance_t",          vlb_coefficients[3])
+        self.register_buffer("x_zero_x_t_coefs",        vlb_coefficients[4])
+        self.register_buffer("x_zero_epsilon_coefs",    vlb_coefficients[5])
 
         epsilon_coefficients = self.__compute_epsilon_coefficients()
         self.register_buffer("one_over_sqrt_alphas",  epsilon_coefficients[0])
@@ -106,12 +123,6 @@ class DDPM(nn.Module):
 
         # TRAINING ============================================================
         self.optimizers     = self.__get_optimizers()
-
-
-    def get_state_dict_to_save(self):
-        state_dict = self.state_dict()
-        state_dict.pop("latent_model")
-        return state_dict
 
     # =========================================================================
     # Training
@@ -135,8 +146,8 @@ class DDPM(nn.Module):
                 inputs *= self.inverse_latent_std
 
         # Forward Process =====================================================
-        timesteps = self.__sample_from_timesteps(self.amount_training_steps, 
-                                                 inputs.shape[0])
+        timesteps = self.__sample_from_timesteps(
+            self.amount_training_steps, inputs.shape[0]).to(inputs.device)
         
         noised_images, noise = self.__add_noise(inputs, timesteps)
 
@@ -150,19 +161,112 @@ class DDPM(nn.Module):
             if len(self.amount_classes) > 1:
                 mask = mask.unsqueeze(1).repeat(1, labels.shape[1])
 
-            labels = torch.where(mask, NULL_LABEL, labels)   
+            labels = torch.where(mask, constants.NULL_LABEL, labels)   
 
-        # Noise Predictionn ===================================================
-        predicted_noise = self.model(noised_images, labels, timesteps)
-        loss            = f.mse_loss(noise, predicted_noise)
+        # Noise Prediction ====================================================
+        model_output = self.model(noised_images, labels, timesteps)
 
-        self.loss_log.add_entry("MSE", loss)
+        match self.prediction_type:
+            # As proposed by algorithm 2 DDPM
+            case PredictionType.L_SIMPLE:
+                loss = self.__l_simple(noise, 
+                                       model_output)
+            # As proposed by Improved DDPMs
+            case PredictionType.L_HYBRID:
+                loss = self.__l_hybrid(noise,
+                                       inputs,
+                                       noised_images, 
+                                       model_output,
+                                       timesteps)
 
         return loss, None
     
     def on_training_step_completed(self):
         if self.use_ema:
             self.ema_model.ema_step(self.model)
+    
+    def __l_hybrid(self, noise, x_zero, x_t, model_output, timesteps):
+        predicted_noise, predicted_log_variance = model_output.chunk(2, dim=1)
+
+        vlb_weight = 0.001
+        l_simple    = self.__l_simple(noise, predicted_noise)
+        l_vlb       = self.__l_vlb(x_zero,
+                                   x_t,
+                                   predicted_noise,
+                                   predicted_log_variance,
+                                   timesteps)
+        loss        = l_simple + vlb_weight * l_vlb
+        
+        self.loss_log.add_entry("L_hybrid", loss)
+        return loss
+    
+    def __l_simple(self, noise, predicted_noise):
+        loss = f.mse_loss(noise, predicted_noise)
+
+        self.loss_log.add_entry("L_simple", loss)
+        return loss
+
+    def __l_vlb(self, 
+                x_zero, 
+                x_t, 
+                predicted_noise, 
+                predicted_log_variance, 
+                timesteps):
+        noise_parameters = self.__get_parameters_from_x_t(
+            x_zero, 
+            x_t, 
+            timesteps)
+        
+        predicted_noise_parameters = self.__get_parameters_from_noise(
+            x_t,
+            predicted_noise,
+            predicted_log_variance,
+            timesteps)
+        
+        kl_divergence = self.__gaussian_kl_divergence(
+            noise_parameters.mean,
+            noise_parameters.log_variance,
+            predicted_noise_parameters.mean,
+            predicted_noise_parameters.log_variance)
+        
+        loss = kl_divergence
+
+        self.loss_log.add_entry("L_vlb", loss)
+        return 
+    
+    def __get_parameters_from_x_t(self, x_zero, x_t, timesteps):
+        mean = (x_zero   * self.pred_x_zero_coef[timesteps] 
+                + x_t    * self.pred_x_t_coef[timesteps])
+        
+        variance = self.variance_t[timesteps]
+        log_variance = self.log_variance_t[timesteps]
+        
+        return NoiseParameters(mean, variance, log_variance)
+    
+    def __get_parameters_from_noise(self, x_t, noise, log_variance, timesteps):
+        x_zero  = (x_zero    * self.x_zero_x_t_coefs[timesteps]  
+                   - noise   * self.x_zero_epsilon_coefs[timesteps])
+
+        mean    = (x_zero   * self.pred_x_zero_coef[timesteps] 
+                   + x_t    * self.pred_x_t_coef[timesteps])
+        
+        variance = torch.exp(log_variance)
+        
+        return NoiseParameters(mean, variance, log_variance)
+    
+    def __gaussian_kl_divergence(self,
+                                 p_mean, 
+                                 p_log_variance, 
+                                 q_mean, 
+                                 q_log_variance):
+        
+        kl_divergence = -0.5 * (
+            1.0 
+            + p_log_variance - q_log_variance
+            - torch.exp(p_log_variance - q_log_variance)
+            - ((p_mean - q_mean) ** 2) * torch.exp(-q_log_variance))
+        
+        return kl_divergence.flatten(1, -1).mean(-1)
 
     def __get_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=4.5e-6)
@@ -175,7 +279,11 @@ class DDPM(nn.Module):
         if training:
             return self.training_step(*args, **kwargs)
 
-    def generate(self, labels=None, amount=1, input_tensor=None):
+    def generate(self,
+                 labels=None, 
+                 amount=1, 
+                 input_tensor=None, 
+                 img2img_strength=800):
 
         if labels is None:
             labels = []
@@ -185,36 +293,37 @@ class DDPM(nn.Module):
 
         for idx in range(len(labels)):
             if labels[idx] is None:
-                labels[idx] = NULL_LABEL
+                labels[idx] = constants.NULL_LABEL
         
         for idx in range(len(labels), amount):
-            labels.append(NULL_LABEL)
+            labels.append(constants.NULL_LABEL)
 
         labels = torch.tensor(labels, device=self.device)
 
-        return self.sample(amount, labels, input_tensor=input_tensor)
+        return self.sample(amount, 
+                           labels, 
+                           input_tensor=input_tensor, 
+                           img2img_strength=img2img_strength)
 
     @torch.no_grad()
     def sample(self, 
                amount_samples, 
                control_signals, 
-               prediction_type= PredictionType.EPSILON_SIMPLE,
-               input_tensor=None):
+               input_tensor=None,
+               img2img_strength=800):
         """ Algorithm 2 DDPM """
-
-
-
-        if self.use_ema:
-            self.ema_model.apply_to_model(self.model) 
+        # Activate EMA, disable saving ========================================
+        if self.use_ema and self.can_save:
+            self.__apply_ema()
 
         starting_offset = 0
         if input_tensor is None:
             x = torch.randn((amount_samples,) + self.input_shape, 
-                            device=self.device)
+                            device=control_signals.device)
         else:
             # Encoding input if sketch guided ================================= 
             input_batch = input_tensor.repeat(amount_samples, 1, 1, 1)
-            starting_offset = 750
+            starting_offset = img2img_strength
 
             timesteps   = torch.tensor(
                 [self.sample_steps[starting_offset]] 
@@ -226,7 +335,7 @@ class DDPM(nn.Module):
             x, _= self.__add_noise(x, timesteps)
 
 
-
+        # Main Loop ===========================================================
         for _, timestep in tqdm(
             enumerate(self.sample_steps[starting_offset:], starting_offset),
             total = self.amount_sample_steps,
@@ -234,14 +343,15 @@ class DDPM(nn.Module):
             initial = starting_offset):
         
             timesteps = torch.tensor([timestep] * amount_samples, 
-                                     device=self.device)
+                                     device=control_signals.device)
 
             model_output = self.model(x, control_signals, timesteps)
 
             # Classifier Free Guidance ========================================
             if (self.use_classifier_free_guidance and control_signals != None):  
                 
-                null_labels = torch.full_like(control_signals, NULL_LABEL)
+                null_labels = torch.full_like(control_signals, 
+                                              constants.NULL_LABEL)
                 unconditional_model_output = self.model(x, 
                                                         null_labels, 
                                                         timesteps)
@@ -252,16 +362,17 @@ class DDPM(nn.Module):
 
 
             # Denoising  ======================================================
-            match prediction_type:
-                # As proposed by algorithm 2
-                case PredictionType.EPSILON_SIMPLE:
-                    x = self.__predict_epsilon_simple(timestep, 
-                                                      x, 
-                                                      model_output)
-                case PredictionType.MEAN_VARIANCE:
+            match self.prediction_type:
+                # As proposed by algorithm 2 DDPM
+                case PredictionType.L_SIMPLE:
+                    x = self.__predict_mean(timestep, 
+                                        x, 
+                                        model_output)
+                # As proposes by Improved DDPMs
+                case PredictionType.L_HYBRID:
                     x = self.__predict_mean_variance(timestep, 
-                                                     x, 
-                                                     model_output)
+                                        x, 
+                                        model_output)
                     
             x = torch.clamp(x, -1.0, 1.0)
 
@@ -276,7 +387,7 @@ class DDPM(nn.Module):
     # =========================================================================
     # Predict Epsilon
     # =========================================================================
-    def __predict_epsilon_simple(self, timestep, x_t, model_output):
+    def __predict_mean(self, timestep, x_t, model_output):
         """ Algorithm 2 DDPM """
         if timestep > 0:
             noise = torch.randn(model_output.shape, 
@@ -291,6 +402,7 @@ class DDPM(nn.Module):
         x_t_minus_one += torch.sqrt(self.betas[timestep]) * noise
 
         return x_t_minus_one
+    
 
     def __compute_epsilon_coefficients(self):
         one_over_sqrt_alphas    = 1. / torch.sqrt(self.alphas)
@@ -302,6 +414,21 @@ class DDPM(nn.Module):
     # =========================================================================
     # Predict Mean and Variance
     # =========================================================================
+    def __predict_mean_variance(self, timestep, x_t, model_output):
+        mean, log_variance = model_output.chunk(2, dim=1)
+        std_deviation = torch.exp(0.5 * log_variance)
+
+        if timestep > 0:
+            noise = torch.randn(model_output.shape, 
+                                generator=self.generator, 
+                                device=model_output.device, 
+                                dtype=model_output.dtype)
+        else: 
+            noise = 0
+
+        x_t_minus_one = x_t - (mean + noise * std_deviation)
+        return x_t_minus_one
+        
     def __predict_mean_variance(self, timestep, x_t, model_output):
         alpha_bar_t = self.alpha_bars[timestep]
         beta_prod_t = 1 - alpha_bar_t 
@@ -320,15 +447,13 @@ class DDPM(nn.Module):
                                 device=model_output.device, 
                                 dtype=model_output.device)
             
-            # can extract this
-            pred_variance_t = torch.clamp(self.variance_t, min=1e-20) 
-            variance        = torch.sqrt(pred_variance_t) * noise
+            variance        = torch.sqrt(self.variance_t) * noise
             
 
         x_t_prev = pred_mean_t + variance
         return x_t_prev
             
-    def __compute_mean_variance_coefficients(self):
+    def __compute_vlb_coefficients(self):
         """ Formula 7 DDPM """
         # Shift alpha_bar to create previous timestep
         alpha_bar_prev  = torch.cat([torch.tensor([1.]), self.alpha_bars[:-1]])
@@ -342,8 +467,18 @@ class DDPM(nn.Module):
                             / beta_prod) 
 
         variance_t      = (beta_prod_prev / beta_prod) * self.betas
+        variance_t      = torch.clamp(self.variance_t, min=1e-20) 
+        log_variance_t  = torch.log(log_variance_t) 
 
-        return x_zero_coefs, x_t_coefs, variance_t
+        mean_x_zero_coefs   = torch.sqrt(1.0 / self.alpha_bars)
+        mean_x_t_coefs      = torch.sqrt(1.0 / self.alpha_bars - 1)
+
+        return (x_zero_coefs, 
+                x_t_coefs, 
+                variance_t,
+                log_variance_t,
+                mean_x_zero_coefs, 
+                mean_x_t_coefs)
     
 
     # =========================================================================
@@ -351,16 +486,10 @@ class DDPM(nn.Module):
     # =========================================================================
     def __add_noise(self, original_samples, timesteps):
         """ Formula 12 DDPM """
-        alpha_bars   = self.alpha_bars.to(device  = original_samples.device,
-                                          dtype   = original_samples.dtype)
-        
-        timesteps   = timesteps.to(device=original_samples.device)    
-
-        sqrt_alpha_bars             = torch.sqrt(alpha_bars[timesteps]
+        sqrt_alpha_bars             = torch.sqrt(self.alpha_bars[timesteps]
                                                  ).flatten()
-        sqrt_one_minus_alpha_bars   = torch.sqrt(1-alpha_bars[timesteps]
+        sqrt_one_minus_alpha_bars   = torch.sqrt(1-self.alpha_bars[timesteps]
                                                  ).flatten()
-
 
         while len(sqrt_alpha_bars.shape) < len(original_samples.shape):
             sqrt_alpha_bars = sqrt_alpha_bars.unsqueeze(-1)
@@ -368,9 +497,9 @@ class DDPM(nn.Module):
         while len(sqrt_one_minus_alpha_bars.shape) < len(original_samples.shape):
             sqrt_one_minus_alpha_bars = sqrt_one_minus_alpha_bars.unsqueeze(-1)
 
-        noise = torch.randn(original_samples.shape, 
-                            generator=self.generator, 
-                            device=original_samples.device)
+        noise = torch.randn_like(original_samples, 
+                                 generator=self.generator, 
+                                 device=original_samples.device)
     
         noisy_samples = (sqrt_alpha_bars             * original_samples 
                          + sqrt_one_minus_alpha_bars * noise)
@@ -417,8 +546,7 @@ class DDPM(nn.Module):
     def __sample_from_timesteps(self, amount_steps, amount_samples):
         return torch.randint(low=1, 
                              high=amount_steps,
-                             size=(amount_samples,),
-                             device=self.device)
+                             size=(amount_samples,))
     
     def __get_sampling_timesteps(self, amount_sample_steps):
         step_size   = self.amount_training_steps // amount_sample_steps
@@ -426,3 +554,24 @@ class DDPM(nn.Module):
                                 stop   = self.amount_training_steps,
                                 step   = step_size)[::-1]
         return timesteps
+    
+    # =========================================================================
+    # Util
+    # =========================================================================
+    def get_state_dict_to_save(self):
+        if self.can_save:
+            state_dict = self.state_dict()
+            state_dict.pop("latent_model")
+            return state_dict
+        return None
+    
+    def apply_ema(self):
+        self.ema_model.apply_to_model(self.model) 
+        self.ema_model  = None
+        self.can_save   = False
+
+class NoiseParameters():
+    def __init__(self, mean, variance, log_variance):
+        self.mean           = mean
+        self.variance       = variance
+        self.log_variance   = log_variance

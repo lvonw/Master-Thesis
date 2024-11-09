@@ -45,7 +45,6 @@ def __get_backend():
     elif system == "Linux":
         return "nccl"
 
-
 def main():
     parser      = prepare_arg_parser()
     arguments   = parser.parse_args()
@@ -195,6 +194,8 @@ def main():
     # =========================================================================
     if config["Main"]["generate"]:
         do_img2img = config["Main"]["img2img"]
+        model.apply_ema()
+        model.to(util.get_device())
         if do_img2img:
             generate.generate(model, 4, 10, config["Main"]["test_image"])
         else:

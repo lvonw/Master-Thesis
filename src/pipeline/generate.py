@@ -10,7 +10,7 @@ from PIL            import Image
 
 def generate(model,
              amount_samples     = 4,
-             iterations         = 10,
+             iterations         = 8,
              input_image_path   = None,
              weight             = 0.8):
     
@@ -33,9 +33,21 @@ def generate(model,
         
     with torch.no_grad():
         for i in range(iterations):
-            label = [[i, 1],[i, 10],[i, 20],[i, 30]]
-            
-            samples = model.generate(label, amount_samples, input_tensor)
+            l = i+1#((i+1)*2)-1 
+            label = [[2, 1],[2, 5],[2, 12],[2, 28]]
+
+            # thing = 700
+            # thing = 750
+            # thing = 775
+            thing = 800
+            # thing = 825
+            # thing = 875
+            # thing = 900
+
+            samples = model.generate(label, 
+                                     amount_samples, 
+                                     input_tensor,
+                                     thing)
 
             if input_tensor is not None:
                 samples = torch.cat((input_tensor, samples), dim=0)

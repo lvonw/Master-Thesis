@@ -65,6 +65,8 @@ RESOURCE_PATH_TEST_IMAGES   = os.path.join(RESOURCE_PATH_IMAGES, "test_images")
 LABEL_AMOUNT_GTC = 16
 LABEL_AMOUNT_CLIMATE = 33
 
+NULL_LABEL = -1
+
 # =============================================================================
 # Configs
 # =============================================================================

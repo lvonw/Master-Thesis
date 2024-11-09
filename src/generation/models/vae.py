@@ -1,3 +1,8 @@
+"""
+Guided by:
+https://github.com/Stability-AI/stablediffusion
+"""
+
 import torch
 import torch.nn                 as nn
 import torch.nn.functional      as f
@@ -98,10 +103,6 @@ class AutoEncoderFactory():
         perceptual_loss         = None
         if use_perceptual_loss:
             printer.print_log("Using Perceptual Loss")
-            # perceptual_loss = LearnedPerceptualImagePatchSimilarity(
-            #     net_type    = loss["perceptual_net"], 
-            #     reduction   = "sum").eval()
-            
             perceptual_loss = LPIPS(loss["perceptual_net"]).eval()
             
         # EMA =================================================================
@@ -184,8 +185,6 @@ class VariationalAutoEncoder(nn.Module):
         self.decoder_ema_model      = decoder_ema_model
 
         self.optimizers             = self.__get_optimizers()
-
-        self.lp                     = LaplaceFilter()
 
         self.log_image_interval     = log_image_interval
         self.data_visualiser        = DataVisualizer()        
@@ -276,7 +275,7 @@ class VariationalAutoEncoder(nn.Module):
         self.loss_log.add_entry("Reconstruction", reconstruction_loss)
 
 
-        # KL-Divergence between Posterior and Gaussian ------------------------
+        # KL-Divergence between Posterior and univariate Gaussian -------------
         mean            = latent_encoding.mean     
         log_var         = latent_encoding.log_variance
         kl_divergence   = -0.5 * (1 + log_var - mean.pow(2) - log_var.exp())
@@ -372,7 +371,6 @@ class VariationalAutoEncoder(nn.Module):
                                            save_dir=self.name,
                                            filename=filename)
 
-
     # =========================================================================
     # Sampling
     # =========================================================================
@@ -430,7 +428,6 @@ class VariationalAutoEncoder(nn.Module):
         self.encoder_ema_model = None
         self.decoder_ema_model = None
 
-
 class LatentEncoding():
     def __init__(self, latents, mean, log_variance):
         self.latents        = latents
@@ -441,10 +438,11 @@ import torch.nn.functional                  as f
 import util
 class LaplaceFilter():
     def __init__(self):
-        self.kernel = torch.tensor([[0,  1, 0], 
-                                    [1, -4, 1], 
-                                    [0,  1, 0]],   
-                                    dtype=torch.float32).view(1, 1, 3, 3).to(util.get_device())
+        self.kernel = torch.tensor(
+            [[0,  1, 0], 
+             [1, -4, 1], 
+             [0,  1, 0]],   
+             dtype=torch.float32).view(1, 1, 3, 3).to(util.get_device())
 
     def __call__(self, x):
         return f.conv2d(x, self.kernel, padding=0)

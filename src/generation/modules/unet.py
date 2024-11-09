@@ -6,9 +6,8 @@ from generation.modules.util_modules    import (ResNetBlock,
                                                 Downsample, 
                                                 Upsample, 
                                                 Normalize)
-from generation.modules.attention       import ContextualAttentionBlock, AttentionBlock
-
-
+from generation.modules.attention       import (ContextualAttentionBlock, 
+                                                AttentionBlock)
 
 class SwitchSequential(nn.Sequential):
     def forward(self, x, control_signal, time):
@@ -26,11 +25,13 @@ class UNETFactory():
     def __init__(self):
         pass
 
-    def create_unet(configuration):
+    def create_unet(configuration, double_output=False):
         input_shape         = (configuration["input_num_channels"], 
                                configuration["input_resolution_x"],
                                configuration["input_resolution_y"])
         
+        output_channels     = input_shape[0] + double_output * input_shape[0]
+
         architecture = configuration["unet_architecture"]
         
         resNet_per_level_encoder    = architecture["ResNet_blocks_per_level"]
@@ -50,6 +51,7 @@ class UNETFactory():
 
         return UNET(input_shape,
                     starting_channels,
+                    output_channels, 
                     channel_multipliers_encoder,
                     channel_multipliers_decoder,
                     resNet_per_level_encoder,
@@ -64,6 +66,7 @@ class UNET(nn.Module):
     def __init__(self, 
                  input_shape,
                  starting_channels,
+                 output_channel_amount,
                  channel_multipliers_encoder,
                  channel_multipliers_decoder,
                  resNet_per_level_encoder,
@@ -79,7 +82,7 @@ class UNET(nn.Module):
         
         skip_channels = [] 
 
-        # Encoder
+        # Encoder =============================================================
         self.encoder = nn.ModuleList()
         # TODO Do this for the autoencoder too
         self.input_conv = nn.Conv2d(input_channel_amount, 
@@ -101,15 +104,13 @@ class UNET(nn.Module):
                 current_block.append(
                     ResNetBlock(previous_channel_amount, 
                                 current_channel_amount,
-                                time_embedding_channels = time_embedding_size)
-                )
+                                time_embedding_channels = time_embedding_size))
 
                 if level in attention_levels:
                     current_block.append(
                         self.__get_attention_block(current_channel_amount,
                                                    current_embed,
-                                                   num_heads)
-                    )
+                                                   num_heads))
                 
                 self.encoder.append(SwitchSequential(*current_block))
                 skip_channels.append(current_channel_amount)
@@ -117,11 +118,12 @@ class UNET(nn.Module):
 
             if level + 1 < len(channel_multipliers_encoder):
                 self.encoder.append(SwitchSequential(
-                    Downsample(current_channel_amount, asymmetric_padding=False)
-                ))
+                    Downsample(current_channel_amount, 
+                    asymmetric_padding=False)))
+
                 skip_channels.append(current_channel_amount)
         
-        # Bottleneck
+        # Bottleneck ==========================================================
         self.bottleneck = SwitchSequential(
             ResNetBlock(current_channel_amount, 
                         current_channel_amount,
@@ -131,10 +133,9 @@ class UNET(nn.Module):
                                        num_heads),
             ResNetBlock(current_channel_amount, 
                         current_channel_amount,
-                        time_embedding_channels = time_embedding_size)
-        )
+                        time_embedding_channels = time_embedding_size))
 
-        # Decoder 
+        # Decoder ============================================================= 
         self.decoder = nn.ModuleList()
 
         for level_idx, multiplier in enumerate(channel_multipliers_decoder):
@@ -152,28 +153,25 @@ class UNET(nn.Module):
                 current_block.append(
                     ResNetBlock(current_skip_channel + previous_channel_amount, 
                                 current_channel_amount,
-                                time_embedding_channels = time_embedding_size)
-                )
+                                time_embedding_channels = time_embedding_size))
                 # Attention
                 if level in attention_levels:
                     current_block.append(
                         self.__get_attention_block(current_channel_amount,
                                                    current_embed,
-                                                   num_heads) 
-                    )
+                                                   num_heads))
                 # Upsampling
                 if (layer + 1 == resNet_per_level_decoder and level):
                     current_block.append(
-                        Upsample(current_channel_amount, True)
-                    )
+                        Upsample(current_channel_amount, True))
 
                 self.decoder.append(SwitchSequential(*current_block))
                 previous_channel_amount = current_channel_amount
         
-        # Output
+        # Output ==============================================================
         self.norm           = Normalize(current_channel_amount, 32)                           
         self.output_conv    = nn.Conv2d(current_channel_amount, 
-                                        input_channel_amount, 
+                                        output_channel_amount, 
                                         kernel_size=3, 
                                         padding=1)
 

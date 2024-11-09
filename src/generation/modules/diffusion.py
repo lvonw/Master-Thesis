@@ -7,7 +7,7 @@ import torch.nn.functional  as f
 
 from enum                       import Enum
 from generation.modules.unet    import UNETFactory
-from generation.modules.dit     import DiT
+from generation.modules.dit     import DiTFactory
 
 class ControlSignalIntegration(Enum):
       NONE              = "None"
@@ -27,23 +27,26 @@ class LabelCombinationType(Enum):
 class Diffusion(nn.Module):
     def __init__(self, 
                  configuration, 
-                 amount_classes, 
-                 model_type=ModelType.UNET,
-                 control_signal_integration=ControlSignalIntegration.ADD_TO_TIME):
+                 amount_classes,
+                 learn_variance = False,
+                 control_signal_integration = ControlSignalIntegration.ADD_TO_TIME):
         super().__init__()
 
-        self.time_embedding_size = configuration["time_embedding_size"]
-        self.time_embedding = TimeEmbedding(self.time_embedding_size)
+        self.time_embedding_size    = configuration["time_embedding_size"]
+        self.time_embedding         = TimeEmbedding(self.time_embedding_size)
 
-        match model_type:
+        if "unet_architecture" in configuration:
+            self.model_type = ModelType.UNET
+        else:
+            self.model_type = ModelType.DIT
+
+        match self.model_type:
             case ModelType.UNET:
-                self.model = UNETFactory.create_unet(configuration)
+                self.model = UNETFactory.create_unet(configuration,
+                                                     learn_variance)
             case ModelType.DIT:
-                self.model = DiT((1, 32, 32), 
-                                 12, 
-                                 2, 
-                                 4*self.time_embedding_size, 
-                                 16)
+                self.model = DiTFactory(configuration,
+                                        learn_variance)
 
         if not amount_classes:
             self.control_signal_integration = ControlSignalIntegration.NONE
@@ -60,9 +63,11 @@ class Diffusion(nn.Module):
         match self.control_signal_integration:
             case ControlSignalIntegration.NONE:
                 control_signal = self.label_embedding(control_signal)
+
             case ControlSignalIntegration.ADD_TO_TIME:
                 timestep += self.label_embedding(control_signal)
                 control_signal = None
+
             case ControlSignalIntegration.CROSS_ATTENTION:
                 control_signal = self.label_embedding(control_signal)
 
@@ -132,8 +137,10 @@ class LabelEmbedding(nn.Module):
         match self.combination_type:
             case LabelCombinationType.CONCAT:
                 x = torch.cat(embeddings, dim=-1)
+
             case LabelCombinationType.ADD:
                 x = torch.stack(embeddings).sum(dim=0)
+
             case LabelCombinationType.MULTIPLY:
                 x = torch.stack(embeddings).prod(dim=0)
 

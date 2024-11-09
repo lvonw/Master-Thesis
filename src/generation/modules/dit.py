@@ -4,14 +4,148 @@ https://github.com/facebookresearch/DiT/blob/main/models.py
 """
 
 import torch
-
-import torch.nn     as nn
-import numpy as np
 import util
-from debug import Printer
+
+import numpy        as np
+import torch.nn     as nn
+
+from debug                          import Printer
+from generation.modules.attention   import SelfAttention
+
+class DiTFactory():
+    def create_dit(configuration, double_output=False):
+        input_shape             = (configuration["input_num_channels"], 
+                                   configuration["input_resolution_x"],
+                                   configuration["input_resolution_y"])
+        
+        output_channel_amount   = (input_shape[0] 
+                                   + double_output * input_shape[0])
 
 
-from generation.modules.attention import SelfAttention
+        architecture            = configuration["DiT_architecture"]
+        amount_dit_blocks       = architecture["amount_DiT_blocks"]
+        patch_size              = architecture["patch_size"]
+        token_channel_amount    = configuration["time_embedding_size"] * 4
+        amount_heads            = architecture["amount_heads"]
+    
+        return DiT(input_shape,
+                   output_channel_amount,
+                   amount_dit_blocks,
+                   patch_size,
+                   token_channel_amount,
+                   amount_heads)
+
+
+class DiT(nn.Module):
+    """
+    Scalable Diffusion Models with Transformers
+    """
+
+    def __init__(self, 
+                 input_shape,
+                 output_channel_amount,
+                 amount_dit_blocks,
+                 patch_size, 
+                 token_channel_amount,
+                 amount_heads):
+        super().__init__()
+
+        self.data_channel_amount    = input_shape[0]
+        self.data_size              = input_shape[1]
+        self.output_channel_amount  = output_channel_amount
+
+        # Patchify ============================================================
+        self.patch_size             = patch_size
+        self.patch_amount           = self.data_size // patch_size
+        self.patchify               = nn.Conv2d(self.data_channel_amount, 
+                                                token_channel_amount, 
+                                                kernel_size   = patch_size, 
+                                                stride        = patch_size)
+        
+        self.token_channel_amount   = token_channel_amount
+        self.positional_encoding    = self.__get_cos_embedding(
+            token_channel_amount, 
+            self.patch_amount)
+        
+        # N x DiT-Blocks ======================================================
+        self.dit_blocks = nn.ModuleList()
+        for _ in range(amount_dit_blocks):
+            self.dit_blocks.append(_DiTBlock(token_channel_amount,
+                                             amount_heads))
+
+        # Layer Norm, Linear and Reshape ======================================
+        self.mlp = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(token_channel_amount, 2 * token_channel_amount))
+        
+        self.layer_norm = nn.LayerNorm(token_channel_amount)
+        self.linear     = nn.Linear(token_channel_amount, 
+                                    np.square(self.patch_size) 
+                                    * output_channel_amount)
+        
+    def forward(self, x, context, time):
+        x = self.patchify(x)
+        x = x.flatten(2).transpose(1, 2) 
+        x += self.positional_encoding
+
+        context += time
+        for dit_block in self.dit_blocks:
+            x = dit_block(x, context)
+
+        gamma, beta = self.mlp(context).unsqueeze(1).chunk(2, dim=2)  
+        x = self.layer_norm(x)
+        x = x * (1 + gamma) + beta
+        x = self.linear(x)
+
+        x = self.__unpatchify(x)
+
+        return x
+
+    def __unpatchify(self, x):
+        x = x.reshape(shape=(x.shape[0], 
+                             self.patch_amount, 
+                             self.patch_amount, 
+                             self.patch_size, 
+                             self.patch_size, 
+                             self.output_channel_amount))
+        x = x.permute(0, 5, 1, 3, 2, 4)
+        x = x.reshape(shape=(x.shape[0], 
+                             self.output_channel_amount, 
+                             self.data_size,  
+                             self.data_size))
+        return x
+
+
+    def __get_cos_embedding(self, embedding_size, image_size):
+        grid = torch.arange(start   = 0, 
+                            end     = image_size, 
+                            dtype   = torch.float32,
+                            device  = util.get_device())
+        
+        grid = torch.meshgrid(grid, grid, indexing="xy")
+
+        y = self.__get_cos_embedding_1D(embedding_size // 2, grid[0].flatten())
+        x = self.__get_cos_embedding_1D(embedding_size // 2, grid[1].flatten())
+
+        return torch.cat([y, x], dim=1)
+
+    def __get_cos_embedding_1D(self, embedding_size, pos):
+        embedding_size = embedding_size // 2
+
+        freqs = torch.arange(start = 0, 
+                             end   = embedding_size, 
+                             dtype = torch.float32,
+                             device=util.get_device()) 
+        freqs /= embedding_size
+        freqs = torch.pow(10000, -freqs)
+                
+        embedding = torch.outer(pos, freqs)
+        embedding = torch.cat([torch.cos(embedding), 
+                               torch.sin(embedding)], 
+                               dim=-1)
+
+        return embedding
+
 
 class _DiTBlock(nn.Module):
     """
@@ -39,7 +173,6 @@ class _DiTBlock(nn.Module):
             nn.GELU(approximate="tanh"),
             nn.Linear(feedforward_channels, token_channels))
 
-        
     def __modulate(self, x, gamma, beta):
         return x * (1 + gamma) + beta
 
@@ -69,116 +202,3 @@ class _DiTBlock(nn.Module):
         x += residual_x
 
         return x    
-
-class DiT(nn.Module):
-    """
-    Scalable Diffusion Models with Transformers
-    """
-
-    def __init__(self, 
-                 input_shape,
-                 amount_dit_blocks,
-                 patch_size, 
-                 token_channel_amount,
-                 amount_heads):
-        super().__init__()
-
-        self.data_channel_amount    = input_shape[0]
-        self.data_size              = input_shape[1]
-
-        # Patchify ============================================================
-        self.patch_size = patch_size
-        self.patch_amount = self.data_size // patch_size
-        self.patchify = nn.Conv2d(self.data_channel_amount, 
-                                  token_channel_amount, 
-                                  kernel_size   = patch_size, 
-                                  stride        = patch_size)
-        
-        # N x DiT-Blocks ======================================================
-        self.dit_blocks = nn.ModuleList()
-        for _ in range(amount_dit_blocks):
-            self.dit_blocks.append(_DiTBlock(token_channel_amount,
-                                             amount_heads))
-
-        # Layer Norm, Linear and Reshape ======================================
-        self.mlp = nn.Sequential(
-            nn.SiLU(),
-            nn.Linear(token_channel_amount, 2 * token_channel_amount))
-        
-        self.layer_norm = nn.LayerNorm(token_channel_amount)
-        self.linear     = nn.Linear(token_channel_amount, 
-                                    np.square(self.patch_size) 
-                                    * self.data_channel_amount)
-
-        self.token_channel_amount = token_channel_amount
-
-
-        self.positional_encoding = self.get_cos_embedding(token_channel_amount, 
-                                                          self.patch_amount)
-        
-
-
-
-    def forward(self, x, context, time):
-        x = self.patchify(x)
-        x = x.flatten(2).transpose(1, 2) 
-        x += self.positional_encoding
-
-        context += time
-
-        for dit_block in self.dit_blocks:
-            x = dit_block(x, context)
-
-        gamma, beta = self.mlp(context).unsqueeze(1).chunk(2, dim=2)  
-        x = self.layer_norm(x)
-        x = x * (1 + gamma) + beta
-        x = self.linear(x)
-
-        x = self.__unpatchify(x)
-
-        return x
-
-    def __unpatchify(self, x):
-        x = x.reshape(shape=(x.shape[0], 
-                             self.patch_amount, 
-                             self.patch_amount, 
-                             self.patch_size, 
-                             self.patch_size, 
-                             self.data_channel_amount))
-        x = x.permute(0, 5, 1, 3, 2, 4)
-        x = x.reshape(shape=(x.shape[0], 
-                             self.data_channel_amount, 
-                             self.data_size,  
-                             self.data_size))
-        
-        return x
-
-
-    def get_cos_embedding(self, embedding_size, image_size):
-        grid = torch.arange(start   = 0, 
-                            end     = image_size, 
-                            dtype   = torch.float32,
-                            device  = util.get_device())
-        
-        grid = torch.meshgrid(grid, grid, indexing="xy")
-
-        y = self.get_cos_embedding_1D(embedding_size // 2, grid[0].flatten())
-        x = self.get_cos_embedding_1D(embedding_size // 2, grid[1].flatten())
-
-        return torch.cat([y, x], dim=1)
-
-    def get_cos_embedding_1D(self, embedding_size, pos):
-        embedding_size = embedding_size // 2
-
-        freqs = torch.arange(start = 0, 
-                             end   = embedding_size, 
-                             dtype = torch.float32,
-                             device=util.get_device()) 
-        freqs /= embedding_size
-        freqs = torch.pow(10000, -freqs)
-                
-        embedding = torch.outer(pos, freqs)
-        embedding = torch.cat([torch.cos(embedding), 
-                               torch.sin(embedding)], dim=-1)
-
-        return embedding

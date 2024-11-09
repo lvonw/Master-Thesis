@@ -119,15 +119,14 @@ def train(model,
         if (configuration["Save_after_epoch"] 
             and (epoch_idx + 1) % configuration["save_after_n"] == 0 
             and global_rank == 0):
-            
+
             util.save_checkpoint(model_state, epoch_idx)
         
         # Validation ==========================================================
-        if False and len(validation_dataloader):
+        if len(validation_dataloader):
             validation_loss = __validate(model,
                                             validation_dataloader, 
-                                            configuration["Validation"],
-                                            batch_size)
+                                            configuration["Validation"])
             validation_losses.append(validation_loss)
             printer.print_log(f"Validation Loss: {validation_loss:.4f}")
 
@@ -194,7 +193,7 @@ class SobelFilter():
         return f.conv2d(f.conv2d(x, self.sobel_x_kernel, padding=0), 
                         self.sobel_y_kernel, padding=0)
 
-def __validate(model, dataloader, configuration, batch_size):    
+def __validate(model, dataloader, configuration):    
     model.eval()
 
     running_loss = 0.0
@@ -224,7 +223,7 @@ def __validate(model, dataloader, configuration, batch_size):
             metadatas       += metadata
 
 
-    validation_loss = running_loss / (len(dataloader) * batch_size)
+    validation_loss = running_loss / (len(dataloader))
     
     if metadatas:
         z_scores        = __compute_z_score(losses)
