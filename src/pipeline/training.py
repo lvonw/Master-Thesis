@@ -66,7 +66,8 @@ def train(model,
         model.train()
 
         if global_rank == 0:
-            print_to_model_loss_log(f"Epoch: {epoch_idx+1}", 
+            print_to_model_loss_log(f"Epoch: {epoch_idx+1}",
+                                    model, 
                                     constants.TRAINING_LOSS_LOG)
 
         for training_step_idx, data in tqdm(
@@ -105,6 +106,7 @@ def train(model,
                 and global_rank == 0):
 
                 print_to_model_loss_log(model_state.loss_log, 
+                                        model,
                                         constants.TRAINING_LOSS_LOG)
                     
             # Post training step behaviour ====================================
@@ -118,7 +120,7 @@ def train(model,
             util.save_checkpoint(model_state, epoch_idx)
         
         # Validation ==========================================================
-        if len(validation_dataloader):
+        if validation_dataloader is not None and len(validation_dataloader):
             validation_loss = __validate(model,
                                             validation_dataloader, 
                                             configuration["Validation"])
@@ -225,7 +227,9 @@ def __validate(model, dataloader, configuration):
             if z_score >= outlier_score:
                 outliers.append(metadatas[i])
 
-    print_to_log_file(validation_loss, constants.VALIDATION_LOSS_LOG)
+    print_to_model_loss_log(validation_loss, 
+                            model,
+                            constants.VALIDATION_LOSS_LOG)
     return validation_loss
 
 def __compute_z_score(losses):
@@ -285,11 +289,11 @@ def __prepare_data_loaders(dataset_wrapper,
             pin_memory=True,
             pin_memory_device=str(util.get_device())
         )
-    validation_dataloader = DataLoader(
-        validation_dataset, 
-        batch_size=batch_size, 
-        shuffle=False,
-        generator=data_loader_generator,
-        num_workers=cpu_count)
+    # validation_dataloader = DataLoader(
+    #     validation_dataset, 
+    #     batch_size=batch_size, 
+    #     shuffle=False,
+    #     generator=data_loader_generator,
+    #     num_workers=cpu_count)
     
-    return training_dataloader, validation_dataloader
+    return training_dataloader, None #validation_dataloader

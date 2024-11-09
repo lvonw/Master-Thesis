@@ -123,8 +123,9 @@ def main():
         # TODO this should really be done differently, probably another static
         # function in datasetfactory that takes the config and determines the
         # necessary constants
-        amount_classes  = [constants.LABEL_AMOUNT_GTC,
-                           constants.LABEL_AMOUNT_CLIMATE]
+        amount_classes  = [10]
+        # amount_classes  = [constants.LABEL_AMOUNT_GTC,
+        #                    constants.LABEL_AMOUNT_CLIMATE]
 
     # =========================================================================
     # Models

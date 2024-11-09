@@ -9,7 +9,7 @@ Main:
 
   load_model: true
 
-  img2img: true
+  img2img: #true
   test_image: test_image0.png
 
 

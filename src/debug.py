@@ -43,7 +43,11 @@ def initialize_model_log(model, configuration):
             file.write(str(model))
     
     # Configuration -----------------------------------------------------------
-    configuration.save(model_log_path, constants.LOG_CONFIGURATION)    
+    model_configuration_file = os.path.join(model_log_path, 
+                                            constants.LOG_CONFIGURATION)
+    if not os.path.exists(model_configuration_file):
+        with open(model_configuration_file, 'w') as file:
+            file.write(str(configuration))  
 
     # Losses ------------------------------------------------------------------
     loss_path = os.path.join(model_log_path, 

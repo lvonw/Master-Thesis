@@ -33,8 +33,8 @@ def generate(model,
         
     with torch.no_grad():
         for i in range(iterations):
-            l = i+1#((i+1)*2)-1 
-            label = [[2, 1],[2, 5],[2, 12],[2, 28]]
+            label = i#((i+1)*2)-1 
+            #label = [[2, 1],[2, 5],[2, 12],[2, 28]]
 
             # thing = 700
             # thing = 750

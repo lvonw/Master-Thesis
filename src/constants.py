@@ -15,7 +15,7 @@ VALIDATION_LOSS_LOG = "validation_loss.txt"
 IMAGE_LOG           = os.path.join(LOG_PATH, "images")
 
 LOG_ARCHITECTURE    = "architecture.txt"
-LOG_CONFIGURATION   = "config.yaml"
+LOG_CONFIGURATION   = "config.txt"
 LOG_LOSS_FOLDER     = "losses"
 LOG_IMAGES_FOLDER   = "images"
 
@@ -126,5 +126,5 @@ DATALOADER_SEED = 42
 # Pre gathered these values as they are distributed across multiple DEMs
 DEM_NODATA_VAL = -32768
 
-DEM_GLOBAL_MIN = -1 # -1503 # -2      # 0      # -12269
-DEM_GLOBAL_MAX = 8092  # 4993    # 3213   # 22894
+DEM_GLOBAL_MIN = -1     # -1503 # -2    # 0     # -12269
+DEM_GLOBAL_MAX = 8092   # 4993  # 3213  # 22894

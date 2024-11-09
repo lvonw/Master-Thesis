@@ -22,9 +22,6 @@ class SwitchSequential(nn.Sequential):
         return x
     
 class UNETFactory():
-    def __init__(self):
-        pass
-
     def create_unet(configuration, double_output=False):
         input_shape         = (configuration["input_num_channels"], 
                                configuration["input_resolution_x"],
