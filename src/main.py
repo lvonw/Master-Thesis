@@ -10,7 +10,9 @@ import torch.distributed            as distributed
 from cli.cli                        import CLI
 from configuration                  import Configuration
 from data.dataset                   import DatasetFactory
-from debug                          import Printer, LogLevel
+from debug                          import (Printer, 
+                                            LogLevel, 
+                                            initialize_model_log)
 from generation.models.vae          import AutoEncoderFactory
 from generation.models.ddpm         import DDPM
 from pipeline                       import generate, training
@@ -137,7 +139,10 @@ def main():
        print (e)
        model = AutoEncoderFactory.create_auto_encoder(config["Model"])
     printer.print_log("Finished.")
-    
+
+    # Initialize Model Log ====================================================
+    initialize_model_log(model, config)
+
     # Load Checkpoint =========================================================
     starting_epoch = 0
     if config["Main"]["load_model"]:

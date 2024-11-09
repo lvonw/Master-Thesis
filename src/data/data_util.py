@@ -341,7 +341,8 @@ class DataVisualizer():
                       save_only=False,
                       clear_afterwards=True,
                       save_dir = "default",
-                      filename = ""):
+                      filename = "",
+                      model = None):
         
         amount_rows     = len(self.plot_tuples)
         amount_columns  = max(len(plots) for plots in self.plot_tuples)
@@ -395,11 +396,19 @@ class DataVisualizer():
         
         if not save_only:
             plt.show()
+        
         if save or save_only:
-            save_path = os.path.join(constants.IMAGE_LOG, save_dir)
-            os.makedirs(save_path, exist_ok=True)
+            if model is not None:
+                os.path.join(constants.LOG_PATH, 
+                             model.model_family,
+                             model.name,
+                             constants.LOG_IMAGES_FOLDER)    
+            else:
+                save_path = os.path.join(constants.IMAGE_LOG, save_dir)
+                os.makedirs(save_path, exist_ok=True)
             save_file = os.path.join(save_path, filename + ".png")
             plt.savefig(save_file)
+        
         if clear_afterwards:
             self.plot_tuples.clear()
             plt.close()

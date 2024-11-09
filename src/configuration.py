@@ -125,9 +125,12 @@ class Configuration():
 
         # distribute usage to items
         
-    def save(self, config_file=constants.CONFIG_DEFAULT_FILE):
+    def save(self, 
+             directory=constants.CONFIG_PATH, 
+             config_file=constants.CONFIG_DEFAULT_FILE):
+        
         """Saves the current configuration data to the specified file."""
-        config_path = os.path.join(self.directory, config_file)
+        config_path = os.path.join(directory, config_file)
 
         with open(config_path, 'w') as file:
             yaml.dump(self.config_data, file, indent=4)   

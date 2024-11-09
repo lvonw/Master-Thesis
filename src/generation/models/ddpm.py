@@ -290,7 +290,6 @@ class DDPM(nn.Module):
         elif issubclass(int, type(labels)):
             labels = [labels] * amount
 
-
         for idx in range(len(labels)):
             if labels[idx] is None:
                 labels[idx] = constants.NULL_LABEL
@@ -338,8 +337,8 @@ class DDPM(nn.Module):
         # Main Loop ===========================================================
         for _, timestep in tqdm(
             enumerate(self.sample_steps[starting_offset:], starting_offset),
-            total = self.amount_sample_steps,
-            desc = "Generating Image",
+            total   = self.amount_sample_steps,
+            desc    = "Generating Image",
             initial = starting_offset):
         
             timesteps = torch.tensor([timestep] * amount_samples, 

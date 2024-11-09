@@ -54,6 +54,8 @@ def generate(model,
 
             data_visualizer.create_image_tensor_tuple(samples, title=str(label)) 
             
-            data_visualizer.show_ensemble()
+            data_visualizer.show_ensemble(
+                save=True,
+                filename=f"cfg_{thing}")
 
     # Transform back to image space

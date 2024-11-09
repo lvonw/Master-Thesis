@@ -1,15 +1,14 @@
 import constants
-import math
-import matplotlib.pyplot    as plt
-import numpy                as np
 import os
 import torch
-import torch.nn             as nn
 import util
 
+import matplotlib.pyplot    as plt
+import numpy                as np
 
 from data.data_util                 import DataVisualizer
-from debug                          import Printer, print_to_log_file
+from debug                          import (Printer,
+                                            print_to_model_loss_log)
 from torch.utils.data               import DataLoader
 from torch.utils.data.distributed   import DistributedSampler
 from tqdm                           import tqdm
@@ -53,11 +52,7 @@ def train(model,
             
     validation_losses   = []
             
-    # Training ================================================================
-    if global_rank == 0:
-        print_to_log_file(f"\nModel: {model_state.name}", 
-                        constants.TRAINING_LOSS_LOG)
-    
+    # Training ================================================================    
     total_training_step_idx = 0
     for epoch_idx in tqdm(
         range(starting_epoch, num_epochs),
@@ -71,8 +66,8 @@ def train(model,
         model.train()
 
         if global_rank == 0:
-            print_to_log_file(f"Epoch: {epoch_idx+1}", 
-                              constants.TRAINING_LOSS_LOG)
+            print_to_model_loss_log(f"Epoch: {epoch_idx+1}", 
+                                    constants.TRAINING_LOSS_LOG)
 
         for training_step_idx, data in tqdm(
             enumerate(training_dataloader, 0), 
@@ -109,8 +104,8 @@ def train(model,
             if ((training_step_idx + 1) % logging_steps == 0 
                 and global_rank == 0):
 
-                print_to_log_file(model_state.loss_log, 
-                                  constants.TRAINING_LOSS_LOG)
+                print_to_model_loss_log(model_state.loss_log, 
+                                        constants.TRAINING_LOSS_LOG)
                     
             # Post training step behaviour ====================================
             model_state.on_training_step_completed()
@@ -129,9 +124,6 @@ def train(model,
                                             configuration["Validation"])
             validation_losses.append(validation_loss)
             printer.print_log(f"Validation Loss: {validation_loss:.4f}")
-
-    if global_rank == 0:
-        print_to_log_file("\n", constants.TRAINING_LOSS_LOG)
     
     # Post training evaluations =============================================== 
     lp = LaplaceFilter()

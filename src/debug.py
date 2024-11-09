@@ -18,6 +18,52 @@ def print_to_log_file(data, filename):
     file_path = os.path.join(constants.LOG_PATH, filename)
     with open(file_path, 'a') as file:
         file.write(f"{data}\n")
+
+def print_to_model_loss_log(data, model, log_file):
+    file_path = os.path.join(constants.LOG_PATH, 
+                             model.model_family,
+                             model.name,
+                             constants.LOG_LOSS_FOLDER,
+                             log_file)
+
+    with open(file_path, 'a') as file:
+        file.write(f"{data}\n")
+
+def initialize_model_log(model, configuration):
+    model_log_path = os.path.join(constants.LOG_PATH, 
+                             model.model_family,
+                             model.name)
+    os.makedirs(model_log_path, exist_ok=True)
+
+    # Architecture ------------------------------------------------------------
+    model_architecture_file = os.path.join(model_log_path, 
+                                      constants.LOG_ARCHITECTURE)
+    if not os.path.exists(model_architecture_file):
+        with open(model_architecture_file, 'w') as file:
+            file.write(str(model))
+    
+    # Configuration -----------------------------------------------------------
+    configuration.save(model_log_path, constants.LOG_CONFIGURATION)    
+
+    # Losses ------------------------------------------------------------------
+    loss_path = os.path.join(model_log_path, 
+                             constants.LOG_LOSS_FOLDER)
+    os.makedirs(loss_path, exist_ok=True)
+
+    training_loss   = os.path.join(loss_path, constants.TRAINING_LOSS_LOG)
+    if not os.path.exists(training_loss):
+        with open(training_loss, 'w') as file:
+            file.write(f"{model.name}\n")
+
+    validation_loss = os.path.join(loss_path, constants.VALIDATION_LOSS_LOG)
+    if not os.path.exists(validation_loss):
+        with open(validation_loss, 'w') as file:
+            file.write(f"{model.name}\n")
+
+    # Images ------------------------------------------------------------------
+    images_path = os.path.join(model_log_path, 
+                               constants.LOG_IMAGES_FOLDER)
+    os.makedirs(images_path, exist_ok=True)
     
 class Printer():
     _singleton = None

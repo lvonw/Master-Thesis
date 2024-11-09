@@ -14,6 +14,11 @@ TRAINING_LOSS_LOG   = "training_loss.txt"
 VALIDATION_LOSS_LOG = "validation_loss.txt"
 IMAGE_LOG           = os.path.join(LOG_PATH, "images")
 
+LOG_ARCHITECTURE    = "architecture.txt"
+LOG_CONFIGURATION   = "config.yaml"
+LOG_LOSS_FOLDER     = "losses"
+LOG_IMAGES_FOLDER   = "images"
+
 # Config Paths
 CONFIG_PATH         = os.path.join(PROJECT_PATH, "cfg")
 CONFIG_FILE_FORMAT  = ".yaml"
