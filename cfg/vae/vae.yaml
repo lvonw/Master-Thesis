@@ -1022,14 +1022,19 @@ VAE_test_just_like_sd_mnist:
     - 2
     
     use_attention: true
-  attention_resolutions: []
+    attention_resolutions: []
 
   Training:
     learning_rate: 0.0001
 
+
+
+# =============================================================================
+# Highest quality VAE trained on DEMs for 167 000 training steps
+# =============================================================================
 VAE_1x256x256_4x32x32_167k:
   name: VAE_1x256x256_4x32x32_167k
-  description: Trying to get a good vae to work off of here
+  description: Highest quality VAE trained on DEMs for 167 000 training steps
 
   log_image_interval: 1000
   
@@ -1077,7 +1082,46 @@ VAE_1x256x256_4x32x32_167k:
     learning_rate: 0.0001
 
 
+# =============================================================================
+# Small test VAE for MNIST images to use for LDMs
+# =============================================================================
+VAE_mnist_simple:
+  name: VAE_mnist_simple
+  description: Small test VAE for MNIST images to use for LDMs
+
+  log_image_interval: 1000
+  
+  data_num_channels: 1
+  data_resolution_x: 32
+  data_resolution_y: 32
+
+  latent_num_channels: 4
+  latent_resolution_x: 8
+  latent_resolution_y: 8
+
+  EMA:
+    active: false
+
+  Loss:
+    use_discriminator:      false   
+    use_perceptual_loss:    false
+    use_class_weights:      false
+
+    kl_beta: 0.000001
 
 
+  Architecture:
+    ResNet_blocks_per_layer: 2
+    starting_channels: 64
+    dropout: 0.0
+    non_linearity: SiLU
+    channel_multipliers:
+    - 1
+    - 2
+    
+    use_attention: true
+    attention_resolutions: []
 
+  Training:
+    learning_rate: 0.0001
 

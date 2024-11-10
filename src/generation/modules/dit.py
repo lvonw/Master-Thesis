@@ -63,9 +63,10 @@ class DiT(nn.Module):
                                                 stride        = patch_size)
         
         self.token_channel_amount   = token_channel_amount
-        self.positional_encoding    = self.__get_cos_embedding(
+        
+        self.register_buffer("positional_encoding", self.__get_cos_embedding(
             token_channel_amount, 
-            self.patch_amount)
+            self.patch_amount))
         
         # N x DiT-Blocks ======================================================
         self.dit_blocks = nn.ModuleList()
@@ -78,21 +79,25 @@ class DiT(nn.Module):
             nn.SiLU(),
             nn.Linear(token_channel_amount, 2 * token_channel_amount))
         
-        self.layer_norm = nn.LayerNorm(token_channel_amount)
+        self.layer_norm = nn.LayerNorm(token_channel_amount, 
+                                       elementwise_affine=False)
         self.linear     = nn.Linear(token_channel_amount, 
                                     np.square(self.patch_size) 
                                     * output_channel_amount)
         
+        self.__initialize_weights()
+        
     def forward(self, x, context, time):
         x = self.patchify(x)
         x = x.flatten(2).transpose(1, 2) 
-        x += self.positional_encoding
-
+        
+        x       += self.positional_encoding
         context += time
+
         for dit_block in self.dit_blocks:
             x = dit_block(x, context)
 
-        gamma, beta = self.mlp(context).unsqueeze(1).chunk(2, dim=2)  
+        gamma, beta = self.mlp(context).unsqueeze(1).chunk(2, dim=2)
         x = self.layer_norm(x)
         x = x * (1 + gamma) + beta
         x = self.linear(x)
@@ -115,7 +120,31 @@ class DiT(nn.Module):
                              self.data_size))
         return x
 
+    def __initialize_weights(self):
+        """Shorter version of the original DiT initialization"""
+        self.apply(self.__basic_init)
 
+        patchify_weights = self.patchify.weight.data
+        nn.init.xavier_uniform_(
+            patchify_weights.view([patchify_weights.shape[0], -1]))
+        nn.init.constant_(self.patchify.bias, 0)
+
+        for dit_block in self.dit_blocks:
+            nn.init.constant_(dit_block.mlp[-1].weight, 0)
+            nn.init.constant_(dit_block.mlp[-1].bias, 0)
+
+        # Zero out final layer
+        nn.init.constant_(self.mlp[-1].weight, 0)
+        nn.init.constant_(self.mlp[-1].bias, 0)
+        nn.init.constant_(self.linear.weight, 0)
+        nn.init.constant_(self.linear.bias, 0)
+
+    def __basic_init(self, module):
+        if isinstance(module, nn.Linear):
+            nn.init.xavier_uniform_(module.weight)
+            if module.bias is not None:
+                nn.init.constant_(module.bias, 0)
+                    
     def __get_cos_embedding(self, embedding_size, image_size):
         grid = torch.arange(start   = 0, 
                             end     = image_size, 
@@ -127,7 +156,9 @@ class DiT(nn.Module):
         y = self.__get_cos_embedding_1D(embedding_size // 2, grid[0].flatten())
         x = self.__get_cos_embedding_1D(embedding_size // 2, grid[1].flatten())
 
-        return torch.cat([y, x], dim=1)
+        embedding = torch.cat([y, x], dim=1)
+        embedding = embedding.unsqueeze(0)
+        return embedding
 
     def __get_cos_embedding_1D(self, embedding_size, pos):
         embedding_size = embedding_size // 2
@@ -138,12 +169,13 @@ class DiT(nn.Module):
                              device=util.get_device()) 
         freqs /= embedding_size
         freqs = torch.pow(10000, -freqs)
-                
-        embedding = torch.outer(pos, freqs)
-        embedding = torch.cat([torch.cos(embedding), 
-                               torch.sin(embedding)], 
-                               dim=-1)
-
+        
+        pos         = torch.reshape(pos, (-1,))
+        embedding   = torch.outer(pos, freqs)
+        embedding   = torch.cat([torch.cos(embedding), 
+                                 torch.sin(embedding)], 
+                                 dim=-1)
+    
         return embedding
 
 
@@ -161,13 +193,15 @@ class _DiTBlock(nn.Module):
             nn.SiLU(),
             nn.Linear(token_channels, 6 * token_channels))
         
-        self.layernorm_1    = nn.LayerNorm(token_channels)
+        self.layernorm_1    = nn.LayerNorm(token_channels,
+                                           elementwise_affine=False)
         self.attention      = SelfAttention(token_channels, num_heads)
 
         feedforward_channels = int(token_channels * 
                                    feedforward_channel_factor)
         
-        self.layernorm_2    = nn.LayerNorm(token_channels)
+        self.layernorm_2    = nn.LayerNorm(token_channels,
+                                           elementwise_affine=False)
         self.feedforward = nn.Sequential(
             nn.Linear(token_channels, feedforward_channels),
             nn.GELU(approximate="tanh"),

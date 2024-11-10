@@ -56,6 +56,7 @@ def generate(model,
             
             data_visualizer.show_ensemble(
                 save=True,
-                filename=f"cfg_{thing}")
+                filename=f"cfg_{thing}",
+                model=model)
 
     # Transform back to image space

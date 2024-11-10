@@ -394,21 +394,21 @@ class DataVisualizer():
 
         plt.tight_layout()
         
-        if not save_only:
-            plt.show()
-        
         if save or save_only:
             if model is not None:
-                os.path.join(constants.LOG_PATH, 
-                             model.model_family,
-                             model.name,
-                             constants.LOG_IMAGES_FOLDER)    
+                save_path = os.path.join(constants.LOG_PATH, 
+                                         model.model_family,
+                                         model.name,
+                                         constants.LOG_IMAGES_FOLDER)    
             else:
                 save_path = os.path.join(constants.IMAGE_LOG, save_dir)
                 os.makedirs(save_path, exist_ok=True)
             save_file = os.path.join(save_path, filename + ".png")
             plt.savefig(save_file)
         
+        if not save_only:
+            plt.show()
+
         if clear_afterwards:
             self.plot_tuples.clear()
             plt.close()

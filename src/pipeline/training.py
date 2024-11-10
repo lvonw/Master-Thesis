@@ -35,6 +35,7 @@ def train(model,
     
     printer         = Printer()
     data_visualizer = DataVisualizer()
+    save_counter    = 0
 
     # Training Parameters =====================================================
     num_epochs      = configuration["epochs"]
@@ -117,7 +118,11 @@ def train(model,
             and (epoch_idx + 1) % configuration["save_after_n"] == 0 
             and global_rank == 0):
 
-            util.save_checkpoint(model_state, epoch_idx)
+            save_counter += 1
+            util.save_checkpoint(model_state, 
+                                 epoch_idx, 
+                                 save_counter, 
+                                 configuration["backup_after_n"])
         
         # Validation ==========================================================
         if validation_dataloader is not None and len(validation_dataloader):
@@ -142,13 +147,16 @@ def train(model,
                 original_image  = inputs[image_idx]
                 reconstruction  = reconstructions[image_idx]
 
+                # title = metadata["filename"][image_idx]
+                title = "mnnist"
+
                 data_visualizer.create_image_tensor_tuple(
                     [original_image, reconstruction], 
-                    title=metadata["filename"][image_idx])
+                    title=title)
                 
                 data_visualizer.create_image_tensor_tuple(
                     [lp(original_image), lp(reconstruction)], 
-                    title=metadata["filename"][image_idx])
+                    title=title)
 
                 inputs  = inputs.to(util.get_device())
                 data_visualizer.show_ensemble()

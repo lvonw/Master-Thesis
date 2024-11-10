@@ -228,54 +228,6 @@ latent_terrain_diffusion_mini:
       - 1
 
 
-latent_terrain_diffusion_max_500:
-  name: latent_terrain_diffusion_max_500
-  description: The real model (tm)
-  
-  input_num_channels: 4
-  input_resolution_x: 32
-  input_resolution_y: 32
-
-  time_embedding_size: 320
-  training_steps: 1000
-  sample_steps: 1000
-
-  Classifier_free_guidance:
-    active: true
-    no_class_probability: 0.1
-    weight: 3
-
-  EMA:
-    active: true
-    weight: 0.995
-    warm_up_steps: 2000
-
-  Latent:
-    active: true
-    pre_trained: true
-    model:
-      external: cfg/vae/vae.yaml
-      selection: VAE_1x256x256_4x32x32_167k
-      only_load_selection: true
-      read_only: true
-
-  unet_architecture:
-    ResNet_blocks_per_level: 2
-    starting_channels: 320
-    num_heads: 8
-    embedding_channels: 40
-
-    channel_multipliers:
-      - 1
-      - 2
-      - 4
-      - 4
-
-    attention_levels:
-      - 0
-      - 1
-      - 2
-
 
 
 
@@ -465,13 +417,15 @@ ltd_mnist:
       - 0
       - 1
 
+
+
 ltd_mnist_variance:
   name: ltd_mnist_variance
   description: 
   
-  input_num_channels: 1
-  input_resolution_x: 32
-  input_resolution_y: 32
+  input_num_channels: 4
+  input_resolution_x: 8
+  input_resolution_y: 8
 
   time_embedding_size: 320
   training_steps: 1000
@@ -490,17 +444,17 @@ ltd_mnist_variance:
     warm_up_steps: 2000
 
   Latent:
-    active: false
+    active: true
     pre_trained: true
     model:
       external: cfg/vae/vae.yaml
-      selection: VAE_1x256x256_4x32x32_167k
+      selection: VAE_mnist_simple
       only_load_selection: true
       read_only: true
 
   unet_architecture:
     ResNet_blocks_per_level: 2
-    starting_channels: 32
+    starting_channels: 64
     num_heads: 8
     embedding_channels: 40
 
@@ -514,13 +468,50 @@ ltd_mnist_variance:
       - 1
 
 
+ltd_mnist_variance_dit:
+  name: ltd_mnist_variance_dit
+  description: DiT-B
+  
+  input_num_channels: 4
+  input_resolution_x: 8
+  input_resolution_y: 8
 
+  time_embedding_size: 160
+  training_steps: 1000
+  sample_steps: 1000
+
+  learn_variance: true
+  beta_schedule: Linear
+
+  Classifier_free_guidance:
+    active: true
+    no_class_probability: 0.1
+    weight: 3.0
+
+  EMA:
+    active: true
+    weight: 0.995
+    warm_up_steps: 2000
+
+  Latent:
+    active: true
+    pre_trained: true
+    model:
+      external: cfg/vae/vae.yaml
+      selection: VAE_mnist_simple
+      only_load_selection: true
+      read_only: true
+
+  DiT_architecture:
+    amount_heads:       8
+    amount_DiT_blocks:  12
+    patch_size:         2
       
 ltd_v2:
   name: ltd_v2
   description: 
   
-  input_num_channels: 1
+  input_num_channels: 4
   input_resolution_x: 32
   input_resolution_y: 32
 
@@ -529,6 +520,7 @@ ltd_v2:
   sample_steps:         1000
 
   learn_variance: true
+  beta_schedule: Linear
 
   Classifier_free_guidance:
     active:               true
@@ -537,11 +529,11 @@ ltd_v2:
 
   EMA:
     active:         true
-    weight:         0.995
+    weight:         0.9999
     warm_up_steps:  2000
 
   Latent:
-    active:       false
+    active:       true
     pre_trained:  true
 
     model:
@@ -554,3 +546,55 @@ ltd_v2:
     amount_heads:       16
     amount_DiT_blocks:  24
     patch_size:         2
+
+latent_terrain_diffusion_max_500:
+  name: latent_terrain_diffusion_max_500
+  description: The real model (tm)
+  
+  input_num_channels: 4
+  input_resolution_x: 32
+  input_resolution_y: 32
+
+  time_embedding_size: 320
+  training_steps: 1000
+  sample_steps: 1000
+
+  Classifier_free_guidance:
+    active: true
+    no_class_probability: 0.1
+    weight: 3
+
+  learn_variance: false
+  beta_schedule: Linear
+
+  EMA:
+    active: true
+    weight: 0.995
+    warm_up_steps: 2000
+
+  Latent:
+    active: true
+    pre_trained: true
+    model:
+      external: cfg/vae/vae.yaml
+      selection: VAE_1x256x256_4x32x32_167k
+      only_load_selection: true
+      read_only: true
+
+  unet_architecture:
+    ResNet_blocks_per_level: 2
+    starting_channels: 320
+    num_heads: 8
+    embedding_channels: 40
+
+    channel_multipliers:
+      - 1
+      - 2
+      - 4
+      - 4
+
+    attention_levels:
+      - 0
+      - 1
+      - 2
+

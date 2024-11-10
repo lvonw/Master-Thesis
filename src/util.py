@@ -45,14 +45,38 @@ def load_model(model, strict=True):
                           strict=strict)
     return True
 
-def save_checkpoint(model, epoch_idx):
+def save_checkpoint(model, epoch_idx, save_counter, backup_at = 5):
     optimizer_states = [opt.state_dict() for opt in model.optimizers]
     checkpoint = {
         "epoch": epoch_idx,
         "model_state": model.state_dict(),
         "optimizer_states": optimizer_states,
     }
-    torch.save(checkpoint, get_model_file_path(model))
+
+    model_file_path = get_model_file_path(model)
+
+    # Save to a backup at every n saves
+    if (save_counter % backup_at == 0 
+        and os.path.exists(model_file_path)):
+
+        backup_path = os.path.join(
+            constants.MODEL_PATH_MASTER,
+            get_model_family(model),
+            constants.MODEL_BACKUP_FOLDER)
+        os.makedirs(backup_path, exist_ok=True)
+
+        backup_file_path = os.path.join(
+            backup_path,
+            os.path.splitext(os.path.basename(model_file_path))[0]
+            + "_backup" 
+            + constants.MODEL_FILE_TYPE)
+        
+        if os.path.exists(backup_file_path):
+            os.remove(backup_file_path)
+        
+        model_file_path = backup_file_path
+
+    torch.save(checkpoint, model_file_path)
 
 def load_checkpoint(model,
                     strict=True):

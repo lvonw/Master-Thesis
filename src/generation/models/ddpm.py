@@ -47,10 +47,19 @@ class DDPM(nn.Module):
 
         self.learn_variance         = configuration["learn_variance"]
         if self.learn_variance:
+            Printer().print_log("Learning Variance")
             self.prediction_type    = PredictionType.L_HYBRID
         else:
+            Printer().print_log("Learning Epsilon")
             self.prediction_type    = PredictionType.L_SIMPLE
-            
+
+        if configuration["learn_variance"] == BetaSchedules.COSINE:
+            Printer().print_log("Using Cosine Beta Schedule")
+            self.beta_schedule      = BetaSchedules.COSINE
+        else:
+            Printer().print_log("Using Linear Beta Schedule")
+            self.beta_schedule      = BetaSchedules.LINEAR
+
         self.device                 = util.get_device()
         self.generator              = generator
         self.amount_classes         = amount_classes
@@ -74,6 +83,7 @@ class DDPM(nn.Module):
             # Latent diffusion paper
             self.inverse_latent_std = 0.3576
             
+            Printer().print_log("Loading Latent model")
             if (configuration["Latent"]["pre_trained"] 
                 and not util.load_checkpoint(self.latent_model, strict=False)):
                 
@@ -82,6 +92,8 @@ class DDPM(nn.Module):
                     LogLevel.WARNING)
             else:
                 self.latent_model.on_loaded_as_pretrained()  
+                Printer().print_log("Finished.")
+
 
         # DIFFUSION MODEL =====================================================               
         self.model          = Diffusion(configuration, 
@@ -103,10 +115,10 @@ class DDPM(nn.Module):
 
         # DDPM PARAMETERS =====================================================
         self.register_buffer("betas", self.__create_beta_schedule(
-                                                self.amount_training_steps, 
-                                                beta_start, 
-                                                beta_end, 
-                                                BetaSchedules.COSINE))
+            self.amount_training_steps, 
+            beta_start, 
+            beta_end, 
+            self.beta_schedule))
         self.register_buffer("log_betas", torch.log(self.betas))
 
         self.register_buffer("alphas",          1.0 - self.betas)
@@ -264,6 +276,7 @@ class DDPM(nn.Module):
         log_beta        = self.__batchify(self.log_betas[timesteps])
         log_beta_tilde  = self.__batchify(self.log_variance_t[timesteps])
 
+        # Latent space is N(0, I) so to use this as a gate we translate it
         log_variance    = (log_variance + 1) / 2
         log_variance    = (log_variance         * log_beta 
                            + (1 - log_variance) * log_beta_tilde)
@@ -288,7 +301,8 @@ class DDPM(nn.Module):
         return kl_divergence
 
     def __get_optimizers(self):
-        optimizer = optim.Adam(self.model.parameters(), lr=4.5e-6)
+        optimizer = optim.Adam(self.model.parameters(), lr=1e-4)
+        # optimizer = optim.Adam(self.model.parameters(), lr=4.5e-6)
         return [optimizer]
 
     # =========================================================================
@@ -383,7 +397,7 @@ class DDPM(nn.Module):
             match self.prediction_type:
                 # As proposed by algorithm 2 DDPM
                 case PredictionType.L_SIMPLE:
-                    x = self.__predict_mean(timestep, 
+                    x = self.__predict_epsilon(timestep, 
                                             x, 
                                             model_output)
                 # As proposes by Improved DDPMs
@@ -405,7 +419,7 @@ class DDPM(nn.Module):
     # =========================================================================
     # Predict Epsilon
     # =========================================================================
-    def __predict_mean(self, timestep, x_t, model_output):
+    def __predict_epsilon(self, timestep, x_t, model_output):
         """ Algorithm 2 DDPM """
         if timestep > 0:
             noise = torch.randn(model_output.shape, 
@@ -452,8 +466,11 @@ class DDPM(nn.Module):
         
         mean            = predicted_noise_parameters.mean
         std_deviation   = torch.sqrt(predicted_noise_parameters.variance)
+
+        #std_deviation = torch.sqrt(self.__batchify(self.variance_t[timesteps]))
         
         x_t_minus_one   = mean + noise * std_deviation
+        #x_t_minus_one   = self.__predict_epsilon(timesteps[0].item(), x_t, predicted_noise)
 
         return x_t_minus_one
 
@@ -522,6 +539,7 @@ class DDPM(nn.Module):
                                       beta_end ** 0.5,
                                       amount_timesteps, 
                                       dtype=torch.float32) ** 2
+            # Only use cosine when learning the variance
             case BetaSchedules.COSINE:
                 # Improved DDPM formula 17
                 s = 0.01
@@ -536,11 +554,6 @@ class DDPM(nn.Module):
                 alpha_bar_t = f_t / f_t[0]
                 betas       = 1 - (alpha_bar_t[1:] / alpha_bar_t[:-1])
 
-                # 0.999 causes the magnitude of the image to be completely
-                # wrong, why???
-                # Some github issues suggest clipping during reverse is needed
-                # Seems to be what SD does
-                # Some say this doesnt work with predicting epsilon
                 return torch.clip(betas, min=0, max=0.999)
 
     

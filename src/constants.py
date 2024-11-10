@@ -58,6 +58,7 @@ MODEL_PATH_MASTER   = os.path.join(DATA_PATH_MASTER,
                                    "models")
 MODEL_FILE_TYPE     = ".pth"
 MODEL_PATH_TEST     = os.path.join(MODEL_PATH_MASTER, "test.pth")
+MODEL_BACKUP_FOLDER = "backup"
 
 # Resource Paths
 RESOURCE_PATH_MASTER        = os.path.join(PROJECT_PATH, "resources")

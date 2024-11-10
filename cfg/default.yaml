@@ -21,10 +21,12 @@ Training:
   batch_size:       128
   learning_rate:    4.5e-6
   logging_steps:    10
-  num_workers:      2
+  num_workers:      8
+  Data_Split:       1.0
+
   Save_after_epoch: true
   save_after_n:     10
-  Data_Split:       1.0
+  backup_after_n:   2
 
   Validation:
     z_score: 3
@@ -35,8 +37,12 @@ Training:
 Model:
   # external: cfg/vae/vae.yaml
   # selection: VAE_1x256x256_4x32x32_167k
+  # selection: VAE_mnist_simple
+
   external: cfg/diffusion/ddpm.yaml
-  selection: ltd_mnist_variance
+  selection: ltd_v2
+  #selection: ltd_mnist_variance_dit
+
   only_load_selection: true
   read_only: true
 
@@ -44,7 +50,7 @@ Model:
 # DATA
 # =============================================================================
 Data:
-  use_MNIST:      true #false
+  use_MNIST:      false
 
   DEM_List:       SRTM_GL1_50_over_list.txt
   DEM_Dataset:    SRTM_GL1_512x512

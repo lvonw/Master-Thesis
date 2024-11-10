@@ -418,7 +418,8 @@ class VariationalAutoEncoder(nn.Module):
     # General
     # =========================================================================
     def on_loaded_as_pretrained(self):
-        self.__apply_ema()
+        if self.use_ema:
+            self.__apply_ema()
     
     def __apply_ema(self):
         # Be sure to not save this as long as we are not a submodel

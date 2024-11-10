@@ -38,16 +38,16 @@ def initialize_model_log(model, configuration):
     # Architecture ------------------------------------------------------------
     model_architecture_file = os.path.join(model_log_path, 
                                       constants.LOG_ARCHITECTURE)
-    if not os.path.exists(model_architecture_file):
-        with open(model_architecture_file, 'w') as file:
-            file.write(str(model))
+    
+    with open(model_architecture_file, 'w') as file:
+        file.write(str(model))
     
     # Configuration -----------------------------------------------------------
     model_configuration_file = os.path.join(model_log_path, 
                                             constants.LOG_CONFIGURATION)
-    if not os.path.exists(model_configuration_file):
-        with open(model_configuration_file, 'w') as file:
-            file.write(str(configuration))  
+    
+    with open(model_configuration_file, 'w') as file:
+        file.write(str(configuration))  
 
     # Losses ------------------------------------------------------------------
     loss_path = os.path.join(model_log_path, 

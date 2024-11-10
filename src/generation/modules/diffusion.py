@@ -35,6 +35,14 @@ class Diffusion(nn.Module):
         self.time_embedding_size    = configuration["time_embedding_size"]
         self.time_embedding         = TimeEmbedding(self.time_embedding_size)
 
+        if not amount_classes:
+            self.control_signal_integration = ControlSignalIntegration.NONE
+        else:
+            self.control_signal_integration = control_signal_integration
+
+        self.label_embedding = LabelEmbedding(amount_classes, 
+                                              self.time_embedding.output_dim)
+
         if "unet_architecture" in configuration:
             self.model_type = ModelType.UNET
         else:
@@ -45,19 +53,15 @@ class Diffusion(nn.Module):
                 self.model = UNETFactory.create_unet(configuration,
                                                      learn_variance)
             case ModelType.DIT:
-                self.model = DiTFactory(configuration,
-                                        learn_variance)
+                self.model = DiTFactory.create_dit(configuration,
+                                                   learn_variance)
+                self.control_signal_integration = ControlSignalIntegration.NONE
 
-        if not amount_classes:
-            self.control_signal_integration = ControlSignalIntegration.NONE
-        else:
-            self.control_signal_integration = control_signal_integration
-            
-        self.label_embedding = LabelEmbedding(amount_classes, 
-                                              self.time_embedding.output_dim)
+        self.__initialize_weights()
+
 
     def forward(self, x, control_signal, timestep):
-        timestep = self.get_time_embedding(timestep, self.time_embedding_size)
+        timestep = self.__get_time_embedding(timestep, self.time_embedding_size)
         timestep = self.time_embedding(timestep)
 
         match self.control_signal_integration:
@@ -75,7 +79,15 @@ class Diffusion(nn.Module):
 
         return x
     
-    def get_time_embedding(self, timesteps, embedding_size):
+    def __initialize_weights(self):
+        # Adapted version of DiT initialization
+        for embedding in self.label_embedding.embeddings:
+            nn.init.normal_(embedding.weight, std=0.02)
+
+        nn.init.normal_(self.time_embedding.linear_1.weight, std=0.02)
+        nn.init.normal_(self.time_embedding.linear_2.weight, std=0.02)
+    
+    def __get_time_embedding(self, timesteps, embedding_size):
         embedding_size = embedding_size // 2
         freqs = torch.pow(10000, 
                           -torch.arange(start=0, 
@@ -87,7 +99,6 @@ class Diffusion(nn.Module):
         x = x * freqs[None]
         return torch.cat([torch.cos(x), torch.sin(x)], dim=-1)
 
-    
 class TimeEmbedding(nn.Module):
     def __init__(self, num_embedding):
         super().__init__()
