@@ -432,7 +432,7 @@ ltd_mnist_variance:
   sample_steps: 1000
 
   learn_variance: true
-  beta_schedule: Linear
+  beta_schedule: Cosine
 
   Classifier_free_guidance:
     active: true
@@ -614,7 +614,7 @@ ltd_v3:
   sample_steps:         1000
 
   learn_variance: true
-  beta_schedule: Cosine
+  beta_schedule: Linear
 
   Classifier_free_guidance:
     active:               true

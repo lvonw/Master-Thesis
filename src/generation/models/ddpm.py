@@ -53,7 +53,7 @@ class DDPM(nn.Module):
             Printer().print_log("Learning Epsilon")
             self.prediction_type    = PredictionType.L_SIMPLE
 
-        if configuration["learn_variance"] == BetaSchedules.COSINE:
+        if configuration["beta_schedule"] == BetaSchedules.COSINE.value:
             Printer().print_log("Using Cosine Beta Schedule")
             self.beta_schedule      = BetaSchedules.COSINE
         else:
