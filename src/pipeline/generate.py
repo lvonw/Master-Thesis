@@ -7,12 +7,15 @@ import numpy        as np
 
 from data.data_util import GeoUtil, DataVisualizer, NormalizationMethod
 from PIL            import Image
+from datetime       import datetime
 
 def generate(model,
              amount_samples     = 4,
              iterations         = 8,
+             img2img            = False,
              input_image_path   = None,
-             weight             = 0.8):
+             weight             = 0.8,
+             save_only          = False):
     
     data_visualizer = DataVisualizer()
     model = model.to(util.get_device())
@@ -33,8 +36,8 @@ def generate(model,
         
     with torch.no_grad():
         for i in range(iterations):
-            label = i#((i+1)*2)-1 
-            #label = [[2, 1],[2, 5],[2, 12],[2, 28]]
+            #label = i  #((i+1)*2)-1 
+            label = [[2, 1],[2, 5],[2, 12],[2, 28]]
 
             # thing = 700
             # thing = 750
@@ -52,11 +55,14 @@ def generate(model,
             if input_tensor is not None:
                 samples = torch.cat((input_tensor, samples), dim=0)
 
-            data_visualizer.create_image_tensor_tuple(samples, title=str(label)) 
+            data_visualizer.create_image_tensor_tuple(samples, 
+                                                      title=str(label)) 
             
+            time = datetime.now().strftime("%m-%d-%H-%M-%S")
             data_visualizer.show_ensemble(
-                save=True,
-                filename=f"cfg_{thing}",
-                model=model)
+                save = True,
+                filename = f"cfg_{thing}_{time}",
+                model = model,
+                save_only = save_only)
 
     # Transform back to image space

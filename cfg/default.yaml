@@ -10,7 +10,7 @@ Main:
   load_model: true
 
   img2img: #true
-  test_image: test_image0.png
+  test_image: test_image5.png
 
 
 # =============================================================================
@@ -23,6 +23,8 @@ Training:
   logging_steps:    10
   num_workers:      8
   Data_Split:       1.0
+
+  generate_after_n: 5
 
   Save_after_epoch: true
   save_after_n:     10
@@ -40,8 +42,11 @@ Model:
   # selection: VAE_mnist_simple
 
   external: cfg/diffusion/ddpm.yaml
-  selection: ltd_v2
-  #selection: ltd_mnist_variance_dit
+  # selection: latent_terrain_diffusion_max_500
+  # selection: ltd_v2
+  selection: ltd_v3
+  # selection: ltd_mnist_variance
+  # selection: ltd_mnist_variance_dit
 
   only_load_selection: true
   read_only: true
@@ -50,7 +55,7 @@ Model:
 # DATA
 # =============================================================================
 Data:
-  use_MNIST:      false
+  use_MNIST:      #true
 
   DEM_List:       SRTM_GL1_50_over_list.txt
   DEM_Dataset:    SRTM_GL1_512x512

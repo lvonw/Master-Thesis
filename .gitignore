@@ -6,6 +6,7 @@ run.bat
 *__pycache__
 
 resources/*/*
+.vscode
 
 # It is beyond silly that i have to do this
 !data/

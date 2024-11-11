@@ -21,7 +21,7 @@ class Normalize(nn.Module):
                                  eps=1e-6, 
                                  affine=True)
 
-    def forward(self, x):
+    def forward(self, x, *args, **kwargs):
         return self.norm(x)
 
 class Downsample(nn.Module):
@@ -73,7 +73,8 @@ class Upsample(nn.Module):
 class ResNetBlock(nn.Module):
     def __init__(self, 
                  in_channels, 
-                 out_channels, 
+                 out_channels,
+                 use_adagn = False, 
                  time_embedding_channels=1280):
         super().__init__()
 
@@ -87,12 +88,19 @@ class ResNetBlock(nn.Module):
                                 padding=1)
 
         self.norm_1 = Normalize(in_channels, 32)
-        self.norm_2 = Normalize(out_channels, 32)
-
-        if time_embedding_channels > 0:
-            self.time_linear = nn.Linear(time_embedding_channels,
-                                       out_channels)
-
+        
+        self.use_adagn = use_adagn
+        if use_adagn:
+            self.norm_2 = AdaGN(out_channels, 
+                               time_embedding_channels,
+                               32)
+        else:     
+            self.norm_2 = Normalize(out_channels, 32)
+        
+            if time_embedding_channels > 0:
+                self.time_linear = nn.Linear(time_embedding_channels,
+                                            out_channels)
+                   
         if in_channels == out_channels:
             self.residual = nn.Identity()
         else: 
@@ -108,18 +116,36 @@ class ResNetBlock(nn.Module):
         x = f.silu(x)
         x = self.conv_1(x)
 
-        if time_embedding is not None: 
+        if not self.use_adagn and time_embedding is not None: 
             time_embedding = f.silu(time_embedding)
             time_embedding = self.time_linear(time_embedding)
-            x = x + time_embedding.unsqueeze(-1).unsqueeze(-1)
-
-        x = self.norm_2(x)
+            x = x + time_embedding[:, :, None, None]
+            
+        x = self.norm_2(x, time_embedding)
         x = f.silu(x)
         x = self.conv_2(x)
 
         return x + self.residual(residual_x) 
 
+class AdaGN(nn.Module):
+    """From Diffusion Models beat GANs"""
+    def __init__(self, 
+                 amount_channels,
+                 embedding_channels, 
+                 amount_groups=32):
+        super().__init__()
 
+        self.norm = nn.GroupNorm(num_groups=amount_groups, 
+                                 num_channels=amount_channels, 
+                                 eps=1e-6, 
+                                 affine=True)
+        
+        self.mlp = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(embedding_channels, 2 * amount_channels))
 
-
-    
+    def forward(self, x, control_signal):
+        gamma, beta = self.mlp(control_signal)[:, :, None, None].chunk(2, 
+                                                                       dim=1)
+        x = self.norm(x)
+        return x * (1 + gamma) + beta

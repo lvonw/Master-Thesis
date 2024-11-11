@@ -344,10 +344,6 @@ class DDPM(nn.Module):
                input_tensor=None,
                img2img_strength=800):
         """ Algorithm 2 DDPM """
-        # Activate EMA, disable saving ========================================
-        if self.use_ema and self.can_save:
-            self.__apply_ema()
-
         starting_offset = 0
         if input_tensor is None:
             x = torch.randn((amount_samples,) + self.input_shape, 
@@ -372,7 +368,8 @@ class DDPM(nn.Module):
             enumerate(self.sample_steps[starting_offset:], starting_offset),
             total   = self.amount_sample_steps,
             desc    = "Generating Image",
-            initial = starting_offset):
+            initial = starting_offset,
+            leave   = False):
         
             timesteps = torch.tensor([timestep] * amount_samples, 
                                      device=control_signals.device)
@@ -519,8 +516,9 @@ class DDPM(nn.Module):
         while len(sqrt_one_minus_alpha_bars.shape) < len(original_samples.shape):
             sqrt_one_minus_alpha_bars = sqrt_one_minus_alpha_bars.unsqueeze(-1)
 
-        noise = torch.randn_like(original_samples, 
-                                 device=original_samples.device)
+        noise = torch.randn(original_samples.shape,
+                            generator=self.generator, 
+                            device=original_samples.device)
     
         noisy_samples = (sqrt_alpha_bars             * original_samples 
                          + sqrt_one_minus_alpha_bars * noise)

@@ -432,6 +432,7 @@ ltd_mnist_variance:
   sample_steps: 1000
 
   learn_variance: true
+  beta_schedule: Linear
 
   Classifier_free_guidance:
     active: true
@@ -454,9 +455,10 @@ ltd_mnist_variance:
 
   unet_architecture:
     ResNet_blocks_per_level: 2
-    starting_channels: 64
+    starting_channels: 128
     num_heads: 8
     embedding_channels: 40
+    use_adagn: true
 
     channel_multipliers:
       - 1
@@ -586,6 +588,7 @@ latent_terrain_diffusion_max_500:
     starting_channels: 320
     num_heads: 8
     embedding_channels: 40
+    use_adagn: false
 
     channel_multipliers:
       - 1
@@ -598,3 +601,55 @@ latent_terrain_diffusion_max_500:
       - 1
       - 2
 
+ltd_v3:
+  name: ltd_v3
+  description: 
+  
+  input_num_channels: 4
+  input_resolution_x: 32
+  input_resolution_y: 32
+
+  time_embedding_size:  320
+  training_steps:       1000
+  sample_steps:         1000
+
+  learn_variance: true
+  beta_schedule: Cosine
+
+  Classifier_free_guidance:
+    active:               true
+    no_class_probability: 0.1
+    weight:               3.0
+
+  EMA:
+    active:         true
+    weight:         0.9999
+    warm_up_steps:  2000
+
+  Latent:
+    active:       true
+    pre_trained:  true
+
+    model:
+      external:             cfg/vae/vae.yaml
+      selection:            VAE_1x256x256_4x32x32_167k
+      only_load_selection:  true
+      read_only:            true
+
+  unet_architecture:
+    ResNet_blocks_per_level: 2
+    starting_channels: 320
+    num_heads: 8
+    embedding_channels: 40
+    use_adagn: true
+
+    channel_multipliers:
+      - 1
+      - 2
+      - 4
+      - 4
+
+    attention_levels:
+      - 0
+      - 1
+      - 2

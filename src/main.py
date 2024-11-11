@@ -120,12 +120,8 @@ def main():
         amount_classes = dataset_wrapper.amount_classes
         printer.print_log("Finished.")
     else:
-        # TODO this should really be done differently, probably another static
-        # function in datasetfactory that takes the config and determines the
-        # necessary constants
-        amount_classes  = [10]
-        # amount_classes  = [constants.LABEL_AMOUNT_GTC,
-        #                    constants.LABEL_AMOUNT_CLIMATE]
+        amount_classes  = DatasetFactory.get_label_amounts(config["Data"])
+
 
     # =========================================================================
     # Models
@@ -148,7 +144,7 @@ def main():
     starting_epoch = 0
     if config["Main"]["load_model"]:
         printer.print_log("Loading state dict...")
-        starting_epoch = util.load_checkpoint(model)
+        starting_epoch = util.load_checkpoint(model, strict=True)
         
         if not starting_epoch:
             printer.print_log(f"Model {model.name} could not be loaded",
@@ -203,9 +199,9 @@ def main():
         model.apply_ema()
         model.to(util.get_device())
         if do_img2img:
-            generate.generate(model, 4, 10, config["Main"]["test_image"])
+            generate.generate(model, 4, 10, True, config["Main"]["test_image"])
         else:
-            generate.generate(model, 4, 10)
+            generate.generate(model, 4, 10, True)
 
     if is_distributed:
         distributed.destroy_process_group()

@@ -72,9 +72,7 @@ class DatasetFactory():
                                          label_cache)    
   
         channel_cache   = DatasetFactory.__pre_process_data_cache(channel_cache)
-        # amount_classes  = [16] #DatasetFactory.__get_amount_classes(label_cache)
-        amount_classes  = [constants.LABEL_AMOUNT_GTC,
-                           constants.LABEL_AMOUNT_CLIMATE]
+        amount_classes  = DatasetFactory.get_label_amounts(data_configuration)
 
         if data_configuration["RandomCrop"]["active"]:
             printer.print_log("Activating RandomCrop transform")
@@ -115,6 +113,23 @@ class DatasetFactory():
         return DatasetWrapper(dataset           = terrain_dataset, 
                               amount_classes    = amount_classes,
                               loss_weights      = loss_weights)
+    
+    def get_label_amounts(configuration):
+        if configuration["use_MNIST"]:
+            return [10]
+        
+        labels_amounts = []
+
+        if configuration["GLiM"]["use_as_label"]:
+            pass
+        if configuration["DSMW"]["use_as_label"]:
+            pass
+        if configuration["GTC"]["use_as_label"]:
+            labels_amounts.append(constants.LABEL_AMOUNT_GTC)
+        if configuration["Climate"]["use_as_label"]:
+            labels_amounts.append(constants.LABEL_AMOUNT_CLIMATE)
+
+        return labels_amounts
     
     def __pre_process_data_cache(data_cache):
         processed_cache = []
@@ -175,6 +190,7 @@ class DatasetFactory():
         return DatasetWrapper(training_dataset      = training_set, 
                               validation_dataset    = validation_set,
                               amount_classes        = [10])
+    
 
 class DatasetWrapper():
     def __init__(self, 

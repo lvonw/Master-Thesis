@@ -9,9 +9,11 @@ import numpy                as np
 from data.data_util                 import DataVisualizer
 from debug                          import (Printer,
                                             print_to_model_loss_log)
+from pipeline.generate              import generate
 from torch.utils.data               import DataLoader
 from torch.utils.data.distributed   import DistributedSampler
 from tqdm                           import tqdm
+
 
 
 def print_loss_graph(losses):
@@ -123,6 +125,14 @@ def train(model,
                                  epoch_idx, 
                                  save_counter, 
                                  configuration["backup_after_n"])
+            
+        if ((epoch_idx + 1) % configuration["generate_after_n"] == 0):
+            generate(model,
+                     4, 
+                     1,
+                     False,
+                     None,
+                     save_only=True) 
         
         # Validation ==========================================================
         if validation_dataloader is not None and len(validation_dataloader):
