@@ -24,10 +24,10 @@ Training:
   num_workers:      8
   Data_Split:       1.0
 
-  generate_after_n: 5
+  generate_after_n: 50
 
   Save_after_epoch: true
-  save_after_n:     10
+  save_after_n:     15
   backup_after_n:   2
 
   Validation:
