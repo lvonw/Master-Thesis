@@ -2,15 +2,15 @@
 # MAIN
 # =============================================================================
 Main:
-  train:      true
+  train:      #true
   validate:   false
   test:       false
   generate:   true
 
   load_model: true
 
-  img2img: #true
-  test_image: test_image5.png
+  img2img: true
+  test_image: test_image3.png
 
 
 # =============================================================================
@@ -50,6 +50,19 @@ Model:
 
   only_load_selection: true
   read_only: true
+
+# =============================================================================
+# Perlin
+# =============================================================================
+Perlin:
+  seed:             42
+  lacunarity:       2
+  persistance:      0.5
+  octaves:          6
+
+  chunks_per_image_side:  4
+  image_side_resolution:  256
+  cells_per_chunk_side:   1
 
 # =============================================================================
 # DATA

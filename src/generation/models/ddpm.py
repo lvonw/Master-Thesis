@@ -348,6 +348,7 @@ class DDPM(nn.Module):
         if input_tensor is None:
             x = torch.randn((amount_samples,) + self.input_shape, 
                             device=control_signals.device)
+            
         else:
             # Encoding input if sketch guided ================================= 
             input_batch = input_tensor.repeat(amount_samples, 1, 1, 1)
@@ -361,7 +362,6 @@ class DDPM(nn.Module):
             x   *= self.inverse_latent_std
 
             x, _= self.__add_noise(x, timesteps)
-
 
         # Main Loop ===========================================================
         for _, timestep in tqdm(
@@ -463,11 +463,8 @@ class DDPM(nn.Module):
         
         mean            = predicted_noise_parameters.mean
         std_deviation   = torch.sqrt(predicted_noise_parameters.variance)
-
-        #std_deviation = torch.sqrt(self.__batchify(self.variance_t[timesteps]))
         
         x_t_minus_one   = mean + noise * std_deviation
-        #x_t_minus_one   = self.__predict_epsilon(timesteps[0].item(), x_t, predicted_noise)
 
         return x_t_minus_one
 

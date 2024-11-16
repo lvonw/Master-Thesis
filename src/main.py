@@ -15,6 +15,7 @@ from debug                          import (Printer,
                                             initialize_model_log)
 from generation.models.vae          import AutoEncoderFactory
 from generation.models.ddpm         import DDPM
+from generation.perlin.perlin       import FractalPerlinGenerator, test
 from pipeline                       import generate, training
 from torch.nn.parallel              import DistributedDataParallel  as DDP
 
@@ -51,7 +52,6 @@ def main():
     parser      = prepare_arg_parser()
     arguments   = parser.parse_args()
     printer     = Printer()
-    # TODO possibly try to get this to work
     share_data  = False
 
     # Distribution ============================================================    
@@ -88,6 +88,9 @@ def main():
 
     printer.print_only_rank_0 = config["Debug"]["print_only_rank_zero"]
     printer.print_log("Finished.")
+
+    test(config["Perlin"])
+    quit()
 
     # =========================================================================
     # CLI
@@ -172,7 +175,7 @@ def main():
     # =========================================================================
     # Training
     # =========================================================================
-    if config["Main"]["train"]:      
+    if config["Main"]["train"]:   
         if is_distributed:
             training.train(model,
                            model.module, 
@@ -195,13 +198,23 @@ def main():
     # Generation
     # =========================================================================
     if config["Main"]["generate"]:
+        perlin_generator = FractalPerlinGenerator(config["Perlin"])
+
         do_img2img = config["Main"]["img2img"]
         model.apply_ema()
         model.to(util.get_device())
         if do_img2img:
-            generate.generate(model, 4, 10, True, config["Main"]["test_image"])
+            generate.generate(model, 
+                              4, 
+                              10, 
+                              True, 
+                              config["Main"]["test_image"], 
+                              perlin_generator=perlin_generator)
         else:
-            generate.generate(model, 4, 10, True)
+            generate.generate(model, 
+                              4, 
+                              10, 
+                              True)
 
     if is_distributed:
         distributed.destroy_process_group()
