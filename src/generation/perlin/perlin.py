@@ -50,7 +50,7 @@ class FractalPerlinGenerator():
     def generate_chunk(self, coordinate=(0, 0)):
         current_frequency = self.cells_per_chunk_side
         current_amplitude = 1
-
+        
         chunk = np.zeros((self.chunk_side_resolution, 
                           self.chunk_side_resolution))
 
@@ -95,7 +95,6 @@ class FractalPerlinGenerator():
         angles = np.empty((grid_side_length, grid_side_length))
 
         for cell_y in range(grid_side_length):
-            string = ""
             for cell_x in range(grid_side_length):
 
                 vertex_x = (cell_x / resolution) + coordinate[0]
@@ -174,22 +173,3 @@ class FractalPerlinGenerator():
         """5th degree polynomial is steady in 2nd derivative"""
         x = np.pow(x, 3) * (10 + x * (x * 6.0 - 15.0))
         return (b - a) * x + a
-
-
-import torch
-from data.data_util import DataVisualizer
-
-import matplotlib.pyplot as plt
-
-def test(config):
-    
-    perlin = FractalPerlinGenerator(config)
-    data = perlin.generate_image((0,0))
-    # data = np.log((data / 2) + 1)
-
-    plt.imshow(data, cmap="gray", interpolation="nearest")
-    plt.colorbar()
-    plt.title("perlin")
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.show()

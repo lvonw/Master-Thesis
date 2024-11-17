@@ -316,7 +316,9 @@ class DDPM(nn.Module):
                  labels=None, 
                  amount=1, 
                  input_tensor=None, 
-                 img2img_strength=800):
+                 img2img_strength=800,
+                 mask = None,
+                 masked_input = None):
 
         if labels is None:
             labels = []
@@ -335,33 +337,58 @@ class DDPM(nn.Module):
         return self.sample(amount, 
                            labels, 
                            input_tensor=input_tensor, 
-                           img2img_strength=img2img_strength)
+                           img2img_strength=img2img_strength,
+                           mask=mask,
+                           masked_input=masked_input)
 
     @torch.no_grad()
     def sample(self, 
                amount_samples, 
-               control_signals, 
+               control_signals,
                input_tensor=None,
-               img2img_strength=800):
+               img2img_strength=800,
+               mask = None,
+               masked_input = None):
         """ Algorithm 2 DDPM """
+
+        # Sketch guidance =====================================================
         starting_offset = 0
         if input_tensor is None:
+            # Start with pure noise -------------------------------------------
             x = torch.randn((amount_samples,) + self.input_shape, 
                             device=control_signals.device)
-            
         else:
-            # Encoding input if sketch guided ================================= 
-            input_batch = input_tensor.repeat(amount_samples, 1, 1, 1)
+            # Encoding input if sketch guided --------------------------------- 
             starting_offset = img2img_strength
 
-            timesteps   = torch.tensor(
-                [self.sample_steps[starting_offset]] 
-                * amount_samples).to(input_tensor.device)
+            timesteps = torch.tensor([self.sample_steps[starting_offset]] 
+                                     * amount_samples).to(input_tensor.device)
             
-            x   = self.latent_model.encode(input_batch).latents
+            x   = self.latent_model.encode(input_tensor).latents
             x   *= self.inverse_latent_std
-
+            x   = x.repeat(amount_samples, 1, 1, 1)
             x, _= self.__add_noise(x, timesteps)
+            
+
+        # Masking =============================================================
+        if mask is not None:
+            if self.is_latent:
+                self.latent_model.eval()
+
+                masked_input = self.latent_model.encode(masked_input).latents
+                masked_input *= self.inverse_latent_std
+
+                # mask = self.latent_model.encode(mask).latents
+                # mask *= mask
+                mask = f.interpolate(
+                    mask, 
+                    size=(32, 32), 
+                    mode="bilinear",
+                    align_corners=False  
+                )
+
+            
+            inverted_mask = 1 - mask
 
         # Main Loop ===========================================================
         for _, timestep in tqdm(
@@ -371,12 +398,16 @@ class DDPM(nn.Module):
             initial = starting_offset,
             leave   = False):
         
-            timesteps = torch.tensor([timestep] * amount_samples, 
-                                     device=control_signals.device)
-
+            timesteps = torch.full((amount_samples,),
+                                    timestep, 
+                                    device=control_signals.device)
+                    
             model_output = self.model(x, control_signals, timesteps)
 
             # Classifier Free Guidance ========================================
+            # Theoretically it's slower to have 2 passes through the model, 
+            # however this saves on VRAM, therefore making it faster on lower
+            # end GPUs
             if (self.use_classifier_free_guidance and control_signals != None):  
                 
                 null_labels = torch.full_like(control_signals, 
@@ -403,6 +434,26 @@ class DDPM(nn.Module):
                                                      x, 
                                                      model_output)
                     
+            # Apply Mask ======================================================
+            if mask is not None:
+                noised_masked_input, _ = self.__add_noise(masked_input, 
+                                                          timesteps) 
+                # if self.is_latent:
+                #     x /= self.inverse_latent_std
+                #     x = self.latent_model.decode(x)
+
+                #     noised_masked_input /= self.inverse_latent_std  
+                #     noised_masked_input = self.latent_model.decode(
+                #         noised_masked_input)
+
+
+                # print (mask.shape)
+                x = noised_masked_input * mask + x * inverted_mask
+            
+                # if self.is_latent:
+                #     x = self.latent_model.encode(x).latents
+                #     x *= self.inverse_latent_std
+    
             x = torch.clamp(x, -1.0, 1.0)
 
         # Decoding ============================================================

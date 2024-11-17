@@ -15,7 +15,7 @@ from debug                          import (Printer,
                                             initialize_model_log)
 from generation.models.vae          import AutoEncoderFactory
 from generation.models.ddpm         import DDPM
-from generation.perlin.perlin       import FractalPerlinGenerator, test
+from generation.perlin.perlin       import FractalPerlinGenerator
 from pipeline                       import generate, training
 from torch.nn.parallel              import DistributedDataParallel  as DDP
 
@@ -89,8 +89,8 @@ def main():
     printer.print_only_rank_0 = config["Debug"]["print_only_rank_zero"]
     printer.print_log("Finished.")
 
-    test(config["Perlin"])
-    quit()
+    # test(config["Perlin"])
+    # quit()
 
     # =========================================================================
     # CLI
@@ -205,7 +205,7 @@ def main():
         model.to(util.get_device())
         if do_img2img:
             generate.generate(model, 
-                              4, 
+                              2, #4, 
                               10, 
                               True, 
                               config["Main"]["test_image"], 
