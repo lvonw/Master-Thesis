@@ -34,10 +34,10 @@ class PredictionType(enum.Enum):
 class DDPM(nn.Module):
     def __init__(self, 
                  configuration,
-                 generator=torch.Generator(device=util.get_device()), 
-                 beta_start=0.00085,
-                 beta_end = 0.0120, 
-                 amount_classes=0):
+                 generator      = torch.Generator(device = util.get_device()), 
+                 beta_start     = 0.00085,
+                 beta_end       = 0.0120, 
+                 amount_classes = 0):
         super().__init__()
 
         self.model_family           = "diffusion"
@@ -125,6 +125,7 @@ class DDPM(nn.Module):
         self.register_buffer("alpha_bars",      torch.cumprod(self.alphas, 0))
         self.register_buffer("sqrt_alpha_bars", torch.sqrt(self.alpha_bars))
 
+        # Pre Computed coefficients for variance prediction -------------------
         vlb_coefficients = self.__compute_vlb_coefficients()
         self.register_buffer("x_zero_coefs",            vlb_coefficients[0])
         self.register_buffer("x_t_coefs",               vlb_coefficients[1])
@@ -133,6 +134,7 @@ class DDPM(nn.Module):
         self.register_buffer("x_zero_x_t_coefs",        vlb_coefficients[4])
         self.register_buffer("x_zero_epsilon_coefs",    vlb_coefficients[5])
 
+        # Pre Computed coefficients simplified epsilon prediction (DDPM) ------
         epsilon_coefficients = self.__compute_epsilon_coefficients()
         self.register_buffer("one_over_sqrt_alphas",  epsilon_coefficients[0])
         self.register_buffer("epsilon_coefficient",   epsilon_coefficients[1])
@@ -172,7 +174,8 @@ class DDPM(nn.Module):
             # Perhaps we could try setting each entry independantly
             mask = torch.rand(
                 labels.shape[0],
-                device=labels.device) < self.no_class_probability
+                device=labels.device,
+                generator=self.generator) < self.no_class_probability
             
             if len(self.amount_classes) > 1:
                 mask = mask.unsqueeze(1).repeat(1, labels.shape[1])
@@ -311,6 +314,8 @@ class DDPM(nn.Module):
     def forward(self, x, training=False, *args, **kwargs):
         if training:
             return self.training_step(*args, **kwargs)
+        
+        return self.generate(*args, **kwargs)
 
     def generate(self,
                  labels=None, 
@@ -356,10 +361,11 @@ class DDPM(nn.Module):
         if input_tensor is None:
             # Start with pure noise -------------------------------------------
             x = torch.randn((amount_samples,) + self.input_shape, 
-                            device=control_signals.device)
+                            device=control_signals.device,
+                            generator=self.generator)
         else:
             # Encoding input if sketch guided --------------------------------- 
-            starting_offset = img2img_strength
+            starting_offset = int(img2img_strength * self.sample_steps)
 
             timesteps = torch.tensor([self.sample_steps[starting_offset]] 
                                      * amount_samples).to(input_tensor.device)
@@ -371,6 +377,8 @@ class DDPM(nn.Module):
             
 
         # Masking =============================================================
+        # Currently using postcondition inpainting. This already produces good
+        # results, but pretraining on a mask condition might yield better ones
         if mask is not None:
             if self.is_latent:
                 self.latent_model.eval()
@@ -378,14 +386,11 @@ class DDPM(nn.Module):
                 masked_input = self.latent_model.encode(masked_input).latents
                 masked_input *= self.inverse_latent_std
 
-                # mask = self.latent_model.encode(mask).latents
-                # mask *= mask
                 mask = f.interpolate(
                     mask, 
-                    size=(32, 32), 
+                    size=(self.input_shape[1], self.input_shape[2]), 
                     mode="bilinear",
-                    align_corners=False  
-                )
+                    align_corners=False)
 
             
             inverted_mask = 1 - mask
@@ -438,21 +443,9 @@ class DDPM(nn.Module):
             if mask is not None:
                 noised_masked_input, _ = self.__add_noise(masked_input, 
                                                           timesteps) 
-                # if self.is_latent:
-                #     x /= self.inverse_latent_std
-                #     x = self.latent_model.decode(x)
-
-                #     noised_masked_input /= self.inverse_latent_std  
-                #     noised_masked_input = self.latent_model.decode(
-                #         noised_masked_input)
-
-
-                # print (mask.shape)
                 x = noised_masked_input * mask + x * inverted_mask
-            
-                # if self.is_latent:
-                #     x = self.latent_model.encode(x).latents
-                #     x *= self.inverse_latent_std
+
+                # print (mask[0,0,0])
     
             x = torch.clamp(x, -1.0, 1.0)
 
@@ -496,14 +489,15 @@ class DDPM(nn.Module):
     # =========================================================================
     def __predict_mean_variance(self, timesteps, x_t, model_output):
         if timesteps[0].item() > 0:
-            noise = torch.randn_like(x_t, 
-                                     device = x_t.device, 
-                                     dtype  = x_t.dtype)
+            noise = torch.randn(x_t.shape, 
+                                device      = x_t.device, 
+                                dtype       = x_t.dtype,
+                                generator   = self.generator)
         else: 
             noise = torch.full_like(x_t, 
                                     0, 
-                                    device = x_t.device, 
-                                    dtype  = x_t.dtype)
+                                    device  = x_t.device, 
+                                    dtype   = x_t.dtype)
 
         predicted_noise, predicted_log_variance = model_output.chunk(2, dim=1)
         predicted_noise_parameters = self.__get_parameters_from_noise(
@@ -609,7 +603,8 @@ class DDPM(nn.Module):
     def __sample_from_timesteps(self, amount_steps, amount_samples):
         return torch.randint(low=1, 
                              high=amount_steps,
-                             size=(amount_samples,))
+                             size=(amount_samples,),
+                             generator=self.generator)
     
     def __get_sampling_timesteps(self, amount_sample_steps):
         step_size   = self.amount_training_steps // amount_sample_steps

@@ -2,13 +2,13 @@ import os
 import enum
 
 # =============================================================================
-# Paths
+# PATHS 
 # =============================================================================
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DATA_PATH_MASTER    = os.path.join(PROJECT_PATH, "data")
 
-# Log Paths
+# Log Paths ===================================================================
 LOG_PATH            = os.path.join(DATA_PATH_MASTER, "log")
 TRAINING_LOSS_LOG   = "training_loss.txt"
 VALIDATION_LOSS_LOG = "validation_loss.txt"
@@ -19,13 +19,13 @@ LOG_CONFIGURATION   = "config.txt"
 LOG_LOSS_FOLDER     = "losses"
 LOG_IMAGES_FOLDER   = "images"
 
-# Config Paths
+# Config Paths ================================================================
 CONFIG_PATH         = os.path.join(PROJECT_PATH, "cfg")
 CONFIG_FILE_FORMAT  = ".yaml"
 CONFIG_DEFAULT_FILE = "default" + CONFIG_FILE_FORMAT
 USAGES_FILE         = os.path.join(CONFIG_PATH, "usages" + CONFIG_FILE_FORMAT)
 
-# Data Paths
+# Dataset Paths ===============================================================
 DATASET_PATH_MASTER = os.path.join(DATA_PATH_MASTER,    "datasets")
 DATA_PATH_DEM       = os.path.join(DATASET_PATH_MASTER, "DEMs")
 DATA_PATH_DEM_LIST  = os.path.join(DATA_PATH_DEM,       "SRTM_GL1_list.txt")
@@ -53,14 +53,14 @@ DATA_PATH_GTC       = os.path.join(
 
 DEFAULT_DEM_LIST    = "SRTM_GL1_list.txt"
 
-# Model Paths
+# Model Paths =================================================================
 MODEL_PATH_MASTER   = os.path.join(DATA_PATH_MASTER,
                                    "models")
 MODEL_FILE_TYPE     = ".pth"
 MODEL_PATH_TEST     = os.path.join(MODEL_PATH_MASTER, "test.pth")
 MODEL_BACKUP_FOLDER = "backup"
 
-# Resource Paths
+# Resource Paths ==============================================================
 RESOURCE_PATH_MASTER        = os.path.join(PROJECT_PATH, "resources")
 RESOURCE_PATH_IMAGES        = os.path.join(RESOURCE_PATH_MASTER, "images")
 RESOURCE_PATH_TEST_IMAGES   = os.path.join(RESOURCE_PATH_IMAGES, "test_images")
@@ -68,12 +68,11 @@ RESOURCE_PATH_TEST_IMAGES   = os.path.join(RESOURCE_PATH_IMAGES, "test_images")
 # =============================================================================
 # Label Amounts
 # =============================================================================
-LABEL_AMOUNT_GTC = 16
-LABEL_AMOUNT_CLIMATE = 33
+LABEL_AMOUNT_GTC        = 16
+LABEL_AMOUNT_CLIMATE    = 33
 
-NULL_LABEL = -1
-
-MASK_VALUE = -9999
+NULL_LABEL              = -1
+MASK_VALUE              = -9999
 
 # =============================================================================
 # Configs
@@ -87,19 +86,19 @@ CONFIGURATION_DATA              = "Data"
 # =============================================================================
 # Terminal Formatting
 # =============================================================================
-STYLE_RESET         = "\033[0m"
+STYLE_RESET             = "\033[0m"
 
-STYLE_BOLD          = "\033[1m"
-STYLE_UNDERLINE     = "\033[4m"
+STYLE_BOLD              = "\033[1m"
+STYLE_UNDERLINE         = "\033[4m"
 
-COLOUR_RED          = "\033[91m"
-COLOUR_GREEN        = "\033[92m"
-COLOUR_YELLOW       = "\033[93m"
-COLOUR_BLUE         = "\033[94m"
-COLOUR_CYAN         = "\033[95m"
-COLOUR_PURPLE       = "\033[96m"
-COLOUR_GRAY         = "\033[97m"
-COLOUR_BLACK        = "\033[98m"
+COLOUR_RED              = "\033[91m"
+COLOUR_GREEN            = "\033[92m"
+COLOUR_YELLOW           = "\033[93m"
+COLOUR_BLUE             = "\033[94m"
+COLOUR_CYAN             = "\033[95m"
+COLOUR_PURPLE           = "\033[96m"
+COLOUR_GRAY             = "\033[97m"
+COLOUR_BLACK            = "\033[98m"
 
 BACKGROUND_BLACK        = "\033[40m"
 BACKGROUND_RED          = "\033[41m"

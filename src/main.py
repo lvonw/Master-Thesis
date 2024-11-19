@@ -182,11 +182,11 @@ def main():
                            dataset_wrapper, 
                            config["Training"], 
                            starting_epoch,
-                           is_distributed       = True,
-                           global_rank          = global_rank,
-                           local_rank           = local_rank,
-                           local_amount         = torch.cuda.device_count(),
-                           global_amount        = torch.cuda.device_count())
+                           is_distributed   = True,
+                           global_rank      = global_rank,
+                           local_rank       = local_rank,
+                           local_amount     = torch.cuda.device_count(),
+                           global_amount    = torch.cuda.device_count())
         else: 
             training.train(model,
                            model, 

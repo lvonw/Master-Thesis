@@ -24,7 +24,12 @@ class FractalPerlinGenerator():
         
         self.center_offset = 0 #np.ceil(self.chunks_per_image_side / 2) - 1
 
-    def generate_image(self, center_coordinate=(0, 0)):
+    def generate_image(self, image_coordinate=(0, 0)):  
+        """
+        Coordinate in chunk space
+        """      
+        center_coordinate = self.image_to_chunk_coordinates(image_coordinate)
+        
         image_chunks = []
         
         # Generate chunks =====================================================
@@ -36,7 +41,7 @@ class FractalPerlinGenerator():
              for chunk_x in range(self.chunks_per_image_side):
                 chunk_coordinate = (chunk_x + offset_x,
                                     chunk_y + offset_y)
-                image_chunks[chunk_y].append(self.generate_chunk(
+                image_chunks[chunk_y].append(self.__generate_chunk(
                     chunk_coordinate))
 
         # Stitch chunks =======================================================
@@ -47,7 +52,7 @@ class FractalPerlinGenerator():
         image = np.vstack(rows)
         return image
 
-    def generate_chunk(self, coordinate=(0, 0)):
+    def __generate_chunk(self, coordinate=(0, 0)):
         current_frequency = self.cells_per_chunk_side
         current_amplitude = 1
         
@@ -55,7 +60,7 @@ class FractalPerlinGenerator():
                           self.chunk_side_resolution))
 
         for _ in range(self.octaves):            
-            gradients       = self.__generate_gradients(
+            gradients = self.__generate_gradients(
                 int(np.ceil(current_frequency)),
                 coordinate)
             
@@ -101,8 +106,7 @@ class FractalPerlinGenerator():
                 vertex_y = (cell_y / resolution) + coordinate[1]
 
                 vertex_seed = (self.seed + abs(hash((vertex_x, vertex_y))))
-
-                generator = np.random.default_rng(vertex_seed)
+                generator   = np.random.default_rng(vertex_seed)
 
                 angles [cell_y][cell_x] = generator.uniform(0, 2 * np.pi)
 
@@ -170,6 +174,15 @@ class FractalPerlinGenerator():
 
 
     def __smoothstep(self, x, a, b):
-        """5th degree polynomial is steady in 2nd derivative"""
         x = np.pow(x, 3) * (10 + x * (x * 6.0 - 15.0))
         return (b - a) * x + a
+    
+    def get_minimum_overlap(self):
+        return self.chunk_side_resolution
+    
+    def get_step_size_for_minimum_overlap(self):
+        return self.chunks_per_image_side - 1
+    
+    def image_to_chunk_coordinates(self, coordinates):
+        step = self.get_step_size_for_minimum_overlap()
+        return (step * coordinates[0], step * coordinates[1])    
