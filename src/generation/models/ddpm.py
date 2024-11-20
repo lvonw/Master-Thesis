@@ -318,12 +318,12 @@ class DDPM(nn.Module):
         return self.generate(*args, **kwargs)
 
     def generate(self,
-                 labels=None, 
-                 amount=1, 
-                 input_tensor=None, 
-                 img2img_strength=800,
-                 mask = None,
-                 masked_input = None):
+                 labels             = None, 
+                 amount             = 1, 
+                 input_tensor       = None, 
+                 img2img_strength   = 800,
+                 mask               = None,
+                 masked_input       = None):
 
         if labels is None:
             labels = []
@@ -350,10 +350,10 @@ class DDPM(nn.Module):
     def sample(self, 
                amount_samples, 
                control_signals,
-               input_tensor=None,
-               img2img_strength=800,
-               mask = None,
-               masked_input = None):
+               input_tensor     = None,
+               img2img_strength = 800,
+               mask             = None,
+               masked_input     = None):
         """ Algorithm 2 DDPM """
 
         # Sketch guidance =====================================================
@@ -365,7 +365,7 @@ class DDPM(nn.Module):
                             generator=self.generator)
         else:
             # Encoding input if sketch guided --------------------------------- 
-            starting_offset = int(img2img_strength * self.sample_steps)
+            starting_offset = int(img2img_strength * len(self.sample_steps))
 
             timesteps = torch.tensor([self.sample_steps[starting_offset]] 
                                      * amount_samples).to(input_tensor.device)

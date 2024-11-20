@@ -297,13 +297,17 @@ class DataVisualizer():
         return DataVisualizer.create_array_figure(dataset_array)
 
     def create_array_from_tensor(self, tensor):
-        tensor = tensor.to("cpu")
-        if len(tensor.shape) == 4:
-            image_tensor = tensor[0][0]
+        if not isinstance(tensor, np.ndarray):
+            tensor  = tensor.to("cpu")
+            image   = tensor.numpy()
         else:
-            image_tensor = tensor[0]
+            image   = tensor
 
-        image = image_tensor.numpy()
+        if len(image.shape) == 4:
+            image = image[0][0]
+        else:
+            image = image[0]
+
         return image
         
 
@@ -352,11 +356,14 @@ class DataVisualizer():
                                 figsize=(5*amount_columns, 5*amount_rows))
         
         # Adjust shape for consistency
-        axs = np.array(axs) 
-        if amount_rows  == 1:
-            axs = axs[np.newaxis, :]
-        if amount_columns == 1:
-            axs = axs[:, np.newaxis]
+        if amount_rows == 1 and amount_columns == 1:
+            axs = np.array([[axs]])
+        elif amount_rows == 1:
+            axs = np.array([axs])
+        elif amount_columns == 1:
+            axs = np.array(axs)[:, np.newaxis]
+        else:
+            axs = np.array(axs) 
 
         for column, plot_tuple in enumerate(self.plot_tuples):
             for row, plot in enumerate(plot_tuple):

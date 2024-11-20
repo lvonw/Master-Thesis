@@ -5,19 +5,19 @@ import platform
 import torch
 import util                   
 
-import torch.distributed            as distributed 
+import torch.distributed        as distributed 
 
-from cli.cli                        import CLI
-from configuration                  import Configuration
-from data.dataset                   import DatasetFactory
-from debug                          import (Printer, 
-                                            LogLevel, 
-                                            initialize_model_log)
-from generation.models.vae          import AutoEncoderFactory
-from generation.models.ddpm         import DDPM
-from generation.perlin.perlin       import FractalPerlinGenerator
-from pipeline                       import generate, training
-from torch.nn.parallel              import DistributedDataParallel  as DDP
+from cli.cli                    import CLI
+from configuration              import Configuration
+from data.dataset               import DatasetFactory
+from debug                      import (Printer, 
+                                        LogLevel, 
+                                        initialize_model_log)
+from generation.models.vae      import AutoEncoderFactory
+from generation.models.ddpm     import DDPM
+from generation.perlin.perlin   import FractalPerlinGenerator
+from pipeline                   import generate, training
+from torch.nn.parallel          import DistributedDataParallel  as DDP
 
 def prepare_arg_parser():
     parser = argparse.ArgumentParser(prog="Diffusion",        
@@ -205,11 +205,11 @@ def main():
         model.to(util.get_device())
         if do_img2img:
             generate.generate(model, 
-                              2, #4, 
-                              10, 
-                              True, 
-                              config["Main"]["test_image"], 
-                              perlin_generator=perlin_generator)
+                              amount_samples    = 1, #2, #4, 
+                              iterations        = 4, #10, 
+                              img2img           = True, 
+                              input_image_path  = config["Main"]["test_image"], 
+                              perlin_generator  = perlin_generator)
         else:
             generate.generate(model, 
                               4, 
