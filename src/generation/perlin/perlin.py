@@ -29,7 +29,6 @@ class FractalPerlinGenerator():
         Coordinate in chunk space
         """      
         center_coordinate = self.image_to_chunk_coordinates(image_coordinate)
-        
         image_chunks = []
         
         # Generate chunks =====================================================

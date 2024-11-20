@@ -398,10 +398,12 @@ class DDPM(nn.Module):
         # Main Loop ===========================================================
         for _, timestep in tqdm(
             enumerate(self.sample_steps[starting_offset:], starting_offset),
-            total   = self.amount_sample_steps,
-            desc    = "Generating Image",
-            initial = starting_offset,
-            leave   = False):
+            total       = self.amount_sample_steps,
+            desc        = "Generating Image",
+            position    = 1,
+            initial     = starting_offset,
+            leave       = False,
+            disable     = False):
         
             timesteps = torch.full((amount_samples,),
                                     timestep, 

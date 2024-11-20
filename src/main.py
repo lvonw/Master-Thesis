@@ -206,7 +206,7 @@ def main():
         if do_img2img:
             generate.generate(model, 
                               amount_samples    = 1, #2, #4, 
-                              iterations        = 4, #10, 
+                              iterations        = 9, #10, 
                               img2img           = True, 
                               input_image_path  = config["Main"]["test_image"], 
                               perlin_generator  = perlin_generator)

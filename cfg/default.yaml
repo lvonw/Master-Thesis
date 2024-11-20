@@ -60,7 +60,7 @@ Perlin:
   persistance:      0.5
   octaves:          6
 
-  chunks_per_image_side:  4
+  chunks_per_image_side:  2
   image_side_resolution:  256
   cells_per_chunk_side:   1
 

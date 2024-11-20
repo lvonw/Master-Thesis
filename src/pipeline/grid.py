@@ -37,18 +37,18 @@ class GenerationGrid():
 
     def insert(self, element, coordinate):
         array_coordinate = self.__grid_to_array(coordinate)
-        
+
         # Adjust Y shape ======================================================
         if array_coordinate[1] < 0:
             for _ in range(0 - array_coordinate[1]):
                 self.origin_coordinate = (self.origin_coordinate[0],
                                           self.origin_coordinate[1] + 1)
-                self.grid =  [None] * len(self.grid) + self.grid
+                self.grid =  [[None] * len(self.grid[0])] + self.grid
 
         if array_coordinate[1] >= len(self.grid):
             for _ in range(1 + array_coordinate[1] - len(self.grid)):
-                self.grid = self.grid + [None] * len(self.grid)
-
+                self.grid = self.grid + [[None] * len(self.grid[0])]
+            
         # Adjust X shape ======================================================
         if array_coordinate[0] < 0:
             deficit = 0 - array_coordinate[0]
@@ -60,7 +60,8 @@ class GenerationGrid():
                 self.grid[idx] = [None] * deficit + row
 
         if array_coordinate[0] >= len(self.grid[0]):
-            deficit = 1 + array_coordinate[0] - len(self.grid)
+            deficit = 1 + array_coordinate[0] - len(self.grid[0])
+
             for idx, row in enumerate(self.grid):
                 self.grid[idx] = row + [None] * deficit
 
@@ -171,19 +172,20 @@ class GenerationGrid():
             overlapping_area = self.__get_overlapping_area(
                 mask, 
                 OverlapArea.TOP_RIGHT) 
-            overlapping_area[:] = corner.flip([3])
+            overlapping_area[:] = corner.flip([1])
+
 
         if overlapping_cells[2][0] is not None or bottom_left == 2:
             overlapping_area = self.__get_overlapping_area(
                 mask, 
                 OverlapArea.BOTTOM_LEFT) 
-            overlapping_area[:] = corner.flip([2])
+            overlapping_area[:] = corner.flip([0])
         
         if overlapping_cells[2][2] is not None or bottom_right == 2:
             overlapping_area = self.__get_overlapping_area(
                 mask, 
                 OverlapArea.BOTTOM_RIGHT) 
-            overlapping_area[:] = corner.flip([2, 3])
+            overlapping_area[:] = corner.flip([0, 1])
             
         
         # Create masked image =================================================
@@ -332,3 +334,6 @@ class GridCell():
         self.insertion_index    = insertion_index
         self.image              = image
         self.coordinate         = coordinate
+
+    def __str__(self):
+        return str(self.insertion_index)

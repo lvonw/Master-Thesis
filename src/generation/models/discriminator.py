@@ -1,6 +1,6 @@
 """ 
-Inspired by taming NLayerDiscriminator 
-https://github.com/CompVis/taming-transformers/blob/master/taming/modules/discriminator/model.py
+Guided by taming transformers NLayerDiscriminator 
+https://github.com/CompVis/taming-transformers
 """
 
 import torch

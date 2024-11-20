@@ -5,11 +5,12 @@ import util
 
 import numpy        as np
 
+from datetime       import datetime
 from enum           import Enum
 from data.data_util import GeoUtil, DataVisualizer, NormalizationMethod
 from PIL            import Image
 from pipeline.grid  import GenerationGrid
-from datetime       import datetime
+from tqdm           import tqdm
 
 import matplotlib.pyplot as plt
 
@@ -60,20 +61,29 @@ def generate(model,
                             MaskInterpolation.RIGHT_COSINE)
 
                 
-        for i in range(iterations):
+        for i in tqdm(range(iterations),
+                      total     = iterations,
+                      desc      = "Generating Samples",
+                      position  = 0,
+                      leave     = True,
+                      colour    = "magenta",
+                      disable   = False):
+            
+            coordinate = (i%3, i//3)
+
             if perlin_generator is not None:
-                input_image     = perlin_generator.generate_image((i * 10, 0))
+                input_image     = perlin_generator.generate_image(coordinate)
                 input_tensor    = (torch.tensor(input_image, 
                                                 dtype = torch.float32)
                                    .unsqueeze(dim=0)
                                    .unsqueeze(dim=0)
                                    .to(util.get_device()))
 
-                input_tensor    /= i + 1
+                input_tensor    /= (i + 1) / 5
 
             # label = i  #((i+1)*2)-1 
             # label = [[5, 1],[5, 5],[5, 12],[5, 28]]
-            label = [[i + 1, i + 1]] #,[5, 28]] #,[10, 12],[15, 12]]
+            label = [[i + 1, i * 3]] #,[5, 28]] #,[10, 12],[15, 12]]
             
             # weight = 0.0
             # weight = 0.500
@@ -89,7 +99,7 @@ def generate(model,
             # weight = 0.950
             # weight = 0.999
 
-            mask, masked_image  = grid.get_mask_for_coordinate((i, 0), 
+            mask, masked_image  = grid.get_mask_for_coordinate(coordinate, 
                                                                alpha)
             samples = model.generate(label, 
                                      amount_samples, 
@@ -103,14 +113,14 @@ def generate(model,
                                                 mask)
 
                 
-            grid.insert(final_image[0], (i, 0)) 
+            grid.insert(final_image[0], coordinate) 
 
         stitched_image = grid.stitch_image()
         
         data_visualizer.create_image_tensor_tuple([stitched_image],
                                                    title=str(label)) 
 
-        time = datetime.now().strftime("%m-%d-%H-%M-%S")
+        time = datetime.now().strftime("%m-%d_%H-%M-%S")
         data_visualizer.show_ensemble(
             save        = True,
             filename    = f"infinite_{weight}_{time}",
