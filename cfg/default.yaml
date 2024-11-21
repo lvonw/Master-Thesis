@@ -2,6 +2,7 @@
 # MAIN
 # =============================================================================
 Main:
+  profile:    #true
   train:      #true
   validate:   false
   test:       false
@@ -62,7 +63,7 @@ Perlin:
 
   chunks_per_image_side:  2
   image_side_resolution:  256
-  cells_per_chunk_side:   1
+  cells_per_chunk_side:   2
 
 # =============================================================================
 # DATA

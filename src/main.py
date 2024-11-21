@@ -18,6 +18,7 @@ from generation.models.ddpm     import DDPM
 from generation.perlin.perlin   import FractalPerlinGenerator
 from pipeline                   import generate, training
 from torch.nn.parallel          import DistributedDataParallel  as DDP
+from torchinfo                  import summary
 
 def prepare_arg_parser():
     parser = argparse.ArgumentParser(prog="Diffusion",        
@@ -173,6 +174,17 @@ def main():
     printer.print_log(f"Amount Classes: {amount_classes}")
 
     # =========================================================================
+    # Profiling
+    # =========================================================================
+    if config["Main"]["profile"]: 
+        model.eval()
+        model.apply_ema()
+        summary(model, 
+                input_size=model.get_output_shape(), 
+                device="cuda", 
+                monitoring=True)
+
+    # =========================================================================
     # Training
     # =========================================================================
     if config["Main"]["train"]:   
@@ -207,14 +219,12 @@ def main():
             generate.generate(model, 
                               amount_samples    = 1, #2, #4, 
                               iterations        = 9, #10, 
-                              img2img           = True, 
                               input_image_path  = config["Main"]["test_image"], 
                               perlin_generator  = perlin_generator)
         else:
             generate.generate(model, 
-                              4, 
-                              10, 
-                              True)
+                              amount_samples    = 4, 
+                              iterations        = 10)
 
     if is_distributed:
         distributed.destroy_process_group()

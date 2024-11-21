@@ -4,7 +4,10 @@ import torch
 import torch.nn         as nn
 
 # TODO Need to make it so we dont constantly check this
-def get_device():
+def get_device(idle = False):
+    if idle:
+        return "cpu"
+
     if torch.cuda.is_available():
         device = "cuda"
     elif torch.backends.mps.is_available():
@@ -33,7 +36,8 @@ def get_model_file_path(model):
                         model.name + constants.MODEL_FILE_TYPE)
     
 def save_model(model):
-    torch.save(model.state_dict(), get_model_file_path(model))
+    if model.can_save:
+        torch.save(model.state_dict(), get_model_file_path(model))
 
 def load_model(model, strict=True):
     model_path = get_model_file_path(model)
@@ -46,6 +50,9 @@ def load_model(model, strict=True):
     return True
 
 def save_checkpoint(model, epoch_idx, save_counter, backup_at = 5):
+    if not model.can_save:
+        return
+    
     optimizer_states = [opt.state_dict() for opt in model.optimizers]
     checkpoint = {
         "epoch": epoch_idx,

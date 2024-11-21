@@ -14,6 +14,9 @@ from tqdm           import tqdm
 
 import matplotlib.pyplot as plt
 
+import torch
+from torch.profiler import profile, ProfilerActivity
+
 class MaskInterpolation(Enum):
     NONE                = "None"
     LINEAR              = "Linear"
@@ -25,7 +28,6 @@ class MaskInterpolation(Enum):
 def generate(model,
              amount_samples     = 4,
              iterations         = 8,
-             img2img            = False,
              input_image_path   = None,
              weight             = 0.8,
              save_only          = False,
@@ -53,7 +55,7 @@ def generate(model,
                 255).unsqueeze(dim=0).unsqueeze(dim=0).to(util.get_device())
 
 
-        grid = GenerationGrid((1, 1, 256, 256), 
+        grid = GenerationGrid((1,) + model.get_output_shape(), 
                               perlin_generator.get_minimum_overlap())
         
 
@@ -79,7 +81,7 @@ def generate(model,
                                    .unsqueeze(dim=0)
                                    .to(util.get_device()))
 
-                input_tensor    /= (i + 1) / 5
+                input_tensor    /= i + 1
 
             # label = i  #((i+1)*2)-1 
             # label = [[5, 1],[5, 5],[5, 12],[5, 28]]
@@ -96,24 +98,27 @@ def generate(model,
             # weight = 0.850
             # weight = 0.875
             # weight = 0.900
-            # weight = 0.950
+            weight = 0.950
             # weight = 0.999
 
             mask, masked_image  = grid.get_mask_for_coordinate(coordinate, 
                                                                alpha)
+            
             samples = model.generate(label, 
                                      amount_samples, 
                                      input_tensor       = input_tensor,
                                      img2img_strength   = weight,
                                      mask               = mask,
-                                     masked_input       = masked_image)
-            
+                                     masked_input       = masked_image,
+                                     dynamic_device     = False,
+                                     fast_cfg           = True)
+                            
             final_image = grid.create_final_image(samples, 
                                                 masked_image,
                                                 mask)
 
-                
             grid.insert(final_image[0], coordinate) 
+                
 
         stitched_image = grid.stitch_image()
         

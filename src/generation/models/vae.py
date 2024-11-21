@@ -161,7 +161,8 @@ class VariationalAutoEncoder(nn.Module):
         self.model_family   = "vae"
         self.name           = name
         self.loss_log       = LossLog()
-        
+        self.can_save       = True
+
         self.encoder        = encoder
         self.decoder        = decoder
         self.data_shape     = data_shape
@@ -422,12 +423,22 @@ class VariationalAutoEncoder(nn.Module):
             self.__apply_ema()
     
     def __apply_ema(self):
-        # Be sure to not save this as long as we are not a submodel
-        self.encoder_ema_model.apply_to_model(self.encoder)
-        self.decoder_ema_model.apply_to_model(self.decoder)
+        if (self.encoder_ema_model is not None 
+            and self.decoder_ema_model is not None):
 
-        self.encoder_ema_model = None
-        self.decoder_ema_model = None
+            # Be sure to not save this as long as we are not a submodel
+            self.encoder_ema_model.apply_to_model(self.encoder)
+            self.decoder_ema_model.apply_to_model(self.decoder)
+            
+            self.encoder_ema_model.to(util.get_device(idle=True))
+            self.decoder_ema_model.to(util.get_device(idle=True))
+
+            self.encoder_ema_model = None
+            self.decoder_ema_model = None
+
+            torch.cuda.empty_cache()
+
+        self.can_save   = False
 
 class LatentEncoding():
     def __init__(self, latents, mean, log_variance):

@@ -323,7 +323,10 @@ class DDPM(nn.Module):
                  input_tensor       = None, 
                  img2img_strength   = 800,
                  mask               = None,
-                 masked_input       = None):
+                 masked_input       = None,
+                 monitoring         = False,
+                 dynamic_device     = False,
+                 fast_cfg           = True):
 
         if labels is None:
             labels = []
@@ -341,10 +344,13 @@ class DDPM(nn.Module):
 
         return self.sample(amount, 
                            labels, 
-                           input_tensor=input_tensor, 
-                           img2img_strength=img2img_strength,
-                           mask=mask,
-                           masked_input=masked_input)
+                           input_tensor     = input_tensor, 
+                           img2img_strength = img2img_strength,
+                           mask             = mask,
+                           masked_input     = masked_input,
+                           monitoring       = monitoring,
+                           dynamic_device   = dynamic_device,
+                           fast_cfg         = fast_cfg)
 
     @torch.no_grad()
     def sample(self, 
@@ -353,9 +359,18 @@ class DDPM(nn.Module):
                input_tensor     = None,
                img2img_strength = 800,
                mask             = None,
-               masked_input     = None):
+               masked_input     = None,
+               monitoring       = False,
+               dynamic_device   = True,
+               fast_cfg         = True):
         """ Algorithm 2 DDPM """
 
+        if dynamic_device:
+            self.model.to(util.get_device(idle=True))
+            if self.is_latent:
+                self.latent_model.decoder.to(util.get_device(idle=True))
+                self.latent_model.encoder.to(util.get_device())
+        
         # Sketch guidance =====================================================
         starting_offset = 0
         if input_tensor is None:
@@ -363,6 +378,9 @@ class DDPM(nn.Module):
             x = torch.randn((amount_samples,) + self.input_shape, 
                             device=control_signals.device,
                             generator=self.generator)
+            
+            if monitoring:
+                starting_offset = len(self.sample_steps) - 1
         else:
             # Encoding input if sketch guided --------------------------------- 
             starting_offset = int(img2img_strength * len(self.sample_steps))
@@ -374,8 +392,7 @@ class DDPM(nn.Module):
             x   *= self.inverse_latent_std
             x   = x.repeat(amount_samples, 1, 1, 1)
             x, _= self.__add_noise(x, timesteps)
-            
-
+        
         # Masking =============================================================
         # Currently using postcondition inpainting. This already produces good
         # results, but pretraining on a mask condition might yield better ones
@@ -388,13 +405,25 @@ class DDPM(nn.Module):
 
                 mask = f.interpolate(
                     mask, 
-                    size=(self.input_shape[1], self.input_shape[2]), 
-                    mode="bilinear",
-                    align_corners=False)
+                    size            = (self.input_shape[1], 
+                                       self.input_shape[2]), 
+                    mode            = "bilinear",
+                    align_corners   = False)
 
-            
             inverted_mask = 1 - mask
 
+        if fast_cfg:
+            null_labels     = torch.full_like(control_signals, 
+                                              constants.NULL_LABEL)
+            control_signals = torch.cat([control_signals, null_labels])
+
+
+        if dynamic_device:
+            if self.is_latent:
+                self.latent_model.to(util.get_device(idle=True))
+            
+            self.model.to(util.get_device())
+            
         # Main Loop ===========================================================
         for _, timestep in tqdm(
             enumerate(self.sample_steps[starting_offset:], starting_offset),
@@ -408,24 +437,34 @@ class DDPM(nn.Module):
             timesteps = torch.full((amount_samples,),
                                     timestep, 
                                     device=control_signals.device)
-                    
-            model_output = self.model(x, control_signals, timesteps)
+            
+            if fast_cfg:
+                model_output = self.model(x.repeat(2, 1, 1, 1), 
+                                          control_signals, 
+                                          timesteps.repeat(2))
+            else:    
+                model_output = self.model(x, 
+                                          control_signals, 
+                                          timesteps)
 
             # Classifier Free Guidance ========================================
-            # Theoretically it's slower to have 2 passes through the model, 
-            # however this saves on VRAM, therefore making it faster on lower
-            # end GPUs
             if (self.use_classifier_free_guidance and control_signals != None):  
-                
-                null_labels = torch.full_like(control_signals, 
-                                              constants.NULL_LABEL)
-                unconditional_model_output = self.model(x, 
-                                                        null_labels, 
-                                                        timesteps)
+                if fast_cfg:
+                    model_output, unconditional_model_output = torch.chunk(
+                        model_output,
+                        2,
+                        dim = 0)
+                else:
+                    null_labels = torch.full_like(control_signals, 
+                                                  constants.NULL_LABEL)
+                    unconditional_model_output  = self.model(x, 
+                                                             null_labels, 
+                                                             timesteps)
 
                 model_output = torch.lerp(unconditional_model_output, 
                                           model_output,
                                           self.cfg_weight)
+                
 
 
             # Denoising  ======================================================
@@ -447,11 +486,16 @@ class DDPM(nn.Module):
                                                           timesteps) 
                 x = noised_masked_input * mask + x * inverted_mask
 
-                # print (mask[0,0,0])
     
             x = torch.clamp(x, -1.0, 1.0)
 
-        # Decoding ============================================================
+        # Decoding ============================================================        
+        if dynamic_device:
+            self.model.to(util.get_device(idle=True))
+            if self.is_latent:
+                self.latent_model.decoder.to(util.get_device())
+
+
         if self.is_latent:
             self.latent_model.eval()
             x /= self.inverse_latent_std
@@ -626,9 +670,21 @@ class DDPM(nn.Module):
         return None
     
     def apply_ema(self):
-        self.ema_model.apply_to_model(self.model) 
-        self.ema_model  = None
+        if self.ema_model is not None:
+            self.ema_model.apply_to_model(self.model)
+            self.ema_model.to(util.get_device(idle=True)) 
+            self.ema_model  = None
+
+            torch.cuda.empty_cache()
+        
         self.can_save   = False
+
+    def get_output_shape(self):
+        if self.is_latent:
+            return self.latent_model.data_shape
+        
+        return self.input_shape
+
 
 class NoiseParameters():
     def __init__(self, mean, variance, log_variance):
