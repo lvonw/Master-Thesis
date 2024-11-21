@@ -6,6 +6,7 @@ import util
 import numpy        as np
 
 from datetime       import datetime
+from debug          import Printer
 from enum           import Enum
 from data.data_util import GeoUtil, DataVisualizer, NormalizationMethod
 from PIL            import Image
@@ -13,9 +14,6 @@ from pipeline.grid  import GenerationGrid
 from tqdm           import tqdm
 
 import matplotlib.pyplot as plt
-
-import torch
-from torch.profiler import profile, ProfilerActivity
 
 class MaskInterpolation(Enum):
     NONE                = "None"
@@ -25,13 +23,55 @@ class MaskInterpolation(Enum):
     LEFT_EXPONENTIAL    = "Left Exponential"
     RIGHT_EXPONENTIAL   = "Right Exponential"
 
+def new_generate(model, 
+                 configuration  = None, 
+                 title          = "asd",
+                 save_only      = False):
+    data_visualizer     = DataVisualizer()
+    generated_results   = []
+    
+    if configuration is None or configuration["Unguided"]["active"]:
+        generated_results.append(__generate_unguided())
+
+    if configuration is not None and configuration["Image2Image"]["active"]:
+        generated_results.append(__generate_sketch_based())
+
+    if configuration is not None and configuration["Grid"]["active"]:
+        generated_results.append(__generate_grid())
+
+    if configuration is not None and configuration["Inpainting"]["active"]:
+        generated_results.append(__generate_inpainting())
+
+    data_visualizer.create_image_tensor_tuple(generated_results,
+                                              title=str(title)) 
+
+    time = datetime.now().strftime("%m-%d_%H-%M-%S")
+    data_visualizer.show_ensemble(
+        save        = True,
+        filename    = f"infinite_{title}_{time}",
+        model       = model,
+        save_only   = save_only)
+
+def __generate_unguided():
+    pass    
+
+def __generate_sketch_based():
+    pass
+
+def __generate_grid():
+    pass
+
+def __generate_inpainting():
+    pass
+
 def generate(model,
-             amount_samples     = 4,
-             iterations         = 8,
-             input_image_path   = None,
-             weight             = 0.8,
-             save_only          = False,
-             perlin_generator   = None):
+             amount_samples         = 4,
+             iterations             = 8,
+             input_image_path       = None,
+             weight                 = 0.8,
+             save_only              = False,
+             perlin_generator       = None,
+             regenerate_first_chunk = True):
      
     with torch.no_grad():
 
@@ -63,67 +103,81 @@ def generate(model,
                             MaskInterpolation.RIGHT_COSINE)
 
 
+        # weight = 0.0
+        # weight = 0.500
+        # weight = 0.600
+        weight = 0.700
+        # weight = 0.750
+        # weight = 0.775
+        # weight = 0.800
+        # weight = 0.825
+        # weight = 0.850
+        # weight = 0.875
+        # weight = 0.900
+        # weight = 0.950
+        # weight = 0.999
+
         # Generate all Samples ================================================
         for i in tqdm(range(iterations),
                       total     = iterations,
                       desc      = "Generating Samples",
                       position  = 0,
-                      leave     = True,
+                      leave     = False,
                       colour    = "magenta",
                       disable   = False):
             
-            coordinate = (i%6, i//6)
+            coordinate = (i%3, i//3)
+            # label = [[1, i*3]]
+            label = [[5, 28]]
 
-            if perlin_generator is not None:
-                input_image     = perlin_generator.generate_image(coordinate)
-                input_tensor    = (torch.tensor(input_image, 
-                                                dtype = torch.float32)
-                                   .unsqueeze(dim=0)
-                                   .unsqueeze(dim=0)
-                                   .to(util.get_device()))
-
-                # input_tensor    /= i + 1
-
-            # label = i  #((i+1)*2)-1 
-            # label = [[5, 1],[5, 5],[5, 12],[5, 28]]
-            label = [[i % 16, i % 33]] #,[5, 28]] #,[10, 12],[15, 12]]
+            __generate_chunk(model,
+                             grid,
+                             perlin_generator,
+                             coordinate,
+                             weight,
+                             alpha,
+                             label,
+                             amount_samples)
             
-            # weight = 0.0
-            # weight = 0.500
-            # weight = 0.600
-            weight = 0.700
-            # weight = 0.750
-            # weight = 0.775
-            # weight = 0.800
-            # weight = 0.825
-            # weight = 0.850
-            # weight = 0.875
-            # weight = 0.900
-            # weight = 0.950
-            # weight = 0.999
-
-            mask, masked_image  = grid.get_mask_for_coordinate(coordinate, 
-                                                               alpha)
+        for i in tqdm(range(iterations),
+                      total     = iterations,
+                      desc      = "Generating Samples",
+                      position  = 0,
+                      leave     = False,
+                      colour    = "magenta",
+                      disable   = False):
             
-            samples = model.generate(label, 
-                                     amount_samples, 
-                                     input_tensor       = input_tensor,
-                                     img2img_strength   = weight,
-                                     mask               = mask,
-                                     masked_input       = masked_image,
-                                     dynamic_device     = False,
-                                     fast_cfg           = True)
-                            
-            final_image = grid.create_final_image(samples, 
-                                                masked_image,
-                                                mask)
+            coordinate = (i%3, i//3)
+            # label = [[1, i*3]]
+            label = [[5, 28]]
 
-            grid.insert(final_image[0], coordinate) 
-                
+            __generate_chunk(model,
+                             grid,
+                             perlin_generator,
+                             coordinate,
+                             weight,
+                             alpha,
+                             label,
+                             amount_samples)
 
-        stitched_image = grid.stitch_image()
+        # First chunk behaviour ===============================================
+        # saved_stitched_image, stitched_sketch = grid.stitch_image()
+        # if regenerate_first_chunk:
+        #     Printer().print_log("Regenerating first Chunk")
+        #     __generate_chunk(model,
+        #                      grid,
+        #                      perlin_generator,
+        #                      (0, 0),
+        #                      weight,
+        #                      alpha,
+        #                      [[1, 1]],
+        #                      amount_samples)
         
-        data_visualizer.create_image_tensor_tuple([stitched_image],
+        # Stitch final image ==================================================
+        stitched_image, stitched_sketch = grid.stitch_image()
+        
+        data_visualizer.create_image_tensor_tuple([stitched_image,
+                                                   stitched_sketch],
                                                    title=str(label)) 
 
         time = datetime.now().strftime("%m-%d_%H-%M-%S")
@@ -164,3 +218,42 @@ def __get_alpha(overlap_length,
             alpha = torch.pow(2, -alpha)
 
     return alpha
+
+def __generate_chunk(model,
+                     grid,
+                     perlin_generator, 
+                     coordinate,
+                     weight,
+                     alpha,
+                     label,
+                     amount_samples = 1):
+    
+    if perlin_generator is not None:
+        # t = (coordinate[0]*10, coordinate[1]*12)
+        perlin_image    = perlin_generator.generate_image(coordinate)
+        perlin_tensor   = (torch.tensor(perlin_image, 
+                                        dtype = torch.float32)
+                           .unsqueeze(dim=0)
+                           .unsqueeze(dim=0)
+                           .to(util.get_device()))
+
+        perlin_tensor   = perlin_tensor / 2 - 0.3
+    
+    mask, masked_image = grid.get_mask_for_coordinate(coordinate, 
+                                                      alpha,
+                                                      sketch = perlin_tensor)
+    
+    samples = model.generate(label, 
+                             amount_samples, 
+                             input_tensor       = perlin_tensor,
+                             img2img_strength   = weight,
+                             mask               = mask,
+                             masked_input       = masked_image,
+                             dynamic_device     = False,
+                             fast_cfg           = True)
+                                
+    final_image = grid.create_final_image(samples, 
+                                          masked_image,
+                                          mask)
+
+    grid.insert(final_image[0], coordinate, perlin_tensor[0])

@@ -35,7 +35,7 @@ class GenerationGrid():
         # Mapping of the grid space origin to the array space coordinate
         self.origin_coordinate = (0, 0)
 
-    def insert(self, element, coordinate):
+    def insert(self, element, coordinate, sketch=None):
         array_coordinate = self.__grid_to_array(coordinate)
 
         # Adjust Y shape ======================================================
@@ -66,9 +66,10 @@ class GenerationGrid():
                 self.grid[idx] = row + [None] * deficit
 
         # Insert ==============================================================
-        new_cell = GridCell(len(self.insertion_order), 
-                            element.to("cpu").unsqueeze(0), 
-                            coordinate)
+        new_cell = GridCell(insertion_index = len(self.insertion_order), 
+                            image           = element.to("cpu").unsqueeze(0), 
+                            coordinate      = coordinate,
+                            sketch          = sketch.to("cpu").unsqueeze(0))
         self.insertion_order.append(new_cell)
         self.grid[array_coordinate[1]][array_coordinate[0]] = new_cell        
 
@@ -76,7 +77,8 @@ class GenerationGrid():
     def get_mask_for_coordinate(self, 
                                 coordinate, 
                                 alpha,
-                                device=util.get_device()):
+                                device  = util.get_device(),
+                                sketch  = None):
 
         array_coordinate = self.__grid_to_array(coordinate)
         
@@ -162,26 +164,30 @@ class GenerationGrid():
             corner[diagonal, diagonal:] = alpha_value
             corner[diagonal:, diagonal] = alpha_value
 
-        if overlapping_cells[0][0] is not None or top_left == 2:
+        # if overlapping_cells[0][0] is not None or top_left == 2:
+        if top_left == 2:
             overlapping_area = self.__get_overlapping_area(
                 mask, 
                 OverlapArea.TOP_LEFT) 
             overlapping_area[:] = corner
 
-        if overlapping_cells[0][2] is not None or top_right == 2:
+        # if overlapping_cells[0][2] is not None or top_right == 2:
+        if top_right == 2:
             overlapping_area = self.__get_overlapping_area(
                 mask, 
                 OverlapArea.TOP_RIGHT) 
             overlapping_area[:] = corner.flip([1])
 
 
-        if overlapping_cells[2][0] is not None or bottom_left == 2:
+        # if overlapping_cells[2][0] is not None or bottom_left == 2:
+        if bottom_left == 2:
             overlapping_area = self.__get_overlapping_area(
                 mask, 
                 OverlapArea.BOTTOM_LEFT) 
             overlapping_area[:] = corner.flip([0])
         
-        if overlapping_cells[2][2] is not None or bottom_right == 2:
+        # if overlapping_cells[2][2] is not None or bottom_right == 2:
+        if bottom_right == 2:
             overlapping_area = self.__get_overlapping_area(
                 mask, 
                 OverlapArea.BOTTOM_RIGHT) 
@@ -248,6 +254,9 @@ class GenerationGrid():
                     masked_image, OverlapArea.BOTTOM_RIGHT) 
                 overlapping_area[:] = self.__get_overlapping_area(
                     image, OverlapArea.TOP_LEFT)
+
+        if sketch is not None:        
+            masked_image = torch.where(mask > 0, masked_image, sketch)
                 
         return mask, masked_image
     
@@ -263,20 +272,28 @@ class GenerationGrid():
         width   = (len(self.grid[0]) * self.image_shape[-1] 
                    - (len(self.grid[0]) - 1) * self.overlap_size)
 
-        full_image = np.full((1, height, width), -1, dtype=np.float32)
+        full_image  = np.full((1, height, width), -1, dtype=np.float32)
+        full_sketch = np.full((1, height, width), -1, dtype=np.float32)
+
 
         for sub_image in self.insertion_order:
             array_coordinate = self.__grid_to_array(sub_image.coordinate) 
             image_coordinate = self.__array_to_image(array_coordinate)
             
-            full_image[
-                :, 
+            full_image[:, 
                 image_coordinate[1]:image_coordinate[1]+self.image_shape[-2], 
                 image_coordinate[0]:image_coordinate[0]+self.image_shape[-1]]=(
-                    sub_image.image[:,:].numpy()
-                )
+                    sub_image.image[:,:].numpy())
+            
+            if sub_image.sketch is None:
+                continue
 
-        return full_image
+            full_sketch[:, 
+                image_coordinate[1]:image_coordinate[1]+self.image_shape[-2], 
+                image_coordinate[0]:image_coordinate[0]+self.image_shape[-1]]=(
+                    sub_image.sketch[:,:].numpy())
+
+        return full_image, full_sketch
 
     def __str__(self):
         string = ""
@@ -330,10 +347,15 @@ class GenerationGrid():
                 return tensor[:,:, -self.overlap_size:, -self.overlap_size:]
 
 class GridCell():
-    def __init__(self, insertion_index, image, coordinate):
+    def __init__(self, 
+                 insertion_index, 
+                 image, 
+                 coordinate, 
+                 sketch):
         self.insertion_index    = insertion_index
         self.image              = image
         self.coordinate         = coordinate
+        self.sketch             = sketch
 
     def __str__(self):
         return str(self.insertion_index)
