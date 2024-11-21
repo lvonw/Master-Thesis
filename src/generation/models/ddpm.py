@@ -364,6 +364,7 @@ class DDPM(nn.Module):
                dynamic_device   = True,
                fast_cfg         = True):
         """ Algorithm 2 DDPM """
+        torch.cuda.empty_cache()
 
         if dynamic_device:
             self.model.to(util.get_device(idle=True))
@@ -487,7 +488,7 @@ class DDPM(nn.Module):
                 x = noised_masked_input * mask + x * inverted_mask
 
     
-            x = torch.clamp(x, -1.0, 1.0)
+            x = torch.clamp(x, -1.0, 1.0).contiguous()
 
         # Decoding ============================================================        
         if dynamic_device:
