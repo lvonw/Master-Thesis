@@ -6,7 +6,7 @@ class FractalPerlinGenerator():
     https://en.wikipedia.org/wiki/Perlin-noise
     """
 
-    def __init__(self, configuration):
+    def __init__(self, configuration, transform):
         self.seed                   = configuration["seed"]
         self.lacunarity             = configuration["lacunarity"]
         self.persistance            = configuration["persistance"]
@@ -22,7 +22,9 @@ class FractalPerlinGenerator():
         self.cell_side_resolution   = (self.chunk_side_resolution
                                        // self.cells_per_chunk_side)
         
-        self.center_offset = 0 #np.ceil(self.chunks_per_image_side / 2) - 1
+        #np.ceil(self.chunks_per_image_side / 2) - 1
+        self.center_offset          = 0 
+        self.transform              = transform
 
     def generate_image(self, image_coordinate=(0, 0)):  
         """
@@ -49,6 +51,8 @@ class FractalPerlinGenerator():
             rows.append(np.hstack(row))
             
         image = np.vstack(rows)
+        image = self.transform(image)
+        
         return image
 
     def __generate_chunk(self, coordinate=(0, 0)):

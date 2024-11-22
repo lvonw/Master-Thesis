@@ -11,8 +11,60 @@ Main:
   load_model: true
 
   img2img: true
-  test_image: test_image3.png
 
+
+# =============================================================================
+# GENERATION
+# =============================================================================
+Generate:  
+  Perlin:
+    seed:                   42
+    lacunarity:             2
+    persistance:            0.5
+    octaves:                6
+
+    chunks_per_image_side:  2
+    image_side_resolution:  256
+    cells_per_chunk_side:   2
+
+  Unguided:
+    active:     false
+
+    samples:    4
+    iterations: 10
+
+    labels:
+
+  Image2Image:
+    active:     false
+    use_perlin: false
+    
+    samples:    4
+    iterations: 10
+
+    labels:
+
+    weight:     0.7
+    sketch:     test_image3.png
+
+  Grid:
+    active:     true
+    use_perlin: true
+
+    grid_x:     3
+    grid_y:     3
+    iterations: 2
+    regenerate_first_chunk: true
+    
+    labels:
+    
+    weight:     0.7
+
+  Inpainting:
+    active: false
+    samples: 10
+
+    labels:
 
 # =============================================================================
 # TRAINING
@@ -33,6 +85,8 @@ Training:
 
   Validation:
     z_score: 3
+
+
 
 # =============================================================================
 # MODEL

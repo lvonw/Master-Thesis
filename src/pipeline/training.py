@@ -15,7 +15,6 @@ from torch.utils.data.distributed   import DistributedSampler
 from tqdm                           import tqdm
 
 
-
 def print_loss_graph(losses):
     plt.plot(losses)
     plt.xlabel("Step")
@@ -23,7 +22,6 @@ def print_loss_graph(losses):
     plt.title("Training Loss Plot")
     plt.show()
         
-
 def train(model, 
           model_state,
           dataset_wrapper, 
@@ -128,10 +126,6 @@ def train(model,
             
         if ((epoch_idx + 1) % configuration["generate_after_n"] == 0):
             generate(model,
-                     4, 
-                     1,
-                     False,
-                     None,
                      save_only=True) 
         
         # Validation ==========================================================

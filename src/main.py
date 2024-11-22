@@ -15,7 +15,6 @@ from debug                      import (Printer,
                                         initialize_model_log)
 from generation.models.vae      import AutoEncoderFactory
 from generation.models.ddpm     import DDPM
-from generation.perlin.perlin   import FractalPerlinGenerator
 from pipeline                   import generate, training
 from torch.nn.parallel          import DistributedDataParallel  as DDP
 from torchinfo                  import summary
@@ -209,22 +208,9 @@ def main():
     # =========================================================================
     # Generation
     # =========================================================================
-    if config["Main"]["generate"]:
-        perlin_generator = FractalPerlinGenerator(config["Perlin"])
-
-        do_img2img = config["Main"]["img2img"]
-        model.apply_ema()
-        model.to(util.get_device())
-        if do_img2img:
-            generate.generate(model, 
-                              amount_samples    = 1, #2, #4, 
-                              iterations        = 9, #9, #10, 
-                              input_image_path  = config["Main"]["test_image"], 
-                              perlin_generator  = perlin_generator)
-        else:
-            generate.generate(model, 
-                              amount_samples    = 4, 
-                              iterations        = 10)
+    if config["Main"]["generate"]:        
+        generate.generate(model, 
+                          config["Generate"])
 
     if is_distributed:
         distributed.destroy_process_group()
