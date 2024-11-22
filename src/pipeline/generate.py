@@ -27,28 +27,35 @@ class MaskInterpolation(Enum):
     RIGHT_EXPONENTIAL   = "Right Exponential"
 
 @torch.no_grad()
-def new_generate(model, 
-                 configuration  = None, 
-                 title          = "asd",
-                 save_only      = False):
+def generate(model, 
+             configuration  = None, 
+             title          = "asd",
+             save_only      = False):
     
+    model.eval()
     model.apply_ema()
     model.to(util.get_device())
-    model.eval()
     
     data_visualizer     = DataVisualizer()
+    printer             = Printer()
     generated_results   = []
     perlin_generator    = FractalPerlinGenerator(configuration["Perlin"],
                                                  lambda x : x / 2 - 0.3)
 
+    # No Configuration ========================================================
     if configuration is None:
+        printer.print_log("Generating without configuration")
+
         generated_results.append(__generate_unguided(
             model,
             [[1,1], [2,5], [5, 12], [12, 28]],
             4,
             1))
     
+    # Unguided ================================================================
     if configuration is not None and configuration["Unguided"]["active"]:
+        printer.print_log("Generating unguided Samples")
+
         unguided_config = configuration["Unguided"]
         generated_results.append(__generate_unguided(
             model,
@@ -56,7 +63,10 @@ def new_generate(model,
             unguided_config["samples"],
             unguided_config["iterations"]))
 
+    # Image to Image ==========================================================
     if configuration is not None and configuration["Image2Image"]["active"]:
+        printer.print_log("Generating sketch guided Samples")
+
         i2i_config = configuration["Image2Image"]
         generated_results.append(__generate_sketch_based(
             model,
@@ -68,8 +78,11 @@ def new_generate(model,
             i2i_config["weight"],
             i2i_config["sketch"]))
 
+    # Grid ====================================================================
     if configuration is not None and configuration["Grid"]["active"]:
-        grid_config = configuration["Image2Image"]
+        printer.print_log("Generating Grid")
+
+        grid_config = configuration["Grid"]
         generated_results.append(__generate_grid(
             model,
             grid_config["labels"],
@@ -81,7 +94,10 @@ def new_generate(model,
             perlin_generator,
             grid_config["regenerate_first_chunk"]))
 
+    # Inpainting ==============================================================
     if configuration is not None and configuration["Inpainting"]["active"]:
+        printer.print_log("Generating inpainted Samples")
+
         inpainting_config = configuration["Inpainting"]
         generated_results.append(__generate_inpainting(
             model,))
@@ -115,7 +131,7 @@ def __generate_unguided(model,
                         iterations):
     samples = []
     
-    for _ in tqdm(range(iterations),
+    for i in tqdm(range(iterations),
                   total     = iterations,
                   desc      = "Generating unguided Samples",
                   position  = 0,
@@ -123,7 +139,7 @@ def __generate_unguided(model,
                   colour    = "magenta",
                   disable   = False):
             
-        label = [[5, 28]]
+        label = [labels[i % len(labels)]]
 
         sample = model.generate(
             label, 
@@ -177,7 +193,7 @@ def __generate_sketch_based(model,
     
     samples.append(sketch_tensor)
 
-    for _ in tqdm(range(iterations),
+    for i in tqdm(range(iterations),
                     total     = iterations,
                     desc      = "Generating Samples",
                     position  = 0,
@@ -185,7 +201,9 @@ def __generate_sketch_based(model,
                     colour    = "magenta",
                     disable   = False):
         
-        sample = model.generate(labels, 
+        label = [labels[i % len(labels)]]
+
+        sample = model.generate(label, 
                                 amount_samples, 
                                 input_tensor       = sketch_tensor,
                                 img2img_strength   = weight,
@@ -226,13 +244,13 @@ def __generate_grid(model,
         for cell_idx in tqdm(range(amount_cells),
                         total     = amount_cells,
                         desc      = f"Generating Grid ({i + 1})",
-                        position  = 1,
+                        position  = 0,
                         leave     = False,
                         colour    = "magenta",
                         disable   = False):
             
             coordinate  = (cell_idx % grid_x, cell_idx // grid_x)
-            label       = labels[cell_idx % len(labels)]
+            label       = [labels[cell_idx % len(labels)]]
 
             __generate_chunk(model,
                              grid,
@@ -249,11 +267,12 @@ def __generate_grid(model,
         Printer().print_log("Regenerating first Chunk")
         __generate_chunk(model,
                          grid,
+                         use_perlin,
                          perlin_generator,
                          (0, 0),
                          weight,
                          alpha,
-                         labels[0])
+                         [labels[0]])
     
     # Stitch final image ======================================================
     stitched_image, stitched_sketch = grid.stitch_image()
@@ -275,14 +294,13 @@ def __generate_chunk(model,
         perlin_image    = perlin_generator.generate_image(coordinate)
         perlin_tensor   = (torch.tensor(perlin_image, 
                                         dtype = torch.float32)
-                            .unsqueeze(dim=0)
-                            .unsqueeze(dim=0)
-                            .to(util.get_device()))
+                           .unsqueeze(dim=0)
+                           .unsqueeze(dim=0)
+                           .to(util.get_device()))
 
     mask, masked_image = grid.get_mask_for_coordinate(coordinate, 
-                                                        alpha,
-                                                        sketch = perlin_tensor)
-
+                                                      alpha,
+                                                      sketch = perlin_tensor)
     samples = model.generate(label, 
                              amount_samples, 
                              input_tensor       = perlin_tensor,
@@ -293,8 +311,8 @@ def __generate_chunk(model,
                              fast_cfg           = True)
                                 
     final_image = grid.create_final_image(samples, 
-                                            masked_image,
-                                            mask)
+                                          masked_image,
+                                          mask)
 
     grid.insert(final_image[0], coordinate, perlin_tensor[0])
 

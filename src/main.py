@@ -16,8 +16,9 @@ from debug                      import (Printer,
 from generation.models.vae      import AutoEncoderFactory
 from generation.models.ddpm     import DDPM
 from pipeline                   import generate, training
-from torch.nn.parallel          import DistributedDataParallel  as DDP
 from torchinfo                  import summary
+
+from torch.nn.parallel          import DistributedDataParallel  as DDP
 
 def prepare_arg_parser():
     parser = argparse.ArgumentParser(prog="Diffusion",        

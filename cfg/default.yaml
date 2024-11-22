@@ -3,15 +3,13 @@
 # =============================================================================
 Main:
   profile:    #true
+
   train:      #true
   validate:   false
   test:       false
   generate:   true
 
   load_model: true
-
-  img2img: true
-
 
 # =============================================================================
 # GENERATION
@@ -34,6 +32,7 @@ Generate:
     iterations: 10
 
     labels:
+      - [1, 1]
 
   Image2Image:
     active:     false
@@ -43,6 +42,7 @@ Generate:
     iterations: 10
 
     labels:
+      - [1, 1]
 
     weight:     0.7
     sketch:     test_image3.png
@@ -57,6 +57,7 @@ Generate:
     regenerate_first_chunk: true
     
     labels:
+      - [1, 1]
     
     weight:     0.7
 
@@ -65,6 +66,7 @@ Generate:
     samples: 10
 
     labels:
+      - [1, 1]
 
 # =============================================================================
 # TRAINING
@@ -113,7 +115,7 @@ Perlin:
   seed:             42
   lacunarity:       2
   persistance:      0.5
-  octaves:          6
+  octaves:          4
 
   chunks_per_image_side:  2
   image_side_resolution:  256
