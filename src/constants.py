@@ -9,15 +9,17 @@ PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH_MASTER    = os.path.join(PROJECT_PATH, "data")
 
 # Log Paths ===================================================================
-LOG_PATH            = os.path.join(DATA_PATH_MASTER, "log")
-TRAINING_LOSS_LOG   = "training_loss.txt"
-VALIDATION_LOSS_LOG = "validation_loss.txt"
-IMAGE_LOG           = os.path.join(LOG_PATH, "images")
+LOG_PATH                = os.path.join(DATA_PATH_MASTER, "log")
+TRAINING_LOSS_LOG       = "training_loss.txt"
+VALIDATION_LOSS_LOG     = "validation_loss.txt"
+IMAGE_LOG               = os.path.join(LOG_PATH, "images")
 
-LOG_ARCHITECTURE    = "architecture.txt"
-LOG_CONFIGURATION   = "config.txt"
-LOG_LOSS_FOLDER     = "losses"
-LOG_IMAGES_FOLDER   = "images"
+LOG_ARCHITECTURE        = "architecture.txt"
+LOG_CONFIGURATION       = "config.txt"
+LOG_LOSS_FOLDER         = "losses"
+LOG_IMAGES_FOLDER       = "images"
+LOG_HEIGHTMAPS          = "heightmaps"
+LOG_HEIGHTMAP_FORMAT    = ".npy"
 
 # Config Paths ================================================================
 CONFIG_PATH         = os.path.join(PROJECT_PATH, "cfg")

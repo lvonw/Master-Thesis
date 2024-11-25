@@ -12,7 +12,9 @@ import torchvision.transforms.functional    as tf
 from concurrent.futures     import ThreadPoolExecutor
 from configuration          import Section
 from data.data_access       import DataAccessor
-from data.data_util         import GeoUtil, NoDataBehaviour, NormalizationMethod
+from data.data_util         import (GeoUtil, 
+                                    NoDataBehaviour, 
+                                    NormalizationMethod)
 from debug                  import Printer
 from torchvision            import transforms
 from torchvision.datasets   import MNIST

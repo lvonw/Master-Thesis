@@ -2,6 +2,7 @@ import constants
 import os
 import torch
 import util
+import yaml
 
 import numpy                    as np
 
@@ -39,8 +40,9 @@ def generate(model,
     data_visualizer     = DataVisualizer()
     printer             = Printer()
     generated_results   = []
+    perlin_transform    = lambda x : (x / 6) - 0.8
     perlin_generator    = FractalPerlinGenerator(configuration["Perlin"],
-                                                 lambda x : x / 2 - 0.3)
+                                                 perlin_transform)
 
     # No Configuration ========================================================
     if configuration is None:
@@ -92,7 +94,8 @@ def generate(model,
             grid_config["iterations"],
             grid_config["weight"],
             perlin_generator,
-            grid_config["regenerate_first_chunk"]))
+            grid_config["regenerate_first_chunk"],
+            MaskInterpolation.RIGHT_COSINE))
 
     # Inpainting ==============================================================
     if configuration is not None and configuration["Inpainting"]["active"]:
@@ -100,23 +103,52 @@ def generate(model,
 
         inpainting_config = configuration["Inpainting"]
         generated_results.append(__generate_inpainting(
-            model,))
+            model,
+            inpainting_config["labels"],
+            inpainting_config["samples"],
+            inpainting_config["iterations"],
+            inpainting_config["image"],
+            inpainting_config["mask"],
+            MaskInterpolation.RIGHT_COSINE))
 
     # Visualization ===========================================================
-    for result in generated_results:
-        data_visualizer.create_image_tensor_tuple(result,
-                                                  title=str(title)) 
+    # for result in generated_results:
+    #     data_visualizer.create_image_tensor_tuple(result,
+    #                                               title=str(title)) 
 
-    time = datetime.now().strftime("%m-%d_%H-%M-%S")
-    data_visualizer.show_ensemble(
-        save        = True,
-        filename    = f"infinite_{title}_{time}",
-        model       = model,
-        save_only   = save_only)
+    # time = datetime.now().strftime("%m-%d_%H-%M-%S")
+    # data_visualizer.show_ensemble(
+    #     save        = True,
+    #     filename    = f"infinite_{title}_{time}",
+    #     model       = model,
+    #     save_only   = save_only)
+    data_visualizer.create_3d_plot(generated_results[0][1])
 
     # Saving ==================================================================
     # Save Full array
+    if configuration["save_array"]:
+        printer.print_log("Saving samples as arrays.")
 
+        array_path_master = os.path.join(
+            constants.LOG_PATH, 
+            model.model_family,
+            model.name,
+            constants.LOG_HEIGHTMAPS)
+        os.makedirs(array_path_master, exist_ok=True)
+
+        time    = datetime.now().strftime("%m-%d_%H-%M-%S")
+        index   = 0
+        for result in generated_results:
+            for sample in result:
+                array = sample.to(util.get_device(idle=True))[0][0].numpy()
+
+                index += 1
+                array_path = os.path.join(
+                    array_path_master,
+                    f"infinite_{title}_{time}_{index}" 
+                    + constants.LOG_HEIGHTMAP_FORMAT)
+
+                np.save(array_path, array)  
 
     # Back to image space
 
@@ -223,10 +255,11 @@ def __generate_grid(model,
                     use_perlin,
                     grid_x, 
                     grid_y,
-                    iterations             = 8,
-                    weight                 = 0.8,
-                    perlin_generator       = None,
-                    regenerate_first_chunk = True):
+                    iterations              = 8,
+                    weight                  = 0.8,
+                    perlin_generator        = None,
+                    regenerate_first_chunk  = True,
+                    alpha_mode              = MaskInterpolation.RIGHT_COSINE):
      
     # Grid ====================================================================
     grid = GenerationGrid((1,) + model.get_output_shape(), 
@@ -234,7 +267,7 @@ def __generate_grid(model,
     
     # Generate Mask Alphas ====================================================
     alpha = __get_alpha(perlin_generator.get_minimum_overlap(),
-                        MaskInterpolation.RIGHT_COSINE)
+                        alpha_mode)
     
     amount_cells = grid_x * grid_y
 

@@ -7,6 +7,7 @@ import numpy                as np
 
 from data.data_access       import DataAccessor
 from enum                   import Enum
+from matplotlib.colors      import LightSource
 from mpl_toolkits.mplot3d   import Axes3D
 from osgeo                  import gdal
 from debug                  import Printer
@@ -320,24 +321,47 @@ class DataVisualizer():
             images.append(self.create_array_from_tensor(tensor))
         
         self.create_image_plot_tuple(images, title, latent_space=latent_space)
-        
-    def create_geo_dataset_3D_figure(self, dataset):
-        dataset_array = dataset.GetRasterBand(1).ReadAsArray()
 
-        x = np.arange(dataset_array.shape[1])
-        y = np.arange(dataset_array.shape[0])
-        x, y = np.meshgrid(x, y)
+
+    def create_3d_plot(self, data_tensor):
+        # import torchvision.transforms.functional    as tf  
+        # data_tensor = tf.resize(data_tensor, 
+        #                         size=1024,
+        #                         interpolation=tf.InterpolationMode.BICUBIC)
+        data = self.create_array_from_tensor(data_tensor)
+
+        x       = np.arange(data.shape[1])
+        y       = np.arange(data.shape[0])
+        x, y    = np.meshgrid(x, y)
+
+        light_source    = LightSource(azdeg     = 270, 
+                                      altdeg    = 45)
+        shaded = light_source.shade(
+            data, 
+            cmap       = plt.get_cmap("gray"), 
+            vert_exag  = 1, 
+            blend_mode = "soft")
 
         fig = plt.figure(figsize=(10, 10))
-        ax = fig.add_subplot(111, projection="3d")
-        ax.plot_surface(x, y, dataset_array, cmap="gray")
+        ax  = fig.add_subplot(111, projection="3d", proj_type="persp")
 
-        plt.title('Raster Image')
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-        #plt.colorbar(label='Pixel Values')
-        ax.set_zlim(-1000, +1000)
+        ax.plot_surface(x, 
+                        y, 
+                        data, 
+                        facecolors  = shaded,
+                        cstride     = 1, 
+                        rstride     = 1, 
+                        antialiased = False, 
+                        shade       = False,
+                        linewidth   = 0,
+                        edgecolor   = "none")
+
+        plt.title("Raster Image")
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+        ax.set_zlabel("Height")
+        # plt.colorbar(label='Pixel Values')
+        ax.set_zlim(-1, +1)
         plt.show()
 
     def show_ensemble(self, 
