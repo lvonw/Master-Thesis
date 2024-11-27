@@ -1,5 +1,4 @@
 import constants
-import json
 import os
 import yaml
 import util
@@ -123,7 +122,7 @@ class Configuration():
         if not usages:
             return 
 
-        # distribute usage to items
+        # TODO distribute usage to items
         
     def save(self, 
              directory=constants.CONFIG_PATH, 
