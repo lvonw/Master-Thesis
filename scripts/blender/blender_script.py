@@ -29,6 +29,8 @@ HEIGHTMAP_SCALE = (111111 / 2) / 8092
 # Scale of a point in z (0u = 0m, 1u = 8092m)
 HEIGHT_SCALE    = 1/2 
 
+TERRAIN_TYPE    = "European"
+
 # Lights and Camera ===========================================================
 CAMERA_POSITION     = (HEIGHTMAP_SCALE/2, -4.5, 10)
 CAMERA_ROTATION     = (radians(37.5), 0, 0)
@@ -42,7 +44,7 @@ SUN_POSITION        = (0, 0, 2)
 SUN_ROTATION        = (radians(45), radians(45), radians(-45))
 SUN_STRENGTH        = 2.6
 
-SUBDIVS_VIEW        = 1
+SUBDIVS_VIEW        = 2
 SUBDIVS_RENDER      = 4
 
 BACKGROUND_COLOUR   = (0.06, 0.37, 1, 1.0)
@@ -55,10 +57,6 @@ class MaterialLookupTable():
     def __init__(self, biome_entries):
         self.biome_entries = biome_entries
 
-        for _, biome in biome_entries.items():
-            if biome is not None:
-                biome.post_init(0)
-
     def __getitem__(self, biome):
         return self.biome_entries[biome]
 
@@ -66,37 +64,80 @@ class BiomeEntry():
     def __init__(self, steepness_entries):
         self.steepness_entries = steepness_entries
 
-    def post_init(self, index):
-        for steepness_entry in self.steepness_entries:
-            index = steepness_entry.post_init(index)
-        
-        return index
-
     def __getitem__(self, steepness):
         for steepness_entry in self.steepness_entries:
             if steepness_entry.steepness >= steepness:
                 return steepness_entry
             
         return self.steepness_entries(len(self.steepness_entries) - 1)
-    
-    def get_all_materials(self):
-        all_materials = []
-        for steepness_entry in self.steepness_entries:
-            for height_entry in steepness_entry.height_entries:
-                all_materials.append(height_entry.material)
 
-        return all_materials
+    def create_material(self):
+        material            = bpy.data.materials.new(name="Material")
+
+        material.use_nodes  = True
+        nodes               = material.node_tree.nodes
+        links               = material.node_tree.links
+
+        nodes.clear()
+        
+        texture_coordinate      = nodes.new(type="ShaderNodeTexCoord")
+
+        previous_shader = self.steepness_entries[0].create_shader(
+            texture_coordinate, nodes, links)
+
+        for i in range(1, len(self.steepness_entries)):
+            steepness_entry     = self.steepness_entries[i]
+            material_shader     = steepness_entry.create_shader(
+                texture_coordinate, nodes, links)
+
+            previous_steepness  = self.steepness_entries[i-1].steepness
+
+            # Determine Steepness =============================================
+            # Dot Product -----------------------------------------------------
+            dot_node            = nodes.new(type = "ShaderNodeVectorMath")
+            dot_node.operation  = "DOT_PRODUCT"
+            links.new(texture_coordinate.outputs["Normal"], 
+                      dot_node.inputs[0])
+            dot_node.inputs[1].default_value = UP_VECTOR
+
+            # Arccos ----------------------------------------------------------
+            arccos_node             = nodes.new(type = "ShaderNodeMath")
+            arccos_node.operation   = "ARCCOSINE"
+            links.new(dot_node.outputs["Value"], 
+                      arccos_node.inputs["Value"])
+
+            # To Degrees ------------------------------------------------------
+            to_deg_node             = nodes.new(type = "ShaderNodeMath")
+            to_deg_node.operation   = "DEGREES"
+            links.new(arccos_node.outputs["Value"], 
+                      to_deg_node.inputs["Value"])
+
+            # Compare to steepness threshold ==================================
+            greater_than_node           = nodes.new(type = "ShaderNodeMath")
+            greater_than_node.operation = "GREATER_THAN"
+            links.new(to_deg_node.outputs["Value"], 
+                      greater_than_node.inputs["Value"])
+            greater_than_node.inputs[1].default_value = previous_steepness
+
+            mix_shader = nodes.new(type="ShaderNodeMixShader")
+            links.new(greater_than_node.outputs["Value"], mix_shader.inputs[0])
+            links.new(previous_shader.outputs[0], mix_shader.inputs[1])
+            links.new(material_shader.outputs[0], mix_shader.inputs[2])
+
+            previous_shader = mix_shader
+
+        # Shader output -------------------------------------------------------
+        output_node = nodes.new(type="ShaderNodeOutputMaterial")
+
+        links.new(previous_shader.outputs[0], 
+                  output_node.inputs["Surface"])
+
+        return material
     
 class SteepnessEntry():
     def __init__(self, steepness, height_entries):
         self.steepness      = steepness
         self.height_entries = height_entries
-
-    def post_init(self, index):
-        for height_entry in self.height_entries:
-            index = height_entry.post_init(index)
-        
-        return index
 
     def __getitem__(self, height):
         for height_entry in self.height_entries:
@@ -104,6 +145,39 @@ class SteepnessEntry():
                 return height_entry
             
         return self.height_entries(len(self.height_entries) - 1)
+    
+    def create_shader(self, texture_coordinate, nodes, links):
+
+        separate_xyz_node   = nodes.new(type="ShaderNodeSeparateXYZ")
+        links.new(texture_coordinate.outputs["Object"], 
+                  separate_xyz_node.inputs[0])
+        
+        previous_shader = self.height_entries[0].create_shader(
+                texture_coordinate, nodes, links)
+
+        for i in range(1, len(self.height_entries)):
+            height_entry    = self.height_entries[i]
+            material_shader = height_entry.create_shader(texture_coordinate, 
+                                                         nodes, 
+                                                         links)
+
+
+            previous_height = self.height_entries[i-1].height
+
+            greater_than_node           = nodes.new(type = "ShaderNodeMath")
+            greater_than_node.operation = "GREATER_THAN"
+            links.new(separate_xyz_node.outputs["Z"], 
+                      greater_than_node.inputs[0])
+            greater_than_node.inputs[1].default_value = previous_height
+
+            mix_shader = nodes.new(type="ShaderNodeMixShader")
+            links.new(greater_than_node.outputs["Value"], mix_shader.inputs[0])
+            links.new(previous_shader.outputs[0], mix_shader.inputs[1])
+            links.new(material_shader.outputs[0], mix_shader.inputs[2])
+
+            previous_shader = mix_shader
+
+        return previous_shader
 
 class HeightEntry():
     def __init__(self, height, material_values):
@@ -113,39 +187,17 @@ class HeightEntry():
 
         self.material           = None
 
-    def post_init(self, index):
-        self.material   = self.__create_material()
-        self.index      = index
-
-        return index + 1
-
-    def __create_material(self):
-        material            = bpy.data.materials.new(name="Material")
-
-        material.use_nodes  = True
-        nodes               = material.node_tree.nodes
-        links               = material.node_tree.links
-
-        nodes.clear()
-
-        # Shader output -------------------------------------------------------
-        output_node = nodes.new(type="ShaderNodeOutputMaterial")
-
+    def create_shader(self, texture_coordinate, nodes, links):
         # Just a single material ==============================================
         if not issubclass(type(self.material_values), list):
             shader_node = self.material_values.create_shader(nodes)
-
-            links.new(shader_node.outputs["BSDF"], 
-                      output_node.inputs["Surface"])     
-            return material  
-
+ 
+            return shader_node  
 
         # Multiple materials so we need to blend them =========================
-        
         # Input Geometry ------------------------------------------------------
-        tex_coord_node      = nodes.new(type="ShaderNodeTexCoord")
         separate_xyz_node   = nodes.new(type="ShaderNodeSeparateXYZ")
-        links.new(tex_coord_node.outputs["Object"], 
+        links.new(texture_coordinate.outputs["Object"], 
                   separate_xyz_node.inputs[0])
 
         # Take first material as first mixed shader ---------------------------
@@ -185,11 +237,7 @@ class HeightEntry():
 
             previous_blended_nodes = mix_shader
 
-
-        links.new(previous_blended_nodes.outputs[0], 
-                  output_node.inputs["Surface"])
-
-        return material        
+        return previous_blended_nodes        
 
 class MaterialValues():
     def __init__(self, colour, roughness, height = 1):
@@ -211,7 +259,6 @@ class MaterialValues():
 # =============================================================================
 # MATERIAL LOOKUP TABLE
 # =============================================================================
-TERRAIN_TYPE    = "European"
 MATERIAL_TABLE  = MaterialLookupTable( biome_entries = 
     {
     "European": BiomeEntry(steepness_entries = [ 
@@ -222,7 +269,7 @@ MATERIAL_TABLE  = MaterialLookupTable( biome_entries =
                 HeightEntry(
                     height          = 0.28,
                     material_values = MaterialValues(
-                        colour      = (0.21, 0.3, 0.4, 1),
+                        colour      = (0.06, 0.16, 0.17, 1),
                         roughness   = 0.1 
                     )
                 ), 
@@ -239,7 +286,7 @@ MATERIAL_TABLE  = MaterialLookupTable( biome_entries =
                         # Darker Grass
                         MaterialValues(
                             height      = 0.38,
-                            colour      = (0.1, 0.49, 0.15, 1),
+                            colour      = (0.11, 0.43, 0.15, 1),
                             roughness   = 0.6 
                         )
                     ]
@@ -249,7 +296,7 @@ MATERIAL_TABLE  = MaterialLookupTable( biome_entries =
                     height          = 1,
                     material_values = MaterialValues(
                         colour      = (1, 1, 1, 1),
-                        roughness   = 0.4 
+                        roughness   = 0.55 
                     )
                 ),
             ]
@@ -393,28 +440,15 @@ subsurf                 = heightmap_mesh.modifiers.new(name="Subdivision",
 subsurf.levels          = SUBDIVS_VIEW
 subsurf.render_levels   = SUBDIVS_RENDER
 
-bpy.context.view_layer.objects.active = heightmap_mesh
-bpy.ops.object.modifier_apply(modifier=subsurf.name)
-
 for face in heightmap_mesh.data.polygons:
     face.use_smooth = True
 
 # Add Material ================================================================
 def add_materials(heightmap, table):
     mesh = heightmap.data
-
-    for material in table[TERRAIN_TYPE].get_all_materials():
-        mesh.materials.append(material)
-
-    for polygon in mesh.polygons:
-        heights = [mesh.vertices[vertex].co.z for vertex in polygon.vertices]
-
-        height                  = np.mean(heights)
-        steepness               = polygon.normal.angle(UP_VECTOR) * 180 / np.pi 
-
-        polygon.material_index  = (table[TERRAIN_TYPE]
-                                        [steepness]
-                                        [height].index)
+    
+    material = table[TERRAIN_TYPE].create_material()
+    mesh.materials.append(material)
         
 add_materials(heightmap_mesh, MATERIAL_TABLE)
 
