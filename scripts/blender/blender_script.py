@@ -29,10 +29,10 @@ HEIGHTMAP_SCALE = (111111 / 2) / 8092
 # Scale of a point in z (0u = 0m, 1u = 8092m)
 HEIGHT_SCALE    = 1/2 
 
-TERRAIN_TYPE    = "European"
+TERRAIN_TYPE    = "Desert"
 
 # Lights and Camera ===========================================================
-CAMERA_POSITION     = (HEIGHTMAP_SCALE/2, -4.5, 10)
+CAMERA_POSITION     = (HEIGHTMAP_SCALE/2, -4.15, 9.3)
 CAMERA_ROTATION     = (radians(37.5), 0, 0)
 CAMERA_CLIP_START   = 0.5
 CAMERA_CLIP_END     = 100
@@ -347,7 +347,81 @@ MATERIAL_TABLE  = MaterialLookupTable( biome_entries =
         )   
     ]),
     "Coast":    None,
-    "Desert":   None,
+    "Desert": BiomeEntry(steepness_entries = [ 
+        SteepnessEntry(
+            steepness       = 14,
+            height_entries  = [
+                HeightEntry(
+                    height          = 0.4,
+                    material_values = [
+                        # Light Sand
+                        MaterialValues(
+                            height      = 0.21,
+                            colour      = (0.69, 0.69, 0.16, 1),
+                            roughness   = 0.7 
+                        ),
+                        # Sand
+                        MaterialValues(
+                            height      = 0.3,
+                            colour      = (0.5, 0.48, 0.08, 1),
+                            roughness   = 0.9 
+                        ),
+                        # Red Sand
+                        MaterialValues(
+                            height      = 0.38,
+                            colour      = (0.5, 0.32, 0.07, 1),
+                            roughness   = 0.9 
+                        ),
+                        # Yellow Sand
+                        MaterialValues(
+                            height      = 0.5,
+                            colour      = (0.5, 0.48, 0.08, 1),
+                            roughness   = 0.9 
+                        )
+                    ]
+                )
+            ]
+        ),
+        SteepnessEntry(
+            steepness       = 30,
+            height_entries  = [
+                # Rock
+                HeightEntry(
+                    height          = 1,
+                    material_values = [
+                        # Orange Rock
+                        MaterialValues(
+                            height      = 0.4,
+                            colour      = (0.55, 0.23, 0.06, 1),
+                            roughness   = 1 
+                        ),
+                        # Red Rock
+                        MaterialValues(
+                            height      = 0.8,
+                            colour      = (0.3, 0.07, 0.02, 1),
+                            roughness   = 1 
+                        )
+                    ]
+                )
+            ]
+        ),
+        SteepnessEntry(
+            steepness       = 90,
+            height_entries  = [
+                HeightEntry(
+                    height          = 1,
+                    material_values = [
+                        # Dark Red Rock
+                        MaterialValues(
+                            height      = 1,
+                            colour      = (0.45, 0.12, 0.02, 1),
+                            roughness   = 1 
+                        )
+                    ]
+                )
+            ]
+        )     
+    ]),
     "Polar":    None,
     "Grey": BiomeEntry(steepness_entries = [ 
         SteepnessEntry(
@@ -391,6 +465,7 @@ for obj in bpy.context.collection.objects:
 # Load the Heightmap ==========================================================
 heightmap   = np.load(HEIGHTMAP_PATH)
 heightmap   = (heightmap + 1) * HEIGHT_SCALE
+heightmap   = np.flip(heightmap, 0)
 
 print (f"Min Height: {np.min(heightmap)}")
 print (f"Max Height: {np.max(heightmap)}")

@@ -40,9 +40,9 @@ Generate:
     samples:    1
     iterations: 1
     labels:
-      - [8, 12]
+      - [10, 12]
     weight:     0.75
-    sketch:     test_image5.png
+    sketch:     test_image6.png
   # ---------------------------------------------------------------------------
   Grid:
     active:     #true
