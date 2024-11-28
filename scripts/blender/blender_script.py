@@ -7,7 +7,46 @@ import bmesh
 
 import numpy    as np
 
+from math       import radians
 from mathutils  import Vector 
+
+# =============================================================================
+# SETTINGS
+# =============================================================================
+# Paths =======================================================================
+MODEL           = "ltd_v3"
+# Enter the path to the project here
+PROJECT_PATH    = "E:\Developer\Master-Thesis"
+DIFFUSION       = "data\log\diffusion"
+# Enter the heightmap file here
+FILE            = "infinite_asd_11-25_15-59-24_2.npy"
+HEIGHTMAP_PATH  = f"{PROJECT_PATH}\{DIFFUSION}\{MODEL}\heightmaps\{FILE}"
+RENDER_PATH     = f"{PROJECT_PATH}\{DIFFUSION}\{MODEL}\\renders\{FILE}"
+
+# Heightmap Params ============================================================
+# Scale of points in x and y in meters (1u = 8092m)
+HEIGHTMAP_SCALE = (111111 / 2) / 8092
+# Scale of a point in z (0u = 0m, 1u = 8092m)
+HEIGHT_SCALE    = 1/2 
+
+# Lights and Camera ===========================================================
+CAMERA_POSITION     = (HEIGHTMAP_SCALE/2, -4.5, 10)
+CAMERA_ROTATION     = (radians(37.5), 0, 0)
+CAMERA_CLIP_START   = 0.5
+CAMERA_CLIP_END     = 100
+CAMERA_ASPECT_RATIO = (4, 3)
+
+RENDER_RESOLUTION   = 1500 
+
+SUN_POSITION        = (0, 0, 2)
+SUN_ROTATION        = (radians(45), radians(45), radians(-45))
+SUN_STRENGTH        = 2.6
+
+SUBDIVS_VIEW        = 1
+SUBDIVS_RENDER      = 4
+
+BACKGROUND_COLOUR   = (0.06, 0.37, 1, 1.0)
+BACKGROUND_STRENGTH = 0.2
 
 # =============================================================================
 # HELPER CLASSES
@@ -169,42 +208,13 @@ class MaterialValues():
 
         return shader_node 
 
-
 # =============================================================================
-# SETTINGS
+# MATERIAL LOOKUP TABLE
 # =============================================================================
-# Paths =======================================================================
-MODEL           = "ltd_v3"
-# Enter the path to the project here
-PROJECT_PATH    = "E:\Developer\Master-Thesis"
-DIFFUSION       = "data\log\diffusion"
-# Enter the heightmap file here
-FILE            = "infinite_asd_11-25_15-59-24_2.npy"
-HEIGHTMAP_PATH  = f"{PROJECT_PATH}\{DIFFUSION}\{MODEL}\heightmaps\{FILE}"
-RENDER_PATH     = f"{PROJECT_PATH}\{DIFFUSION}\{MODEL}\\renders\{FILE}"
-
-# Heightmap Params ============================================================
-# Scale of points in x and y in meters (1u = 8092m)
-HEIGHTMAP_SCALE = (111111 / 2) / 8092
-# Scale of a point in z (0u = 0m, 1u = 8092m)
-HEIGHT_SCALE    = 1/2 
-
-# Lights and Camera ===========================================================
-CAMERA_POSITION     = (-1, -1, 2)
-CAMERA_ROTATION     = (45,  0, -45)
-CAMERA_CLIP_START   = 0.5
-CAMERA_CLIP_END     = 100
-
-SUN_POSITION        = (1, 1, 3)
-
-SUBDIVS_VIEW        = 1
-SUBDIVS_RENDER      = 4
-
-# Material Lookup =============================================================
-TERRAIN_TYPE    = "Tropical"
+TERRAIN_TYPE    = "European"
 MATERIAL_TABLE  = MaterialLookupTable( biome_entries = 
     {
-    "Tropical": BiomeEntry(steepness_entries = [ 
+    "European": BiomeEntry(steepness_entries = [ 
         SteepnessEntry(
             steepness       = 14,
             height_entries  = [
@@ -223,13 +233,13 @@ MATERIAL_TABLE  = MaterialLookupTable( biome_entries =
                         # Fresh Grass
                         MaterialValues(
                             height      = 0.3,
-                            colour      = (0.18, 0.47, 0.18, 1),
+                            colour      = (0.03, 0.59, 0.13, 1),
                             roughness   = 0.55 
                         ),
                         # Darker Grass
                         MaterialValues(
                             height      = 0.38,
-                            colour      = (0.18, 0.3, 0.18, 1),
+                            colour      = (0.1, 0.49, 0.15, 1),
                             roughness   = 0.6 
                         )
                     ]
@@ -238,7 +248,7 @@ MATERIAL_TABLE  = MaterialLookupTable( biome_entries =
                 HeightEntry(
                     height          = 1,
                     material_values = MaterialValues(
-                        colour      = (0.9, 0.9, 0.9, 1),
+                        colour      = (1, 1, 1, 1),
                         roughness   = 0.4 
                     )
                 ),
@@ -292,6 +302,30 @@ MATERIAL_TABLE  = MaterialLookupTable( biome_entries =
     "Coast":    None,
     "Desert":   None,
     "Polar":    None,
+    "Grey": BiomeEntry(steepness_entries = [ 
+        SteepnessEntry(
+            steepness       = 90,
+            height_entries  = [
+                HeightEntry(
+                    height          = 1,
+                    material_values = [
+                        # Fresh Grass
+                        MaterialValues(
+                            height      = 0.0,
+                            colour      = (0, 0, 0, 1),
+                            roughness   = 1 
+                        ),
+                        # Darker Grass
+                        MaterialValues(
+                            height      = 1,
+                            colour      = (1, 1, 1, 1),
+                            roughness   = 0.6 
+                        )
+                    ]
+                ), 
+            ]
+        ),
+    ])
     }
 )
 
@@ -387,7 +421,9 @@ add_materials(heightmap_mesh, MATERIAL_TABLE)
 # Lighting ====================================================================
 light = bpy.data.objects.new("Light", 
                              bpy.data.lights.new("Light", type="SUN"))
-light.location = SUN_POSITION
+light.location          = SUN_POSITION
+light.rotation_euler    = SUN_ROTATION
+light.data.energy       = SUN_STRENGTH
 bpy.context.collection.objects.link(light)
 
 # Camera ====================================================================
@@ -400,11 +436,17 @@ camera.data.clip_start  = CAMERA_CLIP_START
 camera.data.clip_end    = CAMERA_CLIP_END
 
 bpy.context.collection.objects.link(camera)
-bpy.context.scene.camera = camera
+bpy.context.scene.camera                = camera
+bpy.context.scene.render.resolution_x   = RENDER_RESOLUTION
+bpy.context.scene.render.resolution_y   = int(
+    RENDER_RESOLUTION * CAMERA_ASPECT_RATIO[1] / CAMERA_ASPECT_RATIO[0])
+
 
 # Adjust the background =======================================================
 # Maybe make this a different colour instead
-scene = bpy.context.scene
-scene.world.node_tree.nodes["Background"].inputs[1].default_value = 0.5
+background = bpy.context.scene.world.node_tree.nodes["Background"]
+background.inputs["Color"].default_value    = BACKGROUND_COLOUR
+background.inputs["Strength"].default_value = BACKGROUND_STRENGTH
+
 
 print ("Finished!")
