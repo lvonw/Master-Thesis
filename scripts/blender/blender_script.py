@@ -19,7 +19,8 @@ MODEL           = "ltd_v3"
 PROJECT_PATH    = "E:\Developer\Master-Thesis"
 DIFFUSION       = "data\log\diffusion"
 # Enter the heightmap file here
-FILE            = "infinite_asd_11-25_15-59-24_2.npy"
+FILENAME        = "infinite_asd_11-25_15-59-24_2"
+FILE            = f"{FILENAME}.npy"
 HEIGHTMAP_PATH  = f"{PROJECT_PATH}\{DIFFUSION}\{MODEL}\heightmaps\{FILE}"
 RENDER_PATH     = f"{PROJECT_PATH}\{DIFFUSION}\{MODEL}\\renders\{FILE}"
 
@@ -28,6 +29,8 @@ RENDER_PATH     = f"{PROJECT_PATH}\{DIFFUSION}\{MODEL}\\renders\{FILE}"
 HEIGHTMAP_SCALE = (111111 / 2) / 8092
 # Scale of a point in z (0u = 0m, 1u = 8092m)
 HEIGHT_SCALE    = 1/2 
+
+HEIGHTMAP_BASE_RESOLUTION = 256
 
 TERRAIN_TYPE    = "Desert"
 
@@ -48,7 +51,7 @@ SUBDIVS_VIEW        = 2
 SUBDIVS_RENDER      = 4
 
 BACKGROUND_COLOUR   = (0.06, 0.37, 1, 1.0)
-BACKGROUND_STRENGTH = 0.2
+BACKGROUND_STRENGTH = 0.4
 
 # =============================================================================
 # HELPER CLASSES
@@ -467,17 +470,22 @@ heightmap   = np.load(HEIGHTMAP_PATH)
 heightmap   = (heightmap + 1) * HEIGHT_SCALE
 heightmap   = np.flip(heightmap, 0)
 
+
+heightmap_scale_factor = (heightmap.shape[1] / HEIGHTMAP_BASE_RESOLUTION,
+                          heightmap.shape[0] / HEIGHTMAP_BASE_RESOLUTION)
+
 print (f"Min Height: {np.min(heightmap)}")
 print (f"Max Height: {np.max(heightmap)}")
+print (f"Scale Factor: {heightmap_scale_factor}")
 
 # Create mesh from heightmap ==================================================
-def generate_heightmap_mesh(name, heightmap):
+def generate_heightmap_mesh(name, heightmap, scale_factor):
     heightmap_size_x = heightmap.shape[1]
     heightmap_size_y = heightmap.shape[0]
 
     # Create meshgrid for easy indexing ---------------------------------------
-    x       = np.linspace(0, 1, heightmap_size_x)
-    y       = np.linspace(0, 1, heightmap_size_y)
+    x       = np.linspace(0, scale_factor[0], heightmap_size_x)
+    y       = np.linspace(0, scale_factor[1], heightmap_size_y)
     x, y    = np.meshgrid(x, y)
     
     # Create vertices and faces -----------------------------------------------
@@ -507,7 +515,9 @@ def generate_heightmap_mesh(name, heightmap):
     
     return obj
 
-heightmap_mesh = generate_heightmap_mesh("Heightmap", heightmap)
+heightmap_mesh = generate_heightmap_mesh("Heightmap", 
+                                         heightmap, 
+                                         heightmap_scale_factor)
 
 # Add subdivision surface modifier ============================================  
 subsurf                 = heightmap_mesh.modifiers.new(name="Subdivision", 

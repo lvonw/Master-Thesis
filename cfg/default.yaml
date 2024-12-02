@@ -16,6 +16,8 @@ Main:
 # =============================================================================
 Generate:  
   save_array: true
+  save_plots: true
+  show_3d:    true
 
   Perlin:
     seed:                   42
@@ -35,13 +37,16 @@ Generate:
       - [1, 1]
   # ---------------------------------------------------------------------------
   Image2Image:
-    active:     true
-    use_perlin: #true
+    active:             true
+    use_perlin:         true
+    combine:            true
+    combination_alpha:  0.8
+
     samples:    1
     iterations: 1
     labels:
-      - [10, 12]
-    weight:     0.75
+      - [1, 12]
+    weight:     0.9
     sketch:     test_image6.png
   # ---------------------------------------------------------------------------
   Grid:
@@ -52,7 +57,7 @@ Generate:
     iterations: 1
     regenerate_first_chunk: true
     labels:
-      - [1, 1]
+      - [1, 12]
     weight:     0.75
   # ---------------------------------------------------------------------------
   Inpainting:
@@ -80,8 +85,6 @@ Training:
 
   Validation:
     z_score: 3
-
-
 
 # =============================================================================
 # MODEL

@@ -2,11 +2,9 @@ import constants
 import math
 import multiprocessing
 import os
-import time
 import torch
 
 import numpy                                as np
-import torch.distributed                    as distributed 
 import torchvision.transforms.functional    as tf
 
 from concurrent.futures     import ThreadPoolExecutor
@@ -23,7 +21,8 @@ from tqdm                   import tqdm
 
 
 class DatasetFactory():
-    def create_dataset(data_configuration: Section, prepare = False):
+    def create_dataset(data_configuration: Section, 
+                       prepare = False):
         printer = Printer()
 
         if data_configuration["use_MNIST"]:
@@ -73,8 +72,8 @@ class DatasetFactory():
                                          channel_cache, 
                                          label_cache)    
   
-        channel_cache   = DatasetFactory.__pre_process_data_cache(channel_cache)
-        amount_classes  = DatasetFactory.get_label_amounts(data_configuration)
+        channel_cache  = DatasetFactory.__pre_process_data_cache(channel_cache)
+        amount_classes = DatasetFactory.get_label_amounts(data_configuration)
 
         if data_configuration["RandomCrop"]["active"]:
             printer.print_log("Activating RandomCrop transform")
@@ -105,7 +104,6 @@ class DatasetFactory():
             cache_dems=data_configuration["Cache_DEMs"],
             amount_classes=amount_classes) 
         
-        # TODO
         if prepare:
             loss_weights        = terrain_dataset.prepare_dataset(
                 data_configuration["loader_workers"])
@@ -166,6 +164,7 @@ class DatasetFactory():
             label_cache.append((geo_transform, geo_array))
 
     def __get_amount_classes(label_cache):
+        # Deprecated use get_label_amounts() instead
         amount_classes = 0
         
         # Might have to consider nodata later
@@ -229,13 +228,13 @@ class TerrainDataset(Dataset):
                  DEM_list, 
                  channel_cache,
                  label_cache, 
-                 transform=None,
-                 source_dataset=constants.DATA_PATH_DEMS,
-                 cache_dems = True,
+                 transform      = None,
+                 source_dataset = constants.DATA_PATH_DEMS,
+                 cache_dems     = True,
                  amount_classes = 0):
         self.printer                = Printer()
 
-        self.DEM_list               = DEM_list
+        self.dem_list               = DEM_list
         self.transform              = transform
         self.source_dataset         = source_dataset
         
@@ -247,37 +246,60 @@ class TerrainDataset(Dataset):
         self.channel_cache          = channel_cache
         self.label_cache            = label_cache
 
-        # # Thread-Safe cache, introduces massive overheads
+        # Thread-Safe cache, introduces massive overheads for single threads
         manager                     = multiprocessing.Manager()
-        self.shared_dataset_cache   = manager.list()        
+        self.shared_dataset_cache   = manager.list()       
+
+        # For when we only want to load as we go
+        self.prepared               = False 
 
     def __len__(self):
-        return len(self.DEM_list)
+        return len(self.dem_list)
 
-    def __getitem__(self, index):        
-        cache       = self.shared_dataset_cache[index]
-        metadata    = cache.metadata
+    def __getitem__(self, index):
+        if self.prepared:        
+            cache       = self.shared_dataset_cache[index]
+            metadata    = cache.metadata
+        else: 
+            cache       = GeoDatasetCache()
 
-        if cache.did_not_cache_dem:
-            pass
+        # Channels ============================================================
+        if not cache.did_cache_dem:
+            dem_file                            = self.dem_list[index]
+            cache.metadata["filename"]          = dem_file
+            dem_tensor, dem_shape, dem_dataset  = self.__load_dem(dem_file)  
+
+            if self.channel_cache or self.label_cache:
+                (top_left_geo, bot_right_geo), dem_geo_transform = (
+                    self.__load_dem_geo_coordinates(dem_dataset, dem_shape))
+                
+                cache.dem_geo_coordinates   = (top_left_geo, bot_right_geo)
+                cache.dem_geo_transform     = dem_geo_transform
         else:
             dem_tensor  = cache.dem_tensor 
 
         # Channels ============================================================
-        if cache.did_not_cache_channels:
-            pass
+        if not cache.did_cache_channels:
+            data_entry  = dem_tensor
         if len(cache.channel_tensor) > 0:
             channels    = [dem_tensor, cache.label_tensor]        
-            data_entry = torch.cat(channels, dim=0)
+            data_entry  = torch.cat(channels, dim=0)
         else:
-            data_entry = dem_tensor
+            data_entry  = dem_tensor
 
         
         # Label Frames ========================================================
-        if cache.did_not_cache_labels:
-            pass
-        else:
-            label_frames = cache.label_frames
+        if not cache.did_not_cache_labels:
+            for cache in self.label_cache:
+                label, label_data_frame = self.__load_label(cache, 
+                                                            top_left_geo, 
+                                                            bot_right_geo)
+
+                cache.label_geo_transforms.append(cache[0]) 
+                cache.label_tensor = label
+                cache.label_frames.append(label_data_frame)
+    
+        label_frames = cache.label_frames
 
         # Transforms ==========================================================
         if self.transform:
@@ -289,7 +311,6 @@ class TerrainDataset(Dataset):
         if label_frames is not None and len(label_frames) > 0:
             labels = []
             for _, label_frame in enumerate(label_frames):
-                # TODO bit of a workaround, but low prio for now
                 label = torch.median(label_frame)
                 label = torch.tensor(0) if label.item() < 0 else label
                 labels.append(label)
@@ -299,32 +320,37 @@ class TerrainDataset(Dataset):
             label = cache.label_tensor
 
         return data_entry, label, metadata
-    
 
-    def prepare_dataset(self, loader_workers=1):
+    def get_data_by_name(self, filename):
+        try:
+            index = self.dem_list.index(filename)
+            return self[index]
+
+        except ValueError:
+            self.printer.print_log("Item not in list")
+
+            return None, None, None
+        
+    def prepare_dataset(self, loader_workers=1, analyse = False):
         with ThreadPoolExecutor(max_workers=loader_workers) as executor:
-            indices = range(len(self.DEM_list))
+            indices = range(len(self.dem_list))
             list(tqdm(executor.map(self.__prefetch_cache, indices),
                     total=len(indices), 
                     desc="Preparing Dataset"))
         
         self.printer.print_log(f"Cached {len(self.dataset_cache)} Items")
-
-        # analysis_result = self.__analyse_dataset()
-        # self.printer.print_log(analysis_result)
-        # for label, label_amount in enumerate(analysis_result.label_bucket):
-            # self.loss_weights[label] = len(self.DEM_list) / (label_amount)
         
+        # Analysis ============================================================
         loss_weights = None
+        if analyse:
+            analysis_result = self.__analyse_dataset()
+            self.printer.print_log(analysis_result)
+            for label, label_amount in enumerate(analysis_result.label_bucket):
+                self.loss_weights[label] = len(self.dem_list) / (label_amount)
+        
 
         # Transfer our single process cache to the shared cache
         self.printer.print_log("Transferring to shared cache...")
-
-        # for idx in tqdm(range(len(self.dataset_cache)),
-        #                 total=len(self.dataset_cache),
-        #                 desc="Transferring cache"):
-        #     self.shared_dataset_cache.append(self.dataset_cache[idx])
-        #     self.dataset_cache[idx] = None
 
         manager                     = multiprocessing.Manager()
         self.shared_dataset_cache   = manager.list(self.dataset_cache)
@@ -332,10 +358,12 @@ class TerrainDataset(Dataset):
         self.dataset_cache.clear()
         self.printer.print_log("Finished")
 
+        self.prepared = True
+
         return loss_weights
         
     def __prefetch_cache(self, index):
-        filename                    = self.DEM_list[index]
+        filename                    = self.dem_list[index]
         geo_cache                   = GeoDatasetCache()
         self.dataset_cache[index]   = geo_cache
         
@@ -345,6 +373,7 @@ class TerrainDataset(Dataset):
         # DEMs ================================================================
         dem_tensor, dem_shape, dem_dataset  = self.__load_dem(filename)  
         geo_cache.dem_tensor                = dem_tensor
+        geo_cache.did_cache_dem             = True
 
         if self.channel_cache or self.label_cache:
             (top_left_geo, bot_right_geo), dem_geo_transform = (
@@ -352,6 +381,7 @@ class TerrainDataset(Dataset):
             
             geo_cache.dem_geo_coordinates   = (top_left_geo, bot_right_geo)
             geo_cache.dem_geo_transform     = dem_geo_transform
+
         else:
             return
         
@@ -369,7 +399,8 @@ class TerrainDataset(Dataset):
                 geo_cache.channel_geo_transforms.append(cache[0])
 
             channels = torch.cat(channels, dim=0)
-            geo_cache.channel_tensor = channels
+            geo_cache.channel_tensor        = channels
+            geo_cache.did_cache_channels    = True
 
         # Labels ==============================================================
         if self.label_cache:
@@ -381,6 +412,9 @@ class TerrainDataset(Dataset):
                 geo_cache.label_geo_transforms.append(cache[0]) 
                 geo_cache.label_tensor  = label
                 geo_cache.label_frames.append(label_data_frame)
+            
+            geo_cache.did_cache_labels    = True
+
 
     def __load_dem(self, filename):
         dem_dataset = DataAccessor.open_DEM(filename, self.source_dataset) 
@@ -504,9 +538,9 @@ class GeoDatasetCache():
         self.channel_geo_transforms = channel_geo_transforms
         self.channel_tensor         = channel_tensor
 
-        self.did_not_cache_dem      = False
-        self.did_not_cache_channels = False
-        self.did_not_cache_labels   = False
+        self.did_cache_dem          = False
+        self.did_cache_channels     = False
+        self.did_cache_labels       = False
 
         self.uncached_dem           = None
         self.uncached_channels      = []        

@@ -241,14 +241,17 @@ class DataVisualizer():
     
     def create_image_plot(self,
                           image_data, 
-                          title         = None,
-                          x_label       = None,
-                          y_label       = None, 
-                          cmap          = "gray",
-                          latent_space  = True,
-                          append        = True):
+                          title             = None,
+                          x_label           = None,
+                          y_label           = None, 
+                          cmap              = "gray",
+                          latent_space      = True,
+                          append            = True,
+                          three_dimensional = False):
         
-        min_value, max_value = (0., 1.) if latent_space else (None, None)
+        min_value, max_value = (-1., 1.) if latent_space else (None, None)
+
+        plot_type = PlotType.PLANE if three_dimensional else PlotType.IMAGE
 
         image_plot = Plot(data      = image_data, 
                           title     = title,
@@ -257,7 +260,7 @@ class DataVisualizer():
                           cmap      = cmap,
                           min_value = min_value,
                           max_value = max_value,
-                          plot_type = PlotType.IMAGE)
+                          plot_type = plot_type)
         
         if append:
             self.plot_tuples.append((image_plot,))
@@ -267,22 +270,24 @@ class DataVisualizer():
 
     def create_image_plot_tuple(self,
                           image_datas, 
-                          title         = None,
-                          x_label       = None,
-                          y_label       = None,  
-                          cmap          = "gray",
-                          latent_space  = True):
+                          title             = None,
+                          x_label           = None,
+                          y_label           = None,  
+                          cmap              = "gray",
+                          latent_space      = True, 
+                          three_dimensional = False):
         
         image_plots = []
         for image_data in image_datas:
             image_plots.append(self.create_image_plot(
                 image_data, 
-                title           = title,
-                x_label         = x_label,
-                y_label         = y_label,
-                cmap            = cmap,
-                latent_space    = latent_space,
-                append          = False))
+                title               = title,
+                x_label             = x_label,
+                y_label             = y_label,
+                cmap                = cmap,
+                latent_space        = latent_space,
+                append              = False,
+                three_dimensional   = three_dimensional))
             
         self.plot_tuples.append(tuple(image_plots))
             
@@ -315,19 +320,19 @@ class DataVisualizer():
     def create_image_tensor_tuple(self, 
                                   tensors, 
                                   title=None, 
-                                  latent_space  = False):
+                                  latent_space      = False, 
+                                  three_dimensional = False):
         images = []
         for tensor in tensors:
             images.append(self.create_array_from_tensor(tensor))
         
-        self.create_image_plot_tuple(images, title, latent_space=latent_space)
+        self.create_image_plot_tuple(images, 
+                                     title, 
+                                     latent_space       = latent_space,
+                                     three_dimensional  = three_dimensional)
 
 
     def create_3d_plot(self, data_tensor):
-        # import torchvision.transforms.functional    as tf  
-        # data_tensor = tf.resize(data_tensor, 
-        #                         size=1024,
-        #                         interpolation=tf.InterpolationMode.BICUBIC)
         data = self.create_array_from_tensor(data_tensor)
 
         x       = np.arange(data.shape[1])
@@ -360,7 +365,6 @@ class DataVisualizer():
         ax.set_xlabel("X")
         ax.set_ylabel("Y")
         ax.set_zlabel("Height")
-        # plt.colorbar(label='Pixel Values')
         ax.set_zlim(-1, +1)
         plt.show()
 
@@ -416,8 +420,45 @@ class DataVisualizer():
                         fig.colorbar(cax, ax = ax)
 
                     case PlotType.PLANE:
-                        # todo
-                        pass
+                        data    = np.flip(plot.data, 0)
+
+                        x       = np.arange(data.shape[1])
+                        y       = np.arange(data.shape[0])
+                        x, y    = np.meshgrid(x, y)
+
+                        light_source    = LightSource(azdeg     = 270, 
+                                                      altdeg    = 45)
+                        shaded = light_source.shade(
+                            data, 
+                            cmap       = plt.get_cmap("gray"), 
+                            vert_exag  = 1, 
+                            blend_mode = "soft")
+                        
+                        fig.delaxes(ax)
+                        ax = fig.add_subplot(amount_rows, 
+                                             amount_columns, 
+                                             column * amount_columns + row + 1, 
+                                             projection = "3d",
+                                             proj_type  = "persp")
+                        axs[column, row] = ax
+
+                        ax.plot_surface(x, 
+                                        y, 
+                                        data, 
+                                        facecolors  = shaded,
+                                        cstride     = 1, 
+                                        rstride     = 1, 
+                                        antialiased = False, 
+                                        shade       = False,
+                                        linewidth   = 0,
+                                        edgecolor   = "none")
+
+                        ax.set_xlabel("X")
+                        ax.set_ylabel("Y")
+                        ax.set_zlabel("Height")
+                        ax.set_zlim(-1, +1)
+
+                        ax.view_init(elev=30, azim=-60)
 
         for row in range(amount_rows):
             for column in range(len(self.plot_tuples[row]), amount_columns):

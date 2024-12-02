@@ -1,0 +1,67 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass
+  [ 12pt
+   % beidseitiger Druck
+   % , twoside
+   % Kapitel beginnen auf einer rechten Seite
+   , openright 
+   % Verzeichnisse im Inhaltsverzeichnis         
+   , listof=totoc
+   % Literaturverzeichnis im Inhaltsverzeichnis       
+   , bibliography=totoc 
+   % Absätze durch einen vergrößerten Zeilenabstand getrennt
+   , parskip=full
+   % Entwurfsversion       
+   % , draft    
+   % Dokumentenklasse: KOMA-Script Buch        
+  ]{scrreprt}          
+
+\input{templates/header}
+
+\begin{document}
+
+\pagenumbering{Roman}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Titelseite
+\newgeometry{left=3cm,right=2cm,top=2.0cm,bottom=2.0cm}
+\include{templates/titelseite}
+\restoregeometry
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Mehr Platz für Nummerierung benötigt in Verzeichnissen, wenn ein Kapitel 10 
+% oder mehr Bilder hat
+% Für Abbildungsverzeichnis
+\DeclareTOCStyleEntry[numwidth=3em]{tocline}{figure}
+% Für Tabellenverzeichnis 
+%\DeclareTOCStyleEntry[numwidth=3em]{tocline}{table} 
+
+\tableofcontents
+\listoffigures
+\listoftables
+\cleardoublepage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagenumbering{arabic}
+
+\begin{onehalfspace}
+\include{chapters/Abstract}
+\include{chapters/Einleitung}
+\include{chapters/Grundlagen}
+\include{chapters/Hauptkapitel_1}
+\include{chapters/Hauptkapitel_2}
+\include{chapters/Zusammenfassung}
+\include{chapters/Anhang}
+\end{onehalfspace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% create with BibTeX, gives "chapter without number" warning in log
+\printbibliography{} 
+
+\include{stuff/footer}
+
+\end{document}

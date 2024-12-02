@@ -2,7 +2,6 @@ import constants
 import os
 import torch
 import util
-import yaml
 
 import numpy                    as np
 
@@ -40,7 +39,7 @@ def generate(model,
     data_visualizer     = DataVisualizer()
     printer             = Printer()
     generated_results   = []
-    perlin_transform    = lambda x : (x / 6) - 0.8
+    perlin_transform    = lambda x : x#(x / 6) - 0.8
     perlin_generator    = FractalPerlinGenerator(configuration["Perlin"],
                                                  perlin_transform)
 
@@ -78,7 +77,9 @@ def generate(model,
             i2i_config["samples"],
             i2i_config["iterations"],
             i2i_config["weight"],
-            i2i_config["sketch"]))
+            i2i_config["sketch"],
+            i2i_config["combine"],
+            i2i_config["combination_alpha"]))
 
     # Grid ====================================================================
     if configuration is not None and configuration["Grid"]["active"]:
@@ -111,19 +112,29 @@ def generate(model,
             inpainting_config["mask"],
             MaskInterpolation.RIGHT_COSINE))
 
-    # Visualization ===========================================================
-    # for result in generated_results:
-    #     data_visualizer.create_image_tensor_tuple(result,
-    #                                               title=str(title)) 
+    # Visualisation ===========================================================
+    printer.print_log("Preparing Visualisations...")
+    
+    for result in generated_results:
+        # 2D
+        data_visualizer.create_image_tensor_tuple(result,
+                                                  title=str(title),
+                                                  three_dimensional=False) 
+        # 3D
+        if configuration["show_3d"]:
+            data_visualizer.create_image_tensor_tuple(result,
+                                                      title=str(title),
+                                                      three_dimensional=True) 
 
-    # time = datetime.now().strftime("%m-%d_%H-%M-%S")
-    # data_visualizer.show_ensemble(
-    #     save        = True,
-    #     filename    = f"infinite_{title}_{time}",
-    #     model       = model,
-    #     save_only   = save_only)
-    data_visualizer.create_3d_plot(generated_results[0][1])
-
+    time = datetime.now().strftime("%m-%d_%H-%M-%S")
+    save = (save_only 
+            or (configuration is not None and configuration["save_plots"]))
+    data_visualizer.show_ensemble(
+        save        = save,
+        filename    = f"infinite_{title}_{time}",
+        model       = model,
+        save_only   = save_only)
+    
     # Saving ==================================================================
     # Save Full array
     if configuration["save_array"]:
@@ -140,7 +151,15 @@ def generate(model,
         index   = 0
         for result in generated_results:
             for sample in result:
-                array = sample.to(util.get_device(idle=True))[0][0].numpy()
+                if isinstance(sample, torch.Tensor):
+                    array = sample.to(util.get_device(idle=True)).numpy()
+                else:
+                    array = sample
+
+                if len(array.shape) == 4: 
+                    array = array[0][0]
+                elif len(array.shape) == 3: 
+                    array = array[0]
 
                 index += 1
                 array_path = os.path.join(
@@ -194,12 +213,14 @@ def __generate_sketch_based(model,
                             amount_samples,
                             iterations,
                             weight,
-                            sketch):
+                            sketch,
+                            combine,
+                            combination_alpha):
     
     sketch_tensor   = None 
     samples         = []
 
-    # Use Perlin as Sketch ====================================================
+    # Use Perlin as Sketch, takes precedent over specified image ==============
     if use_perlin:
         coordinate      = (0, 0)
         perlin_image    = perlin_generator.generate_image(coordinate)
@@ -209,17 +230,29 @@ def __generate_sketch_based(model,
                            .unsqueeze(dim=0)
                            .to(util.get_device()))
     # Load Sketch if necessary ================================================
-    elif sketch is not None:
+    if sketch is not None:
         input_image_path    = os.path.join(constants.RESOURCE_PATH_TEST_IMAGES,
                                            sketch)
         input_image         = Image.open(input_image_path)
         input_array         = np.array(input_image).transpose(2, 0, 1)[0]
 
-        sketch_tensor        = GeoUtil.get_normalized_array(
-            input_array,
-            NormalizationMethod.CLIPPED_LINEAR,
-            0,
-            255).unsqueeze(dim=0).unsqueeze(dim=0).to(util.get_device())
+        # Use only sketch
+        if not combine and sketch_tensor is None:
+            sketch_tensor        = GeoUtil.get_normalized_array(
+                input_array,
+                NormalizationMethod.CLIPPED_LINEAR,
+                0,
+                255).unsqueeze(dim=0).unsqueeze(dim=0).to(util.get_device())
+        # Combine Perlin and sketch
+        elif combine and sketch_tensor is not None:
+            loaded_tensor = GeoUtil.get_normalized_array(
+                input_array,
+                NormalizationMethod.CLIPPED_LINEAR,
+                0,
+                255).unsqueeze(dim=0).unsqueeze(dim=0).to(util.get_device())
+            
+            sketch_tensor = (combination_alpha * loaded_tensor 
+                             + (1 - combination_alpha) * sketch_tensor) 
     else:
         return []
     
