@@ -18,6 +18,8 @@ data/models/lpips/*
 !data/models/lpips/vgg.pth
 
 # Thesis ignores
+*.pdf
+
 doc/thesis/images/*
 *.aux
 *.log
@@ -25,3 +27,11 @@ doc/thesis/images/*
 *.out
 *.lof
 *.lol
+*.bbl
+*.bcf
+*.fdb_latexmk
+*.fls
+*.lot
+*.xml
+*.synctex.gz
+*.bbl-SAVE-ERROR

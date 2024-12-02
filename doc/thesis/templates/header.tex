@@ -1,10 +1,10 @@
 %%%%%%%%%%%%%%%%%%%  Document info  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newcommand{\projname}{Bachelor Thesis}
-\newcommand{\titel}{Analyse der Zeitersparnis der Verwendung eines Templates bei der Erstellung einer Bachelor Thesis}
-\newcommand{\untertitel}{}
-\newcommand{\thesisname}{Bachelor Thesis}
-\newcommand{\Datum}{23. Februar 20XX}
-\newcommand{\authorname}{Maximilian Mustermann}
+\newcommand{\projname}{Master Thesis}
+\newcommand{\titel}{Unendliche Terrain Generierung mit Diffusions-Modellen}
+\newcommand{\untertitel}{Kontrollierbare und realistische, unendliche Generierung}
+\newcommand{\thesisname}{MASTERARBEIT}
+\newcommand{\Datum}{19. Januar 2025}
+\newcommand{\authorname}{Leopold von Wendt}
 %%%%%%%%%%%%%%%%%%%  Document info  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -60,7 +60,7 @@
 \usepackage{quotchap}               % Beautiful chapter decoration
 \usepackage{subfig}                 % allow sub figures
 \usepackage{tabularx}               % Tabellen mit fester Breite
-\usepackage{lipsum} % für Blindtexte
+\usepackage{lipsum}                 % für Blindtexte
 \usepackage{longtable}
 \usepackage[
     backend=biber,
@@ -90,11 +90,37 @@
 \else
 \fi
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Font Settings & Styling
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{newtxmath, newtxtext}
+\definecolor{chapterblue}{HTML}{000038}
 
-%%%%%%%%%%%%%%%%%%%%%%%% Listings (Code Blocks) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Chapter Styling %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\renewcommand{\sectfont}{\rmfamily\bfseries\color{chapterblue}}
+\renewcommand{\chapnumfont}{
+    \bfseries\fontsize{100}{130}\selectfont
+    \color{chapterblue}
+}
 
+% All Other Stylings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setkomafont{chapter}       {\rmfamily \bfseries \Huge  \color{black}}  
+\setkomafont{section}       {\rmfamily \bfseries \Large \color{black}}  
+\setkomafont{subsection}    {\rmfamily \bfseries \large \color{black}}     
+\setkomafont{subsubsection} {\rmfamily \bfseries \small \color{black}}  
+\setkomafont{paragraph}     {\rmfamily \bfseries \small \color{black}}  
+
+\setkomafont{title}         {\rmfamily \bfseries \large \color{black}}     
+\setkomafont{subtitle}      {\rmfamily \bfseries \large \color{black}}     
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Listings (Code Blocks)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \usepackage{listings}
-\KOMAoptions{listof=totoc} % necessary because of scrhack
+\KOMAoptions{listof=totoc} % necessary because of scrhack-
 \renewcommand{\lstlistlistingname}{List of Listings}
 \lstset
   { basicstyle=\small\ttfamily
