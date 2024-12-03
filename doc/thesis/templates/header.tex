@@ -1,5 +1,6 @@
 %%%%%%%%%%%%%%%%%%%  Document info  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand{\projname}{Master Thesis}
+\newcommand{\fachrichtung}{Fachrichtung Informatik}
 \newcommand{\titel}{Unendliche Terrain Generierung mit Diffusions-Modellen}
 \newcommand{\untertitel}{Kontrollierbare und realistische, unendliche Generierung}
 \newcommand{\thesisname}{MASTERARBEIT}
@@ -37,15 +38,31 @@
   \usepackage[dvips]{graphicx}  % Grafiken und normales LaTeX
 \fi
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Page Formatting
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% From the template
+% \usepackage[a4paper,%
+%     %bindingoffset=0.5cm,%
+%     inner=2.5cm,
+%     outer=2.0cm,
+%     top=1.5cm,
+%     bottom=1.5cm,
+%     footskip=1.0cm,
+%     includeheadfoot
+% ]{geometry}
+
+% According to the Guideline specifications
 \usepackage[a4paper,%
-    %bindingoffset=0.5cm,%
-    inner=2.5cm,
-    outer=2.0cm,
-    top=1.5cm,
-    bottom=1.5cm,
-    footskip=1.0cm,
+    inner       = 4cm,
+    outer       = 3.5cm,
+    top         = 3cm,
+    bottom      = 3cm,
+    footskip    = 1.0cm,
     includeheadfoot
 ]{geometry}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
 \usepackage[utf8]{inputenc}         % Input encoding (allow direct use of special characters like "ä")
 %\usepackage[english]{babel}
@@ -99,7 +116,7 @@
 % Chapter Styling %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \renewcommand{\sectfont}{\rmfamily\bfseries\color{chapterblue}}
 \renewcommand{\chapnumfont}{
-    \bfseries\fontsize{100}{130}\selectfont
+    \bfseries\fontsize{70}{90}\selectfont
     \color{chapterblue}
 }
 
