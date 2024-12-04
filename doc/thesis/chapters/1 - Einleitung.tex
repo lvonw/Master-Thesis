@@ -1,124 +1,79 @@
 \chapter{Einleitung}
 
-Einleitung beginnt hier. 
-Hier ein Beispiel eines Zitats:
-\begin{quote}
-According to all known laws
-of aviation,
 
-there is no way a bee
-should be able to fly.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Kapitel Header
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Its wings are too small to get
-its fat little body off the ground.
-\footnote{
-Simon Smith und Steve Hickner, 
-url: \url{http://www.script-o-rama.com/movie_scripts/a1/bee-movie-script-transcript-seinfeld.html}, 
-Abrufdatum: 2022-02-18\cite{bee_movie}
-}
-\end{quote}
-\vspace{-0.5cm} % negative vertical spacing
-\begin{flushright}
-{\footnotesize Note: Not true.} 
-\end{flushright}
+Die Terrain-Generierung ist ein zentrales Gebiet in der Computergraphik. In ihr enthalten sind Methoden und Algorithmen, welche Landschaften und ihre natürliche Strukturen wie Berge, Täler und Flüsse erzeugen können. Sie findet überall dort Verwendung, wo virtuelle Welten entstehen und ist somit ein Grundpfeiler vieler digitaler Industrien. Von Videospielen über Filme bis hin zu Anwendungen in der Architektur - die Relevanz von Methoden für das Erstellen realistischer Landschaften lässt nicht nach. \\
+Bisweilen muss hierbei sorgfältig zwischen realistischer Erscheinung, Aufwand in der Implementierung und Laufzeiteffizienz abgewogen werden. Simple prozedurale Methoden wie fraktales Perlin- oder Voronoi-Rauschen sind zwar schnell Implementiert und können in Sekundenbruchteilen riesige Gebiete erzeugen. Allerdings gehen sie hierbei erhebliche Kompromisse in Realismus und Vielfalt ein. Die Simulation von physikalischen Prozessen wie Plattentektonik oder Erosion hingegen ist aufwändig, komplex und erfordert viel Expertenwissen. \\
+Generative künstliche Intelligenz, welche in den letzten Jahren enorme Fortschritte verzeichnen konnte, ist in diesem Feld eine vielversprechende und bisher nur wenig erforschte Alternative. Gerade im Bereich der Bildsynthese können sogenannte \textit{Latent Diffusion Modelle} beeindruckende Ergebnisse erzeugen, welche kaum noch von echten Bildern unterschieden werden können.
+Ihre inhärente Fähigkeit komplexeste Strukturen in räumlichen Daten zu erlernen und anschließend zu immitieren bietet sich an, um die komplizierten Merkmale von Landschaften abzubilden. Dies könnte einen guten Kompromiss zwischen augenscheinlichem Realismus und verbundenem Aufwand darstellen. \\
+Diese Arbeit stellt einen neuartigen Einsatz dieser Technologie und ihrer Vorteile für die Terrain-Generierung vor und untersucht diesen ausgiebig. Insbesondere wird hierbei der hohe Grad an Kontrolle, den Diffusions-Modelle innehaben, mit einer nahtlosen, zellbasierten Generierung verbunden. Dies ermöglicht die Synthese unendlicher Terrains, ohne dabei Kompromisse in Realismus oder Vielfalt eingehen zu müssen. Für die Umsetzung kommen hierfür Methoden zum Einsatz, die auf dem neuesten Stand der Technik basieren.
+ 
+Dieses einleitende Kapitel geht auf die Motivation ein, bietet eine genaue Problemdefinition und präzisiert die zu erreichenden Ziele. Abschliessend wird die weitere Struktur der Arbeit dargelegt. 
 
-Anführungszeichen können durch den Befehl \textbackslash{}enquote \enquote{verwendet} werden, da es an den Sprach-Style angepasst werden kann und "das" nicht korrekt dargestellt wird.
-Sonderzeichen wie z. B. Unterstriche müssen aber gesondert behandelt werden \enquote{ein\_wort}.
 
-Beispiele für mathematische Formeln:
-\begin{enumerate}
-    \item $\mathbf{Q} = \{{\frac{a}{b}} \mid a,b \in \mathbf{Z} , b \neq 0\}
-        \Rightarrow |\mathbf{Q}| \leq 1$
-    \item $(x \neq 0 \; \land \; (y = 0 \; \lor \; x < y))$
-    \item $\sim150$
-\end{enumerate}
-
-\clearpage % Page-Break
-
-Eine nicht-nummerierte Liste:
-\begin{itemize}
-    % reduce spacing between items
-    \setlength{\itemsep}{5pt}
-    \setlength{\parskip}{0pt}
-    \setlength{\parsep}{0pt}
-    %
-    \item The bee, of course, flies anyway
-    \item because bees don't care what humans think is impossible.
-    \item Yellow, black. Yellow, black. Yellow, black. Yellow, black.
-    \item Ooh, black and yellow! Let's shake it up a little.
-\end{itemize}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Motivation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Motivation}
 
-\section{Problembeschreibung}
-
-Hier kann z.B. das Problem erläutert werden, aus welchem die Thesis entstanden ist.
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer efficitur ipsum ut nulla dignissim tincidunt. Nullam sit amet tempor urna. Ut euismod mattis orci, vel mattis mi malesuada in. Aliquam molestie fermentum vestibulum. Cras egestas molestie ipsum, vitae malesuada ante consectetur id. In turpis neque, pharetra eget neque vel, rhoncus tincidunt ex. Sed lacinia fermentum odio quis faucibus. Phasellus blandit orci vitae ipsum rutrum aliquam. Fusce ipsum nisl, luctus in interdum non, sodales sed lacus. Fusce vitae fermentum tellus, vitae feugiat magna. Curabitur tincidunt mauris ac venenatis accumsan. Mauris efficitur sit amet mauris in sodales. Ut fringilla commodo sem, at commodo erat mattis sed.
-
-Integer venenatis convallis erat, sit amet elementum odio egestas interdum. Phasellus sagittis vestibulum libero vel sodales. Phasellus a facilisis felis, vel mollis velit. Quisque pulvinar turpis vitae bibendum condimentum. Nulla facilisi. Praesent iaculis euismod eros et consequat. Nullam efficitur facilisis sapien. Aenean non laoreet lectus. Phasellus tellus lorem, ullamcorper vel aliquam ut, sollicitudin accumsan nibh. Duis vel elementum justo. Proin sed enim ipsum. Morbi sed mattis neque. Nulla varius dui a purus tempor elementum. Donec at nisl tortor. Pellentesque consequat porta aliquet. 
-
-\clearpage
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{images/read_hard_drive.png} % 80% der Textbreite
-    \caption
-    [Auslesen einer Festplatte] % Text, der im Bildverzeichnis verwendet wird
-    {Auslesen einer Festplatte\cite{quelle}} % citation in der Beschriftung aber nicht im Bildverzeichnis
-    \label{fig:old_db}
-\end{figure}
-
-\begin{wraptable}[9]{r}{8cm} 
-% [9] = Höhe von neun Zeilen, {r} = rechts, {8cm} = Breite von 8cm (0.6\textwidth geht z.B. auch)
-\begin{center}
-\begin{tabular}{||c c c||} 
-    \hline
-    Name & anderer Name & eine Anzahl \\ [0.5ex] 
-    \hline\hline
-    Joanne &
-    Esparza &
-    $\sim$ 35 \\
-    \hline
-    Ivor &
-    Sullivan &
-    $\sim$ 82 \\ 
-    \hline
-    Martin & 
-    Southern &
-    $\sim$ 35 \\
-    \hline
-    Karina & 
-    Willis &
-    $\sim$ 32 \\
-    \hline
-\end{tabular}
-\end{center}
-\caption{Anzahl Einträge in den Tabellen}
-\label{tab:bsp_tabelle}
-\end{wraptable} 
-
-Hier noch eine Grundlegende Tabelle, die neben dem Text steht.
-Die Tabelle \ref{tab:bsp_tabelle} kann durch das Label referenziert werden.
-Auf gleiche Weise können auch Kapitel, Bilder, etc. referenziert werden.
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer efficitur ipsum ut nulla dignissim tincidunt. Nullam sit amet tempor urna. Ut euismod mattis orci, vel mattis mi malesuada in. Aliquam molestie fermentum vestibulum. 
-
-Cras egestas molestie ipsum, vitae malesuada ante consectetur id. In turpis neque, pharetra eget neque vel, rhoncus tincidunt ex. Sed lacinia fermentum odio quis faucibus. Phasellus blandit orci vitae ipsum rutrum aliquam. Fusce ipsum nisl, luctus in interdum non, sodales sed lacus. 
+Landschaften üben seit jeher eine besondere Faszination auf die Menschheit aus. In jeder Kultur und Kunstform wird immer wieder versucht, die Einzigartigkeit und Schönheit von Landschaften einzufangen. Hierbei sind auch die virtuellen Welten keine Ausnahme. Filme wie David Camerons \textit{Avatar} oder Videospiele wie \textit{Minecraft} sind exemplarisch hierfür. Doch ebenso vielfältig und komplex wie reale Terrains sind ebenfalls die zugrundeliegenden physikalischen Prozesse, die ihr Erscheinungsbild bestimmen. Dies macht die Generierung von realistischen Landschaften anhand akkurater Simulationen zu einer höchst anspruchsvollen und rechenintensiven Aufgabe. \\
+Zur Bewältigung dieses Auwfands werden häufig vereinfachende Methoden wie fraktales Rauschen verwendet. Diese ermöglichen zwar eine schnelle Generierung und sind in aller Regel einfach umzusetzen, erleiden allerdings erhebliche Einbußen in Realismus und Vielfalt und sind nur sehr schwierig zu Kontrollieren. \\
+Generative KI verspricht realistische Terrains ohne Simulation zu ermöglichen. Viele der dazu untersuchten Ansätze basieren allerdings auf \textit{Generative Adverserial Networks} welche historisch als schwierig zu trainieren und zu kontrollieren gelten. \\
+Diffusionsmodelle, eine junge Klasse von generativen Deep-Learning-Modellen welche sich besonders für die Modellierung von räumlichen Daten eignet, stellen eine vielversprechende Alternative dar. Sie übertreffen GANs in vielerlei Metriken wie Qualität und Vielfalt der Ergebnisse, Steuerbarkeit der Generierung und der Einfachheit des Trainings. Erste Ansätze in der Terrain Generierung, welche diese Technologie nutzen, existieren bereits. Das mögliche Potenzial ist allerdings noch weitgehend unerforscht. \\
+Viele Vorteile bereits existierender Methoden können mit Diffusionsmodellen vereint werden. Es besteht die Möglichkeit leistungsstarke Generatoren ohne tiefe Kenntniss über geologische, geomorphologische oder physikalische Prozesse zu implementieren. Zudem können schnell und intuitiv erstellte Skizzen für die Steuerung der Synthese genutzt werden. Ebenfalls ist es möglich unterschiedliche Terrains nahtlos in einander übergehen zu lassen. \\
+Diese Potenziale werden in dieser Arbeit eingehend beleuchtet. Die erarbeiteten Ergebnisse sollen sowohl die vielfältigen Einsatzmöglichkeiten von Diffusionsmodellen verdeutlichen als auch neue Richtungen für die zukünftige Entwicklung von Terrain-Generation aufweisen.
 
 
-\clearpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Problemdefinition
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Problemdefinition}
 
+In der Terrain-Generierung muss die Wahl der zu nutzenden Methode sorgfältig überlegt werden. Faktoren wie aufwand in der Implementierung, Laufzeiteffizienz, Realismus, größe der Generation oder Vielfalt sind hierbei die betreffenden Entscheidungskriterien, welche je nach Anwendungsfall abgewogen werden müssen. \\
+So werden beispielsweise in Videospielen häufig rauschbasierte Ansätze gewählt. Diese sind in der Regel einfach zu implementieren, sehr schnell zu berechnen und eignen sich für praktisch unendlich große Landschaften. Dieser Simplizität erfordert allerdings Kompromisse bei der Vielfalt, der Kontrollierbarkeit und dem Realismus. \\
+Der Gegenpol hierzu ist eine akkurate Simulation der physikalischen Prozesse, die die Geomorphologie eines Terrains bestimmen. Hierdurch lassen sich qualitativ hochwertige Terrains generieren, welche sich ebenfalls durch verschiedene Paremeter und zugrundeliegende Gelände-Skizzen genau steuern lassen. Dies erfodert allerdings die Modellierung von enorm komplexen Systemen und erfordert somit viel Aufwand bei der Implementierung und tiefes Expertenwissen gegebenenfalls sogar bei der Nutzung. \\
+In der Forschung wird immer wieder versucht einen guten Kompromiss zwischen diesen Beiden extremen zu finden, der für möglichst viele Bereiche funktioniert. Eine hierfür mögliche Option liegt im Bereich der generativen künstlichen Intelligenz. In der Vergangenheit basieren viele der dazu untersuchten Ansätze auf \textit{Generative Adverserial Networks}. Diese haben sich jedoch historisch als schwierig zu trainieren und zu kontrollieren erwiesen. \\
+Diffusionsmodelle sind eine junge Klasse von generativen Deep-Learning-Modellen. Sie eignen sich besonders für die Modellierung von räumlichen Daten und stellen eine vielversprechende Alternative dar. Sie übertreffen GANs in vielerlei Metriken wie Qualität und Vielfalt der Ergebnisse, Steuerbarkeit der Generierung und der Einfachheit des Trainings. \\
+Erste Ansätze in der Terrain Generierung, welche diese Technologie nutzen, existieren bereits. Das mögliche Potenzial in Hinblick auf Vereinbarung von einfacher Kontrolle, unendlicher Landschaften sowie Realismus, ist allerdings noch weitgehend unerforscht.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Zielsetzung
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Zielsetzung}
 
+Übergeordnetes Ziel dieser Arbeit ist es einen neuartigen Ansatz für die Terrain-Generation zu entwickeln, welcher weitere Potenziale von Diffusionsmodellen offenbart. Dieser soll intuitiv kontrollierbar realistische, unendliche Landschaften in der Form von Heightmaps generieren können. Zugrunde liegt dabei ein Latent Diffusion Model. Aus dieser Zielstellung lassen sich folgende Kernziele formulieren:
 
+\begin{enumerate}
+    \item \textbf {Framework für Traingsdatenerstellen anhand geographischer Daten:} \\
+    Es wird ein Framework entwickelt, welches die Kombination unterschiedlicher geographischer Datensätze zu einem einzigen Testdatensatz so einfach wie möglich gestaltet. Die Ursprungsdaten sollten dabei stets austauschbar sein, um einfaches Experimentieren und Erweitern zu ermöglichen.
+
+    \item \textbf {Entwicklung eines leistungsfähigen Variatonal-Autoencoders:} \\
+    Der Variational-Autoencoder ist eine Kernkomponent in einem Latent Diffusion Model. Er übernimmt die Kodierung der Heightmaps in einen deutlich geringerdimensionalen Latentraum, sodass das rechenintensive Diffusionsmodell auf kleineren Eingangsdaten arbeiten kann. Ebenso ist er verantwortlich für die Dekodierung der Ergebnisse der Diffusion zurück in den ursprünglichen Bildraum. Die Qualität der generierten Heightmaps ist also in höchstem Maße von der Qualität des VAE abhängig.
+
+    \item \textbf {Erstellung eines mächtigen Latent Diffusion Modells:} \\
+    Basierend auf dem vortrainierten VAE soll ein Diffusionsmodell erstellt und trainiert werden. Diese Kombination ergibt ein Latent Diffusion Modell.
+    Das Modell soll anhand von Skizzen und Klassen kontrollierbar sein. Die Ergebnisse müssen der ursprünglichen Eingabeverteilung möglichst nahekommen, damit der VAE zu hochwertigen Heightmaps entschlüsseln.
+    
+    \item \textbf {Intuitive Steuerung der Generierung durch Skizzen:} \\
+    Der Generator soll in der Lage sein auf Basis von einfachen Heightmapskizzen realistische und vielfältige Terrains zu Generieren. Dadurch haben die Skizze und das Resultat das gleiche Format, wodurch eine intuitive Kontrolle sichergestellt ist.
+
+    \item \textbf {Nahtlose Zellbasierte unendliche Generierung:} \\
+    Ebenfalls soll der Generator in der Lage sein Zellen in einem Gitter so zu generieren, dass sie Nahtlos in einander übergehen, ungeachtet der Unterschiede benachbarter Zellen. Somit wird die Generierung einer theoretisch unendlichen Heightmap ermöglicht.
+     
+\end{enumerate}
+
+Durch die Umsetzung dieser Ziele soll ein Latent Diffusion Modell entstehen, welches intuitiv kontrollierbar realistische, unendliche Landschaften in der Form von Heightmaps generieren kann.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Struktur
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Struktur}
-\label{kap:ueberblick}
 
-Hier kann ein Überblick über folgenden Kapitel dargestellt werden.
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer efficitur ipsum ut nulla dignissim tincidunt. Nullam sit amet tempor urna. Ut euismod mattis orci, vel mattis mi malesuada in.
-
-In turpis neque, pharetra eget neque vel, rhoncus tincidunt ex. Sed lacinia fermentum odio quis faucibus. 
-
-Phasellus blandit orci vitae ipsum rutrum aliquam. Fusce ipsum nisl, luctus in interdum non, sodales sed lacus. Fusce vitae fermentum tellus, vitae feugiat magna. Curabitur tincidunt mauris ac venenatis accumsan. 
+Diese Arbeit ist in acht Kapitel gegliedert. Im zweiten Kapitel werden die für das Verständnis der folgenden Inhalte erforderlichen Konzepte und Technologien vorgestellt. \\
+Folgend, werden in Kapitel drei die entwickelten Ansätze und Methoden detailliert beschrieben. Kapitel vier widmet sich den für das Training des Diffusions-Modells nötigen Datensätzen, sowie ihrer Verarbeitung. Hieran anknüpfend werden im fünften Kapitel die wesentlichen Implementierungsdetails und Herausforderungen erläutert. Die aus dem erarbeiten Ansatz resultierenden Ergebnisse werden im sechsten Kapitel präsentiert und anschließend in Kapitel sieben ausführlich diskutiert. \\
+Abschließend fasst Kapitel acht die gewonnen Erkenntnisse zusammen und gibt einen Ausblick auf mögliche zukünftige Entwicklungen und Potenziale des vorgestellten Ansatzes.
