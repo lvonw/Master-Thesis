@@ -29,12 +29,27 @@ Seien $P(x)$ und $Q(x)$ zwei Wahrscheinlichkeitsverteilungen, so ist die KL-Dive
 
 \begin{equation}
 D_\text{KL}(P||Q) 
-= \mathbb{E}_{x \sim P} \left [
+:= \mathbb{E}_{x \sim P} \left [
 \log \frac{P(x)} {Q(x)}
 \right ]
 = \mathbb{E}_{x \sim P} \left [ 
     \log P(x) - \log Q(x)
     \right ]
+\end{equation}
+
+\subsection{Erwartungswert}
+
+Der Erwartungswert einer Zufallsvariable $X$ unter einer Wahrscheinlichkeitsverteilung $p(X)$ ist gegeben als: 
+\begin{equation}
+    \mathbb E(X) := \int x p(x) dx
+\end{equation}
+In vielen Publikationen im Bereich der künstlichen Intelligenz wird der Erwartungswert auch wie folgt angegeben:
+\begin{equation}
+    \mathbb E_{x \sim p}[x] := \int x p(x) dx
+\end{equation}
+Diese Definition kann ebenfalls um den Erwartungswert einer Funktion $f(x)$ angewandt werden, wenn x aus der Wahrscheinlichkeitsverteilung $p(X)$ entnommen wird. 
+\begin{equation}
+    \mathbb E_{x \sim p}[f(x)] := \int f(x) p(x) dx
 \end{equation}
 
 
@@ -55,20 +70,67 @@ Die Minimierung der KL-Divergenz ist allerdings mathematisch äquivalent zur min
     \cite{Goodfellow-et-al-2016}
 }. 
 Dies entspricht wiederum der maximierung der Log-Likelihood und ist somit als Trainingskriterium bei Modellen bekannt.
-Damit $p_\theta(X)$ $p_\text{data}(X)$ erlernen kann, werden zunächst Beispiele benötigt. Dazu wird mehrfach eine Münze geworfen. Die Menge all dieser Ergebnisse sind die Trainingsdaten. Ein einzelner Münzwurf $x_n$ der Menge entspricht einem Sample, welches der Datenverteilung entnommen wurde $x_n \sim p_\text{data}(X)$. Nun kann über die maximierung der Log-Likelihood normales Training vollzogen werden.
+Damit $p_\theta(X)$ $p_\text{data}(X)$ erlernen kann, werden zunächst Beispiele benötigt. Dazu wird mehrfach eine Münze geworfen. Die Menge all dieser Ergebnisse sind die Trainingsdaten. Ein einzelner Münzwurf $x_n$ der Menge entspricht einem Sample, welches der Datenverteilung entnommen wurde $x_n \sim p_\text{data}(X)$. Nun kann über die Maximierung der Log-Likelihood normales Training vollzogen werden.
 
 Dieses Beispiel kann auf andere Anwendungsfälle übertragen werden. In der Bildysnthese entspricht die Datenverteilung beispielsweise einer Verteilung von Farbwerten auf $n \times m$ Pixeln, im Gegensatz zu einem Münzwurf auf Kopf oder Zahl.
 
 % Autoencoder %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Autoencoder}
 
+Autoencoder (AE) sind streng genommen keine generativen Modellen, da sie lediglich rekonstruieren und keine neuen Daten erzeugen. Sie stellen allerdings die Grundlage für die Variational Autoencoder dar, welche generativ sind und im folgenden Unterabschnitt behandelt werden. \\ 
+AEs haben als grundlegendes Ziel haben eine Eingabe in der dimensionalität zu reduzieren und anschließend wieder zur ursprünglichen Eingabe zu rekonstruieren. Man kann sie sich entsprechend als eine erlernte Variante von Kompressionsalgorithmen wie ZIP vorstellen. 
+Zu diesem Zweck bestehen AE aus zwei Komponenten\footnote{
+    Die Encoder und Decoder Komponenten werden hier als $q$ und $p$ bezeichnet um die Verbindung zu Variational Autoencodern zu verdeutlichen. In vielen Publikationen werden sie allerdings $E$ und $D$ denotiert.    
+}:
+\begin{itemize}
+    \item \textbf{Encoder}: \\
+    Erhält als Eingabe Samples der Datenverteilung und komprimiert sie zu einem Code $h$. Sie werden folgend als $q_\phi(x)$ bezeichnet
+    \item \textbf{Decoder}: \\
+    Erhält als Eingabe den versteckten Zustand und rekonstruiert das ursprüngliche Sample der Datenverteilung möglichst verlustfrei. Diese Komponente modelliert die Datenverteilung auf basis des Codes und wird entsprechend folgend $p_\theta(h)$ denotiert.
+\end{itemize}
+
+Das Training eines solchen AEs ist sehr simpel. Man minimiere lediglich die Distanz zwischen Eingabedaten und Rekonstruktionen. Somit ergibt sich folgendes Optimierungsziel:
+
+\begin{equation}
+    L_{\phi, \theta}(x) := \mathbb E _{x \sim p_{data}} 
+    \left [ 
+        d(x, p_\theta(q_\phi(x)))
+    \right ]
+\end{equation}
+
+% VAE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Variatonal Autoencoder}
+
+Eine spezialisierte Variante der Autoencoder sind sogenannte Variational Autoencoder (VAE)\footnote{
+    Kingma, Welling: Auto-Encoding Variational Bayes
+    \cite{kingma2013auto}
+}. Ihre Erweiterung der Autoencoder besteht in der Einführung einer Bedingung an den Code. Dieser kann in im ursprünglichen AE ein praktisch beliebiger Vektor sein, solange er bei der Entschlüsselung von Vorteil ist. Je nach Anwendungsfall kann es allerdings hilfreich sein, wenn der Code selbst auch eine semantisch Aussagekräftige Darstellung der Eingabe ist. Dies kann den Code, je nach Anwendungsfall, zu einem geringerdimensionalen Substitut für die Ursprungsdaten machen. Hierbei ist allerdings wichtig zu beachten, dass es sich hierbei in aller Regel nicht um menschenverständliche Eigenschaften handelt. \\
+Zu diesem Zweck wird der latente Ergebnisraum des Encoders mit einer beliebigen Wahrscheinlichkeitsverteilung $p(z)$ kombiniert. Eingabedaten werden somit also einen latenten Raum $Z$ abgebildet, welcher grob $p(z)$ entspricht. \\
+Die zugrundeliegende Aussage die somit getroffen wird ist, dass jede Komponente des Codes nicht nur eine Kompression der Eingabe ist, sondern auch selbst einer Wahrscheinlichkeitsverteilung folgt. Hierbei wird angenommen, dass Merkmale der Datenverteilung, die beispielsweise einer Normalverteilung folgen, eine strukturierte und nützliche Darstellung der Eingabedaten ermöglichen. Die so entstehende Verteilung hat die folgende Form:
+\begin{equation}
+    p_\theta(x) = \int_z p_\theta(x, z) dz
+\end{equation}
+Diese Anpassung hat zur Folge, dass das Training eines VAE ein neues Optimierungsziel benötigt. Der erste Gedanke ist, die Log-Likelihood der Verteilung $p_\theta(X)$ zu maximieren. Dies ist aufgrund des Integrals über den latenten Raum nicht effizient möglich. Dieses Problem wird gelöst, indem eine zweite Quantität maximiert wird, welche garantiert kleiner als die Log-Likelihood ist. Diese Quantität ist das Optimierungsziel und wird allgemein die \textit{Evidence Lower Bound} (ELBO) genannt. Sie ist gegeben als:
+\begin{equation}
+    \mathcal L_{\phi, \theta}(x) = \mathbb E_{q_{\phi}(z)}
+    \left [
+        \log p_\theta(x|z) - D_\text{KL} (\log q_{\phi}(z|x) || p(z))
+    \right ]
+\end{equation}
+$p(z)$ ist hierbei die, für die Verteilung der Merkmale angenommene Verteilung. In der Regel handelt es sich hierbei um eine Standardnormalverteilung $\mathcal N(0; I)$. Die Herleitung der ELBO ausgehend von der Log-Likelihood ist sehr komplex und dem Verständnis nicht weiter zutragend. Eine Betrachtung der einzelnen Therme bietet allerdings Aufschluss über die Bedeutung der ELBO:
+\begin{itemize}
+    \item $\log p_\theta(x|z)$: \\
+    Hierbei handelt es sich um die Log-Likelihood der Eingabedaten unter der Bedingung des jeweiligen latenten Codes. Einfacher ausgedrückt stellt dies die Übereinstimmung der Eingabe und der Rekonstruktion sicher. Somit ist dies lediglich das Optimierungsziel des ursprünglichen AE.
+    \item $D_\text{KL} (\log q_{\phi}(z|x) || p(z))$: \\
+    Diese KL-Divergenz stellt eine Regularisierungstherm dar. Sie fordert, dass die Verteilung $q_{\phi}(z|x)$, sprich der latente Ergebnisraum des Encoders, der angenommenen zugrundeliegenden Verteilung $p(z)$ entspricht.
+\end{itemize}
+Tatsächlich wurde also, gegenüber des ursprünglichen Optimierungsziels nur ein Regularisierungstherm hinzugefügt.
+
+
+
 % GAN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Generative Adversarial Networks}
 
-% VAE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Variatonal Autoencoder}
-
-\subsubsection{Evidence Lower Bound}
 
 \subsubsection{VAE-GAN}
 
