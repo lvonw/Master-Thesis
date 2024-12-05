@@ -22,6 +22,21 @@ Die Grundlagen werden ohne Bezug auf das konkrete Projekt, allgemein dargestellt
 
 \subsection{Kullback-Leibler-Divergenz}
 
+Seien $P(x)$ und $Q(x)$ zwei Wahrscheinlichkeitsverteilungen, so ist die KL-Divergenz definiert als \footnote{
+    Vgl. Goodfellow, Bengio, Courville: Deep Learning, S. 74 f.
+    \cite{Goodfellow-et-al-2016}
+}:
+
+\begin{equation}
+D_\text{KL}(P||Q) 
+= \mathbb{E}_{x \sim P} \left [
+\log \frac{P(x)} {Q(x)}
+\right ]
+= \mathbb{E}_{x \sim P} \left [ 
+    \log P(x) - \log Q(x)
+    \right ]
+\end{equation}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % AI
@@ -29,9 +44,20 @@ Die Grundlagen werden ohne Bezug auf das konkrete Projekt, allgemein dargestellt
 
 \section{Generative Künstliche Intelligenz}
 
-$$
-2-2 = 1
-$$
+Modelle der generativen KI versuchen im Allgemeinen die Wahrscheinlichkeitsverteilung der Eingabedaten, oft auch als Datenverteilung bezeichnet, zu modellieren. Sie unterscheiden sich somit von diskreminierenden Ansätzen, welche lediglich Eigenschaften dieser Verteilung erlernen. \\
+Es kann schwierig fallen, intuitiv die Beziehung zwischen Datenverteilung und Modell nachzuvollziehen. Um diesen Sachverhalt zu verdeutlichen, folgt ein einfaches Beispiel:
+
+Ein Münzwurf soll modelliert werden. Das Ergebnis von Münzwürfen ist mit der Wahrscheinlichkeitsverteilung $p(X)$ beschrieben wobei $x \in [\text{Kopf}, \text{Zahl}]$. Um zu verdeutlichen, dass es sich bei $p(X)$ um die Datenverteilung handelt wird sie oft auch als $p_\text{data}(X)$ bezeichnet. \\
+Das Modell, welches den Münzwurf modellieren soll wird $p_\theta(X)$ bezeichnet, wobei $\theta$ die Parameter dieses Modells darstellt. Das Ziel ist, dass Münzwürfe des Modells, nicht von tatsächlichen Münzwürfen unterschieden werden können. Einfacher ausgedrückt, müssen die Wahrscheinlichkeiten für Kopf und Zahl jeweils gleich sein: $p_\theta(X) \overset{!}{=} p_\text{data}(X)$. \\ 
+Um dies zielgerichtet erfüllen zu können benötigen wir eine Metrik, welche angibt, wie gut das Modell die Datenverteilung approximiert. Hierfür kann beispielsweise die Distanz zwischen beiden Verteilungen genommen werden. Eine Möglichkeit diese zu Berechnen ist die KL-Divergenz $D_\text{KL}(p_\text{Data}(X)||p_\theta(X))$. Um eine solche Berechnung durchzuführen muss $p_\text{Data}(X)$ allerdings bekannt sein. Grundsätzlich ist dies allerdings für Datenverteilungen nicht möglich. \\
+Die Minimierung der KL-Divergenz ist allerdings mathematisch äquivalent zur minimierung Kreuzentropie\footnote{
+    Goodfellow, Bengio, Courville: Deep Learning, S. 75
+    \cite{Goodfellow-et-al-2016}
+}. 
+Dies entspricht wiederum der maximierung der Log-Likelihood und ist somit als Trainingskriterium bei Modellen bekannt.
+Damit $p_\theta(X)$ $p_\text{data}(X)$ erlernen kann, werden zunächst Beispiele benötigt. Dazu wird mehrfach eine Münze geworfen. Die Menge all dieser Ergebnisse sind die Trainingsdaten. Ein einzelner Münzwurf $x_n$ der Menge entspricht einem Sample, welches der Datenverteilung entnommen wurde $x_n \sim p_\text{data}(X)$. Nun kann über die maximierung der Log-Likelihood normales Training vollzogen werden.
+
+Dieses Beispiel kann auf andere Anwendungsfälle übertragen werden. In der Bildysnthese entspricht die Datenverteilung beispielsweise einer Verteilung von Farbwerten auf $n \times m$ Pixeln, im Gegensatz zu einem Münzwurf auf Kopf oder Zahl.
 
 % Autoencoder %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Autoencoder}
@@ -48,10 +74,17 @@ $$
 
 \subsubsection{Visual Similarity Metrics}
 
+
+% SUPPORTING MODELS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{UNET}
+
+\subsection{Transformer}
+
+\subsubsection{Attention}
+
 % DDPM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Denoising Diffusion Probabilistic Models}
-
-\subsubsection{Inpainting}
 
 \subsubsection{Improved DDPMs}
 
@@ -61,13 +94,6 @@ $$
 
 \subsubsection{Inpainting}
 
-\subsubsection{UNET}
-
-\subsubsection{ResNet}
-
-\subsubsection{Transformer}
-
-\subsubsection{Attention}
 
 \subsubsection{Diffusion Transformer}
 
@@ -75,21 +101,45 @@ $$
 % LDM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Latent Diffusion Models}
 
+Die bisher vorgestellte Variante von Diffusions-Modellen operiert ausschließlich in der Bilddomäne. Dies ist insbesonder bei hohen Auflösungen enorm Rechenintensiv, sowohl beim Training als auch bei der Inferenz. Latent Diffusion Modelle (LDM)\footnote{
+    Vgl. Rombach et al.: Latent Diffusion Models
+    \cite{rombach2022high}
+}  sind ein Ansatz um dieses Problem zu mitigieren. \\
+Grundlegend bestehen LDMs aus zwei Komponenten: Ein, auf den für das DM gedachten Trainingsdaten, vortrainierter VAE, sowie ein DM, wie es in bereits 2.2.3 beschrieben wurde. \\
+Die Rolle des VAEs hierbei ist die Eingangsdaten in ihrer dimensionalität zu Reduzieren, sodass das DM auf signifikant weniger Dimensionen operiert. Da der nötige Rechenaufwand des DMs in aller Regel, insbesondere durch die sequenzielle Verarbeitung während der Inferenz, deutlich höher ist als die Ver- und Entschlüsselung durch einen VAE reduziert dies den Aufwand enorm.  \footnote{
+    Vgl. Peebles, Xie: Diffusion Transformers, S. 8
+    \cite{peebles2023scalable}
+} \\
+Die grundlegenden Algorithmen für Training und Inferenz bleiben hierbei weitestgehend unverändert. Beim Training müssen die Trainingsdaten nur zunächst kodiert werden und können dann genutzt werden. Bei der Inferenz muss lediglich das Resultat des Reverse-Prozesses einmal entschlüsselt werden.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PTG
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Prozedurale Terrain Generierung}
+\section{Terrain-Generierung}
 
-Aliquam molestie fermentum vestibulum. Cras egestas molestie ipsum, vitae malesuada ante consectetur id. In turpis neque, pharetra eget neque vel, rhoncus tincidunt ex. 
+Terrain-Generierung ist ein zentrales Gebiet der Computergraphik. 
 
 \subsection{Digital Elevation Models}
 
+\textit{Digital Elevation Models} (DEMs) sind eine Datenstruktur für das Repräsentation von Höhenwerten. In ihnen werden beispielsweise Terrains somit über ihr Oberfläche definiert. Durch die Abbildung einer solchen dreidimensionalen Struktur auf zwei Dimensionen haben DEMs zwar den Nachteil, dass keine überhängenden Strukturen abgebildet werden können, da diese allerdings bei Landschaften nur sehr selten vorkommen, ist dies, insbesondere größeren Gebieten oft zu vernachlässigen.\\
+Eine Variante von DEMs, welche die Höhenwerte den koordinaten eines zweidimensionalen Rasters zuordnet, wird im Bereich der Computergraphik auch oft als \textit{Heightmap} bezeichnet. Diese, sehr simple Datenstruktur, ist einfach und effizient zu Verarbeiten, weswegen sie oft in der Terraingenerierung angewandt wird. Aufgrund dieser Repräsentation als zweidimensionales Array sind DEMs insbesondere für die Verwendung mit Bildsynthese-Ansätzen der generativen KI geeigenet.
+
 \subsection{Rauschbasierte Generierung}
 
+In einigen Anwendungsgebieten, wie beispielsweise einer Terrain-Generierung zur Laufzeit eines Videospiels, ist es notwendig, dass die Algorithmen für die Erstellung der Landschaft so einfach wie möglich zu berechnen sind. Komplizierte Simulationen sind somit nicht Anwendbar. \\ 
+Eine weit verbreitete alternative ist die Nutzung von sogennanten Rauschfunktionen. Solche Funktionen bilden ihre Parameter auf Zufallswerte, beziehungsweise Pseudozufallswerte ab. Angewandt auf DEMs sind diese Rauschfunktionen zweidimensional und bilden die $x$ und $y$ Koordinaten des Bildes auf einen zufälligen Höhenwert ab. \\ 
+Reines statistisches Rauschen, welches beispielsweise auf einer Normalverteilung basiert, ist jedoch zu unstrukturiert um überzeugende Terrains erzeugen zu können - es fehlen größere Strukturen und Übergänge. Aus eben diesem Grund verwendet man häufig für Landschaften eine besondere Klasse von Rauschen - sogenannte \textit{Gitterrauschfunktionen}. Diese weisen Zufallswerte nun nicht mehr jedem einzelnen Bildpunkt zu. Stattdessen unterteilen sie das Bild zunächst in ein Gitter und bilden anschließend lediglich die Eckpunkte dieses Gitters zufällig ab. Nun kann zwischen diesen Werten interpoliert werden, um ein kohärenteres Zufallsbild zu erzeugen.\footnote{
+    Vgl. Lagae et al.: A Survey of Procedural Noise Functions, S. 4
+    \cite{https://doi.org/10.1111/j.1467-8659.2010.01827.x}
+}  
 
 \subsubsection{Perlin Rauschen}
+
+Eine Verschärfung des Gitterrauschens ist das Gittergradientenrauschen. Hierbei werden jedem Eckpunkt des Gitters Zufallsgradienten, anstelle von Zufallswerten, zugeordnet. Die wohl populärste Methode dieser Kategorie ist das sogenannte Perlin Rauschen\footnote{
+    Perlin: An Image Synthesizer
+    \cite{perlin1985image}
+}. 
 
 \subsubsection{Fraktales Perlin Rauschen}
 
