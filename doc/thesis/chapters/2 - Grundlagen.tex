@@ -77,22 +77,22 @@ Dieses Beispiel kann auf andere Anwendungsfälle übertragen werden. In der Bild
 % Autoencoder %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Autoencoder}
 
-Autoencoder (AE) sind streng genommen keine generativen Modellen, da sie lediglich rekonstruieren und keine neuen Daten erzeugen. Sie stellen allerdings die Grundlage für die Variational Autoencoder dar, welche generativ sind und im folgenden Unterabschnitt behandelt werden. \\ 
+Autoencoder (AE) sind streng genommen keine generativen Modelle, da sie lediglich rekonstruieren und keine neuen Daten erzeugen. Sie stellen allerdings die Grundlage für die Variational Autoencoder dar, welche generativ sind und im folgenden Unterabschnitt behandelt werden. \\ 
 AEs haben als grundlegendes Ziel haben eine Eingabe in der dimensionalität zu reduzieren und anschließend wieder zur ursprünglichen Eingabe zu rekonstruieren. Man kann sie sich entsprechend als eine erlernte Variante von Kompressionsalgorithmen wie ZIP vorstellen. 
-Zu diesem Zweck bestehen AE aus zwei Komponenten\footnote{
+Zu diesem Zweck bestehen AEs aus zwei Komponenten\footnote{
     Die Encoder und Decoder Komponenten werden hier als $q$ und $p$ bezeichnet um die Verbindung zu Variational Autoencodern zu verdeutlichen. In vielen Publikationen werden sie allerdings $E$ und $D$ denotiert.    
 }:
 \begin{itemize}
-    \item \textbf{Encoder}: \\
-    Erhält als Eingabe Samples der Datenverteilung und komprimiert sie zu einem Code $h$. Sie werden folgend als $q_\phi(x)$ bezeichnet
-    \item \textbf{Decoder}: \\
-    Erhält als Eingabe den versteckten Zustand und rekonstruiert das ursprüngliche Sample der Datenverteilung möglichst verlustfrei. Diese Komponente modelliert die Datenverteilung auf basis des Codes und wird entsprechend folgend $p_\theta(h)$ denotiert.
+    \item \textbf{Encoder $q_\phi(x)$}: \\
+    Erhält als Eingabe Samples der Datenverteilung und komprimiert sie zu einem Code $h$.
+    \item \textbf{Decoder $p_\theta(h)$}: \\
+    Erhält als Eingabe den versteckten Zustand und rekonstruiert das ursprüngliche Sample der Datenverteilung möglichst verlustfrei. Diese Komponente modelliert die Datenverteilung auf basis des Codes.
 \end{itemize}
 
 Das Training eines solchen AEs ist sehr simpel. Man minimiere lediglich die Distanz zwischen Eingabedaten und Rekonstruktionen. Somit ergibt sich folgendes Optimierungsziel:
 
 \begin{equation}
-    L_{\phi, \theta}(x) := \mathbb E _{x \sim p_{data}} 
+    \min L_{\phi, \theta}(x) = \mathbb E _{x \sim p_{data}} 
     \left [ 
         d(x, p_\theta(q_\phi(x)))
     \right ]
@@ -112,16 +112,20 @@ Die zugrundeliegende Aussage die somit getroffen wird ist, dass jede Komponente 
 \end{equation}
 Diese Anpassung hat zur Folge, dass das Training eines VAE ein neues Optimierungsziel benötigt. Der erste Gedanke ist, die Log-Likelihood der Verteilung $p_\theta(X)$ zu maximieren. Dies ist aufgrund des Integrals über den latenten Raum nicht effizient möglich. Dieses Problem wird gelöst, indem eine zweite Quantität maximiert wird, welche garantiert kleiner als die Log-Likelihood ist. Diese Quantität ist das Optimierungsziel und wird allgemein die \textit{Evidence Lower Bound} (ELBO) genannt. Sie ist gegeben als:
 \begin{equation}
-    \mathcal L_{\phi, \theta}(x) = \mathbb E_{q_{\phi}(z)}
+    \mathcal \max L_{\phi, \theta}(x) = \mathbb E_{z \sim q_{\phi}(z|x)}
     \left [
-        \log p_\theta(x|z) - D_\text{KL} (\log q_{\phi}(z|x) || p(z))
+        \log p_\theta(x|z)
     \right ]
+    - D_\text{KL} (\log q_{\phi}(z|x) || p(z))
 \end{equation}
 $p(z)$ ist hierbei die, für die Verteilung der Merkmale angenommene Verteilung. In der Regel handelt es sich hierbei um eine Standardnormalverteilung $\mathcal N(0; I)$. Die Herleitung der ELBO ausgehend von der Log-Likelihood ist sehr komplex und dem Verständnis nicht weiter zutragend. Eine Betrachtung der einzelnen Therme bietet allerdings Aufschluss über die Bedeutung der ELBO:
 \begin{itemize}
-    \item $\log p_\theta(x|z)$: \\
-    Hierbei handelt es sich um die Log-Likelihood der Eingabedaten unter der Bedingung des jeweiligen latenten Codes. Einfacher ausgedrückt stellt dies die Übereinstimmung der Eingabe und der Rekonstruktion sicher. Somit ist dies lediglich das Optimierungsziel des ursprünglichen AE.
-    \item $D_\text{KL} (\log q_{\phi}(z|x) || p(z))$: \\
+    \item $\mathbb E_{z \sim q_{\phi}(z|x)}
+        \left [
+            \log p_\theta(x|z)
+        \right ]$: \\
+    Hierbei handelt es sich um die Log-Likelihood der Eingabedaten unter der Bedingung der jeweiligen latenten Repräsentation. Einfacher ausgedrückt stellt dies die Übereinstimmung der Eingabe und der Rekonstruktion sicher. Somit ist dies lediglich das Optimierungsziel des ursprünglichen AE.
+    \item $-D_\text{KL} (\log q_{\phi}(z|x) || p(z))$: \\
     Diese KL-Divergenz stellt eine Regularisierungstherm dar. Sie fordert, dass die Verteilung $q_{\phi}(z|x)$, sprich der latente Ergebnisraum des Encoders, der angenommenen zugrundeliegenden Verteilung $p(z)$ entspricht.
 \end{itemize}
 Tatsächlich wurde also, gegenüber des ursprünglichen Optimierungsziels nur ein Regularisierungstherm hinzugefügt.
@@ -131,10 +135,67 @@ Tatsächlich wurde also, gegenüber des ursprünglichen Optimierungsziels nur ei
 % GAN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Generative Adversarial Networks}
 
+Maximierung der Log-Likelihood ist nicht die einzige Methode eine Datenverteilung zu erlernen. Tatsächlich schränkt sie häufig die Komplexität der zugrundeliegenden Funktionen ein, da sie von Modellen fordert, dass sie als Wahrscheinlichkeitsverteilungen formuliert werden, welche somit die damit verbundenen mathematischen Invarianten erfüllen müssen. Dies kann die Qualität der Ergebnisse beeinträchtigen. Insbesondere bei Bilddaten kommt hinzu, dass die Log-Likelihood nicht unbedingt ein gutes Maß für visuelle Qualität ist.\\
+Generative Adversarial Networks (GANs)\footnote{
+    Goodfellow et al.: Generative Adversarial Nets
+    \cite{goodfellow2014generativeadversarialnetworks}
+} erlernen die Datenverteilung auf eine andere Weise. In ihnen kommen zwei Komponenten zum Einsatz der \textit{Diskriminator} und der \textit{Generator} welche zwei gegensätzliche Ziele verfolgen:
+\begin{itemize}
+    \item \textbf{Diskriminator $D_\phi$}: \\
+    Der Diskriminator ist, wie der Name vermuten lässt, kein generatives Modell. Er hat als Ziel zwischen den Ausgaben des Generators und Samples der Datenverteilung zu unterscheiden.
+    \item \textbf{Generator $G_\theta$}: \\
+    Das Ziel des Generators ist das Erzeugen von Datenpunkten andhand eine einfachen Ausgangsverteilung $p_z$, die vom Diskriminator nicht von echten Daten unterschieden werden können. 
+\end{itemize}
+Die Idee hinter diesen gegeneinander gerichteten Komponenten ist, dass somit Daten generiert werden, die möglichst ähnlich zu realen Daten sind. Das Optimierungsziel entspricht somit dieser Form\footnote{
+    Goodfellow et al.: Generative Adversarial Nets, S. 3
+    \cite{goodfellow2014generativeadversarialnetworks}
+}:
+\begin{equation}
+    \min_{G_\theta}\max_{D_\phi}V(G_\theta, D_\phi)
+    = \mathbb E_{x \sim p_\text{data}}[\log D_\phi(x)] 
+    + \mathbb E_{z \sim p_z}[\log (1 - D_\phi(G_\theta(z)))]
+\end{equation}
+Die Gegensätzlichkeit ist hier durch das Minimax ausgedrückt, bei welchem der $V$ respektiv zum Generator minimiert und zum Diskriminator maximiert wird. Hervorzuheben ist, dass der Generator über das Täuschen des Diskriminators traininiert wird. \\
+Diese Herangehensweise ist zwar gut um Erzeugen von hochqualitativen Samples, allerdings erweist sie in der Praxis viele Probleme, die nur schwierig zu bewältigen sind. Ein prominentes dieser Probleme ist der sogenannte \textit{Mode Collapse}. Hierbei handelt es sich um einen Zustand, bei dem der Generator nur einen kleinen Bereich der Datenverteilung erlernt. Dies ist ein Umstand der auf das Trainingskriterium des Generators zurückzuführen ist. Hierbei ist, im Gegensatz zur Maximierung der Log-Likelihood, nicht sichergestellt, dass die gesamte Datenverteilung betrachtet wird. Es kann ausreichen nur einen kleinen bereich zu erlernen, welcher aber vom Diskriminator als real eingestuft wird.\footnote{
+    Thanh-Tung, Tran: Mode Collapse in Generative Adversarial Networks, S. TODO
+    \cite{thanhtung2020catastrophicforgettingmodecollapse}
+}:
 
 \subsubsection{VAE-GAN}
 
+Insbesondere bei Bilddaten können Log-Likelihood basierte Modelle qualitative Mängel aufweisen. Dies ist darin begründet das Optimierungsziele zum Optimieren der Log-Likelihood wie beispielsweise die Kreuzentropie nicht unbedingt gute Kriterien für visuelle Ähnlichkeit zur Datenverteilung sind. So kommt es bei VAEs unter anderem oft zu verwaschenen Rekonstruktionen. \\
+VAE-GANs haben als Ziel, die visuelle Qualität von Ergebnissen von VAEs zu verbessern. Sie tun dies indem sie, wie ihr Name vermuten lässt, VAEs mit GANs kombinieren. Konkret wird hierbei der Decoder des VAEs als Generator eines GANs angesehen. Somit müssen die aus dem Decoder resultierenden Rekonstruktionen einen Diskriminator täuschen, welcher die visuelle Qualität sicherstellen soll. Das Trainingsziel ist hierbei ebenfalls eine Kombination beider Ansätze\footnote{
+    Larsen et al.: Autoencoding using a learned similarity metric, S. 2
+    \cite{larsen2016autoencoding}
+}:
+\begin{equation}
+    \mathcal L_\text{VAE-GAN}
+    = \mathcal L_\text{prior} + \mathcal L_{D_l\text{ like}} + \mathcal L_\text{GAN}
+\end{equation}
+Wobei $\mathcal L_\text{prior}$ und $\mathcal L_\text{GAN}$ bereits vorgestellt wurden und $\mathcal L_{D_l\text{ like}}$ eine Abwandlung des ersten Therms der ELBO darstellt. Diese beruht nun auf den Aktivierungen der $l$-ten Schicht des Diskriminators des GAN. 
+\begin{equation}
+    \mathcal L_\text{prior} 
+    = D_\text{KL} (\log q_{\phi_\text{VAE}}(z|x) || p(z))
+\end{equation}
+\begin{equation}
+    \mathcal L_\text{GAN} = \mathbb E_{x \sim p_\text{data}}[\log D_{\phi_\text{GAN}}(x)] 
+    + \mathbb E_{z \sim p_z}
+    [\log (1 - D_{\phi_\text{GAN}}(G_{\theta_\text{GAN}}(z)))]
+\end{equation}
+\begin{equation}
+    \mathcal L_{D_l\text{ like}} = 
+    - \mathbb E_{z \sim q_{\phi_\text{VAE}}(z|x)}
+    \left [
+        \log p_{\theta_\text{VAE}}(D_{l, \phi_\text{GAN}}(x)|z)
+    \right ]
+\end{equation}
+
+In der Praxis wird allerdings oft anstelle von $\mathcal L_{D_l\text{ like}}$ der ursprüngliche Rekonstruktionsfehler von VAEs angewandt. \\
+Diese Variante von VAEs ist in der Lage deutlich ähnlicher scheinende Rekonstruktionen zu erzeugen, als es einfache VAEs können.
+
+
 \subsubsection{Visual Similarity Metrics}
+
 
 
 % SUPPORTING MODELS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -143,7 +204,24 @@ Tatsächlich wurde also, gegenüber des ursprünglichen Optimierungsziels nur ei
 
 \subsection{Transformer}
 
+
 \subsubsection{Attention}
+
+asdasd\footnote{
+    Vaswani et al.: Attention is All You Need, S. 4
+    \cite{vaswani2023attentionneed}
+}:
+
+\begin{equation}
+    \text{Attention}(Q, K, V) = \text{softmax}
+    \left (
+        \frac {QK^T} {\sqrt{d_k}}
+    \right ) V
+\end{equation}
+
+\begin{equation}
+    \text{softmax}(z) = \frac{e^z}{\sum_{j=1}^K e^{z_j}}
+\end{equation}
 
 % DDPM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Denoising Diffusion Probabilistic Models}
