@@ -12,34 +12,79 @@ Die Grundlagen werden ohne Bezug auf das konkrete Projekt, allgemein dargestellt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Mathematik}
 
-\subsection{Wahrscheinlichkeits-Dichte}
+\subsection{Wahrscheinlichkeitsdichtefunktionen}
+Eine Wahrscheinlichkeitsdichtefuntion (WDF) ist eine reelle Funktion $p$, welche die Wahrscheinlichkeit beschreibt, dass eine Zufallsvariable X in einem bestimmten Bereich liegt. Diese Wahrscheinlichkeit wird wie folgt berechnet:
+\begin{equation}
+    a,b \in X \land a \le b, \space p([a, b]) = \int_a^b p(x) dx
+\end{equation}
+Die WDF hat dabei folgende zwei Invarianten zu erfüllen\footnote{
+    Deisenroth: Mathematics for Machine Learning, S. 181
+    \cite{Deisenroth2020}
+}:
+\begin{enumerate}
+    \item Sie ist über den gesamten Definitionsbereich nicht negativ. 
+    \begin{equation}
+        \forall x \in X, \space p(x) \ge 0
+    \end{equation}
+    \item Das Integral der WDF-Funtion ist berechenbar und über den Definitionsbereich gleich eins.
+    \begin{equation}
+        \int p(x) dx = 1
+    \end{equation}
+\end{enumerate}
 
-\subsection{Score}
+Oft kann es sein, dass die Parametrisierung angegeben werden soll. Dies wird im weiteren Verlauf dieser Arbeit als $p_\theta(X)$ denotiert, wobei in diesem Fall $\theta$ die Parametrisierung ist. Der Vollständigkeithalber sei erwähnt, dass einige Publikationen eine alternative Schreibweise $p(X; \theta)$ wählen. \\
+Desweiteren wird im Bereich des Machine Learning oft die Entnahme einer Stichprobe $x$ aus einer WDF $p$, was auch Sampling gennant wird, $x \sim p$ gekennzeichnet. 
+
+
+
 
 \subsection{Likelihood}
 
-\subsubsection{Likelihood-Estimation}
+Die Likelihood $p(y|x)$ ist in der Bayesischen Statistik, vereinfacht ausgedrückt, eine Aussage über die Wahrscheinlichkeit, dass die Beobachtung $x$ der WDF $p$ entnommen wurde\footnote{
+    Deisenroth: Mathematics for Machine Learning, S. 185
+    \cite{Deisenroth2020}
+}. \\
+Im bereich des Machine Learning ist es oft das Ziel, die Likelihood einer parametrisierten WDF zu maximieren\footnote{
+    Vgl. Goodfellow, Bengio, Courville: Deep Learning, S. 133
+    \cite{Goodfellow-et-al-2016}
+}. 
+\begin{equation}
+    \arg\max_\theta p_\theta(y|x)
+\end{equation}
+Dies entspricht sinngemäß der parametrisierung der WDF, unter welcher, die beobachteten Daten, beziehungsweise die Trainingsdaten maximal wahrscheinlich sind. \\
+Diese Maximierung entspricht $\arg\max_\theta \log p_\theta(y|x)$ welche auch als die Maximierung der \textit{Log-Likelihood} bezeichnet wird. Diese Formulierung wird der einfachen Likelihood in der Praxis oft vorgezogen, da sie bei der Differenzierung Vorteile hat.
+
+\subsection{Score}
+
+Der \textit{score} $s$ ist der Gradient der Log-Likelihood einer WDF $p$\footnote{
+    Hyvärinen: Estimation of Non-Normalized Statistical Models by Score Matching, S. 2
+    \cite{JMLR:v6:hyvarinen05a}
+}: 
+\begin{equation}
+    s_\theta(x) = \frac{\partial \log p_\theta(x)}{\partial \theta} 
+    = \nabla_x p_\theta(x)
+\end{equation}
 
 \subsection{Kullback-Leibler-Divergenz}
 
-Seien $P(x)$ und $Q(x)$ zwei Wahrscheinlichkeitsverteilungen, so ist die KL-Divergenz definiert als \footnote{
+Seien $p(x)$ und $q(x)$ zwei WDFs, so ist die KL-Divergenz definiert als\footnote{
     Vgl. Goodfellow, Bengio, Courville: Deep Learning, S. 74 f.
     \cite{Goodfellow-et-al-2016}
 }:
 
 \begin{equation}
-D_\text{KL}(P||Q) 
-:= \mathbb{E}_{x \sim P} \left [
-\log \frac{P(x)} {Q(x)}
+D_\text{KL}(p||q) 
+:= \mathbb{E}_{x \sim p} \left [
+\log \frac{p(x)} {q(x)}
 \right ]
-= \mathbb{E}_{x \sim P} \left [ 
-    \log P(x) - \log Q(x)
+= \mathbb{E}_{x \sim p} \left [ 
+    \log p(x) - \log q(x)
     \right ]
 \end{equation}
 
 \subsection{Erwartungswert}
 
-Der Erwartungswert einer Zufallsvariable $X$ unter einer Wahrscheinlichkeitsverteilung $p(X)$ ist gegeben als: 
+Der Erwartungswert einer Zufallsvariable $X$ unter einer WDF $p(X)$ ist gegeben als: 
 \begin{equation}
     \mathbb E(X) := \int x p(x) dx
 \end{equation}
@@ -190,7 +235,10 @@ Wobei $\mathcal L_\text{prior}$ und $\mathcal L_\text{GAN}$ bereits vorgestellt 
     \right ]
 \end{equation}
 
-In der Praxis wird allerdings oft anstelle von $\mathcal L_{D_l\text{ like}}$ der ursprüngliche Rekonstruktionsfehler von VAEs angewandt. \\
+In der Praxis wird allerdings oft anstelle von $\mathcal L_{D_l\text{ like}}$ der ursprüngliche Rekonstruktionsfehler $- \mathbb E_{z \sim q_{\phi}(z|x)}
+    \left [
+        \log p_\theta(x|z)
+    \right ]$ von VAEs angewandt. \\
 Diese Variante von VAEs ist in der Lage deutlich ähnlicher scheinende Rekonstruktionen zu erzeugen, als es einfache VAEs können.
 
 
@@ -224,7 +272,16 @@ asdasd\footnote{
 \end{equation}
 
 % DDPM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Denoising Diffusion Probabilistic Models}
+\subsection{Diffusions Modelle}
+Diffusions Modelle (DM)\footnote{
+    Dickstein et al.: Diffusion Models, S. 4
+    \cite{pmlr-v37-sohl-dickstein15}
+}
+
+
+
+\subsubsection{Denoising Diffusion Probabilistic Models}
+Denoising Diffusion Probabilistic Models (DDPMs)
 
 \subsubsection{Improved DDPMs}
 
