@@ -87,7 +87,7 @@ Diese Maximierung entspricht $\arg\max_\theta \log p_\theta(y|x)$ welche auch al
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Score}
 
-Der \textit{score} $s$ ist der Gradient, also der Vektor aller partiellen Ableitungen der Log-Likelihood einer WDF $p$\footnote{
+Der \textit{Score} $s$ ist der Gradient, also der Vektor aller partiellen Ableitungen der Log-Likelihood einer WDF $p$\footnote{
     Hyvärinen: Estimation of Non-Normalized Statistical Models by Score Matching, S. 2
     \cite{JMLR:v6:hyvarinen05a}
 }: 
@@ -95,26 +95,35 @@ Der \textit{score} $s$ ist der Gradient, also der Vektor aller partiellen Ableit
     s_\theta(x) = \frac{\partial \log p_\theta(x)}{\partial \theta} 
     = \nabla_x p_\theta(x)
 \end{equation}
+Der Score ist somit zu einem lokalen Maximum der WDF gerichtet, gibt also an, wie sich ein Eingabedatum verändern muss, um unter der zugrundeliegenden Wahrscheinlichkeitsverteilung maximal wahrscheinlich zu sein.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Kullback-Leibler-Divergenz}
 
-Seien $p(x)$ und $q(x)$ zwei WDFs, so ist die KL-Divergenz definiert als\footnote{
+Die Kullback-Leibler-Divergenz, kurz KL-Divergenz, ist eine Metrik welche die Ähnlichkeit zwischen zwei Wahrscheinlichkeitsverteilungen misst. Seien $p(x)$ und $q(x)$ zwei WDFs, so ist die KL-Divergenz definiert als\footnote{
     Vgl. Goodfellow, Bengio, Courville: Deep Learning, S. 74 f.
     \cite{Goodfellow-et-al-2016}
 }:
-
 \begin{equation}
-D_\text{KL}(p||q) 
-:= \mathbb{E}_{x \sim p} \left [
-\log \frac{p(x)} {q(x)}
-\right ]
-= \mathbb{E}_{x \sim p} \left [ 
-    \log p(x) - \log q(x)
+    D_\text{KL}(p||q) 
+    := \mathbb{E}_{x \sim p} \left [
+    \log \frac{p(x)} {q(x)}
     \right ]
+    = \mathbb{E}_{x \sim p} \left [ 
+        \log p(x) - \log q(x)
+        \right ]
 \end{equation}
-
-
+Sie gibt an, wie viele extra Nats\footnote{
+    Nats sind Informationseinheiten in einem Zahlsystem mit Basis $e$. Vergleichbar mit Bits in einem Binärsystem. 
+} nötig sind, wenn eine für $q$ optimierte Verschlüsselung, $p$ kodiert. \\
+Sie bietet einige nützliche Eigenschaften, insbesondere, dass sie nie negativ und nur dann gleich null ist, wenn $p = q$ gilt. Dies und die Tatsache, dass die Minimierung der KL-Divergenz äquivalent zur Maximierung der Log-Likelihood ist\footnote{
+    Amari: Information Geometry and Its Applications, S. 48
+    \cite{10.5555/3019383}
+}, machen sie zu einer oft angewandten Metrik im Machine Learning. \\
+Der Vollständigkeithalber sei erwähnt, dass die KL-Divergenz allerdings per Definition kein Distanzmaß ist, da sie im Allgemeinen keine kommutative Operation ist.  
+\begin{equation}
+    D_\text{KL}(p||q) \ne D_\text{KL}(q||p) 
+\end{equation}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -126,7 +135,7 @@ D_\text{KL}(p||q)
 Modelle der generativen KI versuchen im Allgemeinen die Wahrscheinlichkeitsverteilung der Eingabedaten, oft auch als Datenverteilung bezeichnet, zu modellieren. Sie unterscheiden sich somit von diskreminierenden Ansätzen, welche lediglich Eigenschaften dieser Verteilung erlernen. \\
 Es kann schwierig fallen, intuitiv die Beziehung zwischen Datenverteilung und Modell nachzuvollziehen. Um diesen Sachverhalt zu verdeutlichen, folgt ein einfaches Beispiel:
 
-Ein Münzwurf soll modelliert werden. Das Ergebnis von Münzwürfen ist mit der Wahrscheinlichkeitsverteilung $p(X)$ beschrieben wobei $x \in [\text{Kopf}, \text{Zahl}]$. Um zu verdeutlichen, dass es sich bei $p(X)$ um die Datenverteilung handelt wird sie oft auch als $p_\text{data}(X)$ bezeichnet. \\
+Ein Münzwurf soll modelliert werden. Das Ergebnis von Münzwürfen ist mit der Wahrscheinlichkeitsverteilung $p(X)$ beschrieben wobei $x \in \left \{ \text{Kopf}, \text{Zahl} \right \}$. Um zu verdeutlichen, dass es sich bei $p(X)$ um die Datenverteilung handelt wird sie oft auch als $p_\text{data}(X)$ bezeichnet. \\
 Das Modell, welches den Münzwurf modellieren soll wird $p_\theta(X)$ bezeichnet, wobei $\theta$ die Parameter dieses Modells darstellt. Das Ziel ist, dass Münzwürfe des Modells, nicht von tatsächlichen Münzwürfen unterschieden werden können. Einfacher ausgedrückt, müssen die Wahrscheinlichkeiten für Kopf und Zahl jeweils gleich sein: $p_\theta(X) \overset{!}{=} p_\text{data}(X)$. \\ 
 Um dies zielgerichtet erfüllen zu können benötigen wir eine Metrik, welche angibt, wie gut das Modell die Datenverteilung approximiert. Hierfür kann beispielsweise die Distanz zwischen beiden Verteilungen genommen werden. Eine Möglichkeit diese zu Berechnen ist die KL-Divergenz $D_\text{KL}(p_\text{Data}(X)||p_\theta(X))$. Um eine solche Berechnung durchzuführen muss $p_\text{Data}(X)$ allerdings bekannt sein. Grundsätzlich ist dies allerdings für Datenverteilungen nicht möglich. \\
 Die Minimierung der KL-Divergenz ist allerdings mathematisch äquivalent zur minimierung Kreuzentropie\footnote{
@@ -134,7 +143,8 @@ Die Minimierung der KL-Divergenz ist allerdings mathematisch äquivalent zur min
     \cite{Goodfellow-et-al-2016}
 }. 
 Dies entspricht wiederum der maximierung der Log-Likelihood und ist somit als Trainingskriterium bei Modellen bekannt.
-Damit $p_\theta(X)$ $p_\text{data}(X)$ erlernen kann, werden zunächst Beispiele benötigt. Dazu wird mehrfach eine Münze geworfen. Die Menge all dieser Ergebnisse sind die Trainingsdaten. Ein einzelner Münzwurf $x_n$ der Menge entspricht einem Sample, welches der Datenverteilung entnommen wurde $x_n \sim p_\text{data}(X)$. Nun kann über die Maximierung der Log-Likelihood normales Training vollzogen werden.
+Damit $p_\theta(X)$ $p_\text{data}(X)$ erlernen kann, werden zunächst Beispiele benötigt. Dazu wird mehrfach eine Münze geworfen. Die Menge all dieser Ergebnisse sind die Trainingsdaten. Ein einzelner Münzwurf $x_n$ der Menge entspricht einem Sample, welches der Datenverteilung entnommen wurde $x_n \sim p_\text{data}(X)$. Nun kann über die Maximierung der Log-Likelihood normales Training vollzogen werden. \\
+Wurde das Training abgschlossen stellt $p_\theta(X)$ nun eine Approximation für $p_\text{data}(X)$ dar. Um neue Münzwürfe zu erhalten, können wir sie nun also aus $p_\theta(X)$ entnehmen $x \sim p_\theta(X)$. Hierbei spricht man ebenfalls von Generierung oder Sampling.
 
 Dieses Beispiel kann auf andere Anwendungsfälle übertragen werden. In der Bildysnthese entspricht die Datenverteilung beispielsweise einer Verteilung von Farbwerten auf $n \times m$ Pixeln, im Gegensatz zu einem Münzwurf auf Kopf oder Zahl.
 
@@ -271,24 +281,44 @@ Diese Variante von VAEs ist in der Lage deutlich ähnlicher scheinende Rekonstru
 
 \subsection{Transformer}
 
+Der Transformer\footnote{
+    Vaswani et al.: Attention is All You Need
+    \cite{vaswani2023attentionneed}
+} ist eine Modellarchitektur, welche ursprünglich für den Bereich der Generierung von natürlicher Sprache entworfen wurde. Sie zeichnen sich insbesondere durch ihre Fähigkeit aus, sequenzielle Daten in einem einzigen Zeitschritt kontextualisiert zu verarbeiten. Mitlerweile findet sie allerdings auch in vielen weiteren Gebieten des Deep-Learning Verwendung, so auch beispielsweise in der Bildsynthese in Form von Vision Transformern\footnote{
+    Dosovitskiy et al.: An Image is Worth 16x16 Words 
+    \cite{dosovitskiy2021imageworth16x16words}
+}. \\ 
+Der Transformer folgt dem Encoder-Decoder Schema. Dabei dient, vereinfacht ausgedrückt, der Encoder zur Verarbeitung der Eingabe zu einem Kontext. Der Decoder hingegen generiert anhand dieses Kontextes und der bisher generierten Sequenz autoregressiv die Ausgabe. Das bedeutet, dass die Ausgabe Komponente um Komponente, auf Basis des bisherigen Ergbnisses, synthetisiert wird. \\ 
+Die Daten, die hierbei verarbeitet werden sind grundsätzlich sequenziel, ihre Position innerhalb der Sequenz ist also für ihre Interpretation relevant. \\
+Die grobe Funktionsweise ist dabei wie Folgt. Die Eingabedaten müssen zunächst für den Encoder angepasst werden. Dies kann das gegebenfalls das Embedden des Eingabevektors beinhalten, in jedem Fall aber die Integration eines Positional Embeddings. Diese weist jeder Komponente des Eingabvektors einen eindeutigen Wert anhand der Position dieser Komponente in der zu verarbeitenden Sequenz. Dieses Positional Encoding beruht dabei üblicherweise auf einer Kosinusfunktion, kann aber auch erlernt werden. \\
+Dieser um die Positionsinformationen angereicherte Vektor kann nun vom Encoder, zu einem sogenannten Contextual- oder Hidden-Embedding, verarbeitet werden. Dies ist ein Vektor, welcher grundsätzlich dem Eingangsvektor entspricht. Jede Komponente dieses Vektors ist dabei, stark vereinfacht ausgedrückt, eine kontextualisierte Repräsentation der ursprünglichen Komponente. Das heißt, sie beinhaltet Informationen über ihre Bedeutung innerhalb der jeweiligen Sequenz, sowie gegebenenfalls im breiteren Kontext der Domäne des Modells. \\
+Anhand dieses Hidden-Embeddings wird nun Komponente für Komponente die Ausgabesequenz generiert. Dabei wird in jedem Schritt das bis zu diesem Zeitpunkt generierte Ergebnis mit dem Contextual-Embedding in Kontext gesetzt, was letztendlich die Grundlage für die Auswahl der wahrscheinlich als nächstes folgenden Komponente der Sequenz ist.
 
 \subsubsection{Attention}
 
-asdasd\footnote{
+Der Erfolg von Transformern beruht maßgeblich auf ihren Attention-Blöcken, diese Erlauben es einen, oder gegebenfalls auch zwei, Sequenzvektoren zu sich selbst, oder einander in Kontext zu setzen und diese Information in ihrer Ausgabe festzuhalten. \\
+Diese basieren dabei auf der der sogenannten \textit{Self-Attention}, welche einen sogenannten Attention-Vektor als Ergebnis hat. Jede Komponente dieses Vektors wird berechnet indem alle Komponenten eines Eingabevektors linear abgebildet werden:
+\begin{equation}
+    y_i = \sum_{j=1}^n w_{ji}x_j
+\end{equation}
+Wobei $x$ der Eingabevektor, $y$ der Attentionvektor und $W$ die Gewichtsmatrix für die lineare Abbildung sind. Hierbei ist die Invariante, dass die Summe der Spaltenvektoren von $W$ gleich eins ist, zu erfüllen. Selfattention kann somit als Wertung der Wichtigkeit aller Komponenten von $x$ gemäß verschiedener diskreter Warhscheinlichkeitsverteilungen verstanden werden. Mit anderen Worten wird somit bestimmt, wieviel Aufmerksamkeit einer Komponente zukommen soll. \\
+Dieses Prinzip wird in Attention-Blöcken grundlegend durch die \textit{Scaled Dot Product Attention} umgesetzt. Diese ist wie folgt definiert\footnote{
     Vaswani et al.: Attention is All You Need, S. 4
     \cite{vaswani2023attentionneed}
 }:
-
 \begin{equation}
     \text{Attention}(Q, K, V) = \text{softmax}
     \left (
         \frac {QK^T} {\sqrt{d_k}}
     \right ) V
 \end{equation}
-
 \begin{equation}
     \text{softmax}(z) = \frac{e^z}{\sum_{j=1}^K e^{z_j}}
 \end{equation}
+$Q$, $K$ und $V$ sind hierbei Ergebnisse der Multiplikation eines Eingabevektors mit den korrespondierenden erlernten Gewichtsmatrizen $W^Q$, $W^K$ und $W^V$. $d_k$ ist die Dimension von $Q$ und $K$. \\
+Man nennt $Q$, $K$ und $V$ auch \textit{Query}, \textit{Key} und \textit{Value}, was ihre Bedeutung veranschaulicht. Zunächst werden Query und Key werden miteinander multipliziert, der sich hieraus ergebende Wert soll angeben, wie relevant der jeweilige Key für die jeweilige Query ist. Dies entspricht der Definition der Self-Attention und die umschließende Softmax-Funktion, stellt die Einhaltung der Invariante sicher. Diese, vereinfacht ausgedrückt, gewichteten Relevanzwerte, werden anschließend mit dem Value verrechnet, welcher der Repräsentation der kontextuellen Bedeutung der jeweiligen Komponente des Eingangsvektors entspricht. \\
+Sollen zwei Vektoren zu einander in beziehung gesetzt werden, so wird einer der beiden für $Q$ und der andere für $K$ und $V$ verwendet. Man spricht in diesem Fall auch von \textit{Cross Attention}. \\
+Diese Berechnung kann auch mehrfach mit unterschiedlichen $W^Q$, $W^K$ und $W^V$ durchgeführt werden, um unterschiedliche Interpretationsmöglichkeiten der Sequenz abbilden zu können. Dies wird \textit{Multi-Head Attention} genannt.
 
 % DDPM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Diffusionmodelle}
@@ -298,10 +328,10 @@ Eine Antwort hierauf stellen Diffusions Modelle (DM)\footnote{
     Dickstein et al.: Diffusion Models
     \cite{pmlr-v37-sohl-dickstein15}
 }. Die Kernidee der Generierung dieser Klasse von Modellen ist dabei das, über viele Zeitschritte hinweg, iterative Herauskristallisieren von Informationen aus einem ursprünglichen Rauschbild. Intuitiv kann dies damit begründet werden, dass jeder einzelne Schritt hierbei eine Verhältnismäßig einfache Aufgabe ist, da das Ergebnis jedes Schrittes nur eine kleine Änderung des verrauschten Ausgangszustands darstellt. Alle Schritte zusammen jedoch ergeben ein sehr tiefes und mächtiges Modell. Vergleichbar ist dies mit einem Künstler welcher, beginnend mit einer Grundierung, Schicht für Schicht weitere Strukturen und Details auf eine Leinwand aufträgt. \\
-Die Formulierung eines Diffusionsmodells ist in zwei Prozesse aufgeteilt, wobei $t$ den jeweiligen Zeitschritt angibt: 
+Die Formulierung eines Diffusionsmodells ist in zwei Prozesse aufgeteilt, wobei $t \in [0,T]$ den jeweiligen Zeitschritt angibt. Hierbei ist eine gängige Konvention $T=1000$: 
 \begin{itemize}
     \item \textbf{Vorwärtsprozess} $q(x_{1:T}|x_0)$: \\
-    Das Ziel des Vorwärtsprozesses ist das iterative Einführen von zunehmenden, in der Regel gaußschen Rauschen in die Eingabedaten $x_0$. Der letzte Zeitschritt $x_T$ stellt hierbei ein komplett verrauschtes Bild dar, in welchem die Informationen von $x_0$ gänzlich zerstört wurden. Dieser Prozess ist der Grund für die Namensgebung von Diffusionsmodellen, da er dem Vorgang der Diffusion in der Physik ähnelt. Definiert ist er wie Folgt:
+    Das Ziel des Vorwärtsprozesses ist das iterative Einführen von zunehmenden, in der Regel gaußschen Rauschen in die Eingabedaten $x_0$. Die Daten zum letzten Zeitschritt $x_T$ stellen hierbei reines Rauschen dar, in welchem die Informationen von $x_0$ gänzlich zerstört wurden. Dieser Prozess ist der Grund für die Namensgebung von Diffusionsmodellen, da er dem Vorgang der Diffusion in der Physik ähnelt. Definiert ist er wie Folgt:
     \begin{equation}
         q(x_{1:T}|x_0) := \prod_{t=1}^T q(x_t | x_{t-1}) 
     \end{equation}
@@ -335,7 +365,7 @@ Die Notation dieser Prozesse ähnelt den Komponenten eines Autoencoder. Tatsäch
     \cite{ho2020denoisingdiffusionprobabilisticmodels}
 }.
 Dementsprechend vergleichbar ist ebenfalls das Optimierungsziel, welches eine untere Grenze der Log-Likelihood, auch Variational Lower Bound (VLB) genannt, ist. Diese setzt sich aus drei grundlegenden Thermen, welche in Abhängigkeit zu $t$ stehen, zusammen\footnote{
-    Dhariwal: Nichol, Diffusion Models Beat Gans on Image Synthesis, S. 19
+    Dhariwal, Nichol: Diffusion Models Beat Gans on Image Synthesis, S. 19
     \cite{dhariwal2021diffusionmodelsbeatgans}
 }:
 \begin{equation}
@@ -351,11 +381,14 @@ Wobei die einzelnen hergeleiteten Therme hierbei folgend definiert sind:
 \begin{equation}
     L_T := D_\text{KL}(q(x_T|x_0)||p(x_T))
 \end{equation}
-Diese Definition erscheint auf den ersten Blick nur schwer verständlich, bei genauerer Betrachtung lässt sich die Bedeutung relativ einfach zusammenfassen. Alle drei bilden jeweils die Distanz der jeweiligen Vorwärts- und Rückwärts-Verteilungen ab. Im allerersten Schritt, also $t=0$, sind die Eingabedaten noch unverrauscht. Somit müssen hier noch nicht die Normalverteilungen verglichen werden sondern lediglich die negative Log-Likelihood. Im letzten Zeitschritt werden reine Normalverteilungen verglichen, es benötigt also keine Parametrisierung $\theta$. Für alle schritte dazwischen müssen die jeweiligen Normalverteilungen mittels KL-Divergenz verglichen werden. Die zusätzliche Konditionierung des Vorwärtsprozesses durch $x_0$ ist hierbei notwendig, damit die Berechnung in polynomialer Zeit durchgeführt werden kann\footnote{
+Diese Definition erscheint auf den ersten Blick nur schwer verständlich, bei genauerer Betrachtung jedoch lässt sich die Bedeutung relativ einfach zusammenfassen. Alle drei bilden jeweils die Distanz der korrespondierenden Vorwärts- und Rückwärts-Verteilungen ab. Im allerersten Schritt, also $t=0$, sind die Eingabedaten noch unverrauscht. Somit müssen hier noch nicht die Normalverteilungen verglichen werden sondern lediglich die negative Log-Likelihood. Im letzten Zeitschritt werden reine Normalverteilungen verglichen, es benötigt also keine Parametrisierung $\theta$. Für alle schritte dazwischen müssen die jeweiligen Normalverteilungen mittels KL-Divergenz verglichen werden. Die zusätzliche Konditionierung des Vorwärtsprozesses durch $x_0$ ist hierbei notwendig, damit die Berechnung in polynomialer Zeit durchgeführt werden kann\footnote{
     Ho, Jain, Abbeel: Denoising Diffusion Probabilistic Models, S. 3
     \cite{ho2020denoisingdiffusionprobabilisticmodels}
-}. 
+}. \\
+Das Training erfolgt dabei pro Zeitschritt, welche üblicherweise für jeden Optimierungsschritt zufällig ausgewählt werden. Beim Sampling werden hingegen alle Zeitschritte in einer Markow-Kette, beginnend bei $t=T$ durchlaufen. 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Denoising Diffusion Probabilistic Models}
 
 Die vorherige Definition von Diffusionsmodellen im Allgemeinen bietet bereits ein Verständnis für die Leistungsfähigkeit dieser Klasse von Modellen. Das Prinzip des iterativen Erkennens von Strukturen in Rauschen ist bereits intuitiv leicht zu greifen. Eine besondere Formulierung von Diffusionsmodellen - Denoising Diffusion Probabilistic Models\footnote{
@@ -376,9 +409,10 @@ Weiter kann so, unter der Annahme, dass die Kovarianzmatrix der Normalverteilung
 \end{equation}
 Hierbei erlernt das neurnale Netz $\epsilon_\theta$ nun nicht mehr Erwahrtungswert und Standardverteilung der zugrundeliegenden Normalverteilung, sondern das Rauschen $\epsilon$ selbst. 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Improved DDPMs}
 
-In der Praxis hat sich die Annahme, dass die Kovarianzmatrizen Normalverteilungen konstant sind als zu vereinfachend herausgestellt. Bessere Ergebnisse können durch das Erlernen von $\Sigma$ erzielt werden. Allerdings erhöht dies in der Praxis die Varianz der Trainingsverluste. Eine erfolgreiche Lösung wird Nichol und Dhariwal\footnote{
+In der Praxis hat sich die Annahme, dass die Kovarianzmatrizen der Normalverteilungen konstant sind als zu vereinfachend herausgestellt. Bessere Ergebnisse können durch das Erlernen von $\Sigma$ erzielt werden. Allerdings erhöht dies in der Praxis die Varianz der Trainingsverluste. Eine erfolgreiche Lösung wird Nichol und Dhariwal\footnote{
     Nichol, Dhariwal: Improved Denoising Diffusion Probabilistic Models, S. 4
     \cite{nichol2021improveddenoisingdiffusionprobabilistic}
 } vorgeschlagen. Sie kombinieren die Optimierungsziele $L_\text{simple}$ und $L_\text{vlb}$:
@@ -400,29 +434,89 @@ Die Autoren schlagen ebenfalls eine neue nicht-lineare Noise-Schedule vor welche
 \end{equation}
 Diese soll dafür sorgen, dass Informationen in eingangsdaten langsamer zerstört werden als bei einer linearen Funktion und somit in jeder Trainingsschritt aussagekräftiger wird. $s$ ist von den Autoren auf 0.008 belegt worden.
 
-\subsubsection{Classifier Free Guidance}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Konditionierung}
 
-\subsubsection{Adaptive Group Normalization}
+Diffusionsmodelle wie sie soweit vorgestellt wurden sind unkonditionel. Es gibt somit also noch keine Möglichkeit über ein Kontrollsignal, wie beispielsweise Klassen, die Generation zu steuern. \\
+Um dies zu ermöglichen muss das Signal zunächst in das Modell integriert werden. Hierfür existieren viele Ansätze, welche alle gemein haben, dass das Signal üblicherweise vor der Integration embeddet wird. Das bedeutet, dass es zunächst auf einen Vektor festgelegter größe abgebildet wird. Diese abbildung kann fest definiert, oder erlernt werden. Einige gängige Varianten der Integration solcher Embeddings werden folgend aufgelistet:
+\begin {itemize}
+    \item \textbf{Konkatenation mit Eingangsdaten}: \\
+    Die wahrscheinlich simpelste Art der Integration ist die Konkatenation des Embeddings mit den Eingabedaten.
+    \item \textbf{Addition mit Zeitembedding}: \\
+    Eine ebenfalls sehr simple alternative ist die Addition des Embeddings mit dem Zeitschritt-Embedding. Hierbei muss sichergestellt werden, dass beide Vektoren die gleiche Dimensionalität haben.
+    \item \textbf{Cross Attention}: \\
+    Eine deutlich komplexere Variante ist die Integration mittels Attention. Hierbei werden während der Verarbeitung der Eingabedaten gegebenenfalls mehrfach Cross-Attention Blöcke verwendet, wobei das Embedding für Key und Value genutzt werden. Dieser Ansatz eignet sich vor allem für sehr komplexe Kontrollsignale, wie beispielsweise Text.
+    \item \textbf{Adaptive Group Normalization} (AdaGN) \footnote{
+        Vgl. Dhariwal, Nichol: Diffusion Models Beat Gans on Image Synthesis, S. 6
+        \cite{NEURIPS2021_49ad23d1}
+    }: \\
+    Eine weitere Methode sind AdaGN-Blöcke. Diese erlernen eine lineare Abbildung von Zeit- und Konditionsembedding, dabei können diese Embeddings zuvor addiert oder konkatteniert werden. Sie werden ebenfalls meist mehrfach verwendet. Definitiert ist AdaGN wie folgt:
+    \begin{equation}
+        \text{AdaGN}(h,y) = y_s \text{GroupNorm}(h) + y_b
+    \end{equation}
+    Wobei $h$ die aktuellen Aktivierungen und $y=[y_s, y_b]$ das aufgeteilte Ergebnis einer erlernten linearen Abbildung von Zeit und Kondition ist. \\
+    Eine etwas abgewandelte Methode ist Adaptive Layer Normalization (AdaLN), welche lediglich die Group Normierung durch eine Layer Normierung ersetzt.
 
+    
+\end {itemize}  
+Nach Integration in das Modell, müssen ebenfalls die Algorithmen für Training und Sampling angepasst werden. Die gängigste Art und Weise hierfür stellt die \ac{CFG}\footnote{
+    Ho, Salimans: Classifier-Free Diffusion Guidance
+    \cite{ho2022classifierfreediffusionguidance}
+} dar. Durch sie ist es möglich das Diffusionsmodell zu Konditionieren, ohne dass ein Klassifikationsmodell verwendet werden muss, wie es zuvor nötig war\footnote{
+    Vgl. Dhariwal, Nichol: Diffusion Models Beat Gans on Image Synthesis, S. 6 ff.
+    \cite{NEURIPS2021_49ad23d1}
+}. 
+Hierbei wird zuallererst ein Null-Embedding $\diameter$ definiert, welches die Abwesenheit eines Kontrollsignals abbildet. Anschließend müssen folgende geringfügige Anpassung für Training und Sampling vollzogen werden:
+\begin{enumerate}
+    \item \textbf{Training}:\\
+    Beim Training wird nun die tatsächliche Kondition mit einer definierten Wahrscheinlichkeit $p$ durch $\diameter$ ersetzt. $p$ ist dabei eher gering, beispielsweise $p=0.1$
+    \item \textbf{Sampling}:\\
+    Für das Sampling wird jeder Zeitschritt zweimal durchgeführt. Einer davon nutzt dabei die Kondition $c$, der Andere hingegen $\diameter$. Anschließend wird zwischen beiden Ergebnissen mit einem Gewicht $\lambda$ linear interpoliert:
+    \begin{equation}
+        \tilde \epsilon_t(z_t, c) = (1+w)\epsilon_\theta(z_t, c)
+        - w\epsilon_\theta(z_t, \diameter)
+    \end{equation}
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Image To Image}
+
+Durch die Markow-Kette des Rückwärtsprozesses beim Samplings in einem \ac{DM} ergibt sich die Möglichkeit diesen Prozess zu kapern, um die Generation genauer zu steuern. Konkret bedeutet dies, dass der Rückwärtsprozess nicht zwangsläufig bei $t=T$ beginnen muss. Tatsächlich kann ein beliebiges $t$ als Startpunkt gewählt werden, solange $x_t$ bekannt ist. Da der Rückwärtsprozess zu jedem Zeitschritt versucht den selben Zeitschritt im Forwärtsprozess zu approximieren kann für $x_t$ einfach $q(x_t|x_0)$ genutzt werden. Einfacher ausgedrückt heißt dies, dass ein Eingabedatum entsprechend Zeitschritt $t$ verrauscht werden kann und anschließend umgehend in den Rückwärtsprozess gegeben werden kann um bei $t$ zu starten. Dies hat zur Folge, dass Samples, die auf diese Weise erzeugt wurden, dem Eingegebenen Datenpunkt ähneln. Die Stärke dieser Ähnlichkeit kann dabei über $t$ festgelegt werden - je kleiner $t$ desto weniger werden die Daten durch Rauschen zerstört, desto größer die Ähnlichkeit.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Inpainting}
 
+Ebenfalls ist es möglich die Generierung lokal zu begrenzen, sodass gezielt nur Bereiche in einem Eingabedatum durch die Generierung betroffen werden. Hierfür wird zuerst eine Maske definiert, welche die gleiche Dimension der Eingabedaten hat. Anschließend erfolgt der Rückwärtsprozess. Hierbei wird nun in jedem Schritt der maskierte Bereich von $p_\theta(x_{t-1} | x_{t})$ durch $q(x_{t-1}|x_0)$ ersetzt. Auf diese Weise bleiben die maskierten Bereiche der Eingabedaten unverändert wärend die Unmaskierten generiert wurden. \\
+Aufgrund des Umstands, dass diese Ersetzung in jedem Zeitschritt stattfindet ist der Übergang zwischen Ursprungs- und neuen Daten fließend und kohärent, selbst wenn sich hierbei die Kontrollsignale unterscheiden.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Diffusion Transformer}
+
+\ac{DiT}\footnote{
+    Peebles, Xie: Scalable Diffusion Models with Transformers
+    \cite{peebles2023scalable}
+} stellen eine Alternative zu UNets für die Umsetzung der Modellarchitektur von \ac{DM}s dar. \ac{DiT}s sind eine speziell für Diffusion angepasste Variante der sogenannten Vision Transformer\footnote{
+    Dosovitskiy et al.: An Image is Worth 16x16 Words 
+    \cite{dosovitskiy2021imageworth16x16words}
+}.\\
+Ihre grundlegende Funktionsweise ist dabei stark verwandt zu der von normalen Transformern. Die Eingabedaten werden zunächst in kleinere Patches, vergleichbar mit Tokens, unterteilt. Diese Patches werden anschließend mit einem Positional Encoding versehen, welches beispielsweise bei Bildern auch mehrdimensional sein kann. Diese angereicherten Patches werden anschließend in vielen Iterationen mittels sogenannter \ac{DiT} Blöcke, welche aus abwechselnden Self-Attention und AdaLN-Blöcken beziehungsweise Cross-Attention-Blöcken bestehen, verarbeitet. Abschließend werden die einzelnen Patches wieder zu ihrer ursprünglichen Anordnung zusammengefügt. \\
+Diese Methode hat sich in einigen Kontexten als Leistungsfähiger im Vergleich zu UNets erwiesen. Allerdings erfordern sie ebenfalls mehr Rechenkapazität um vergleichbare oder bessere Ergebnisse zu erzeugen. Aufgrund dieser Leistungsfähigkeit werden \ac{DiT}s in einigen der aktuell leistungsfähigsten Modellen wie beispielsweise Stable Diffusion 3 verwendet.
 
 
 % LDM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Latent Diffusion}
+\subsubsection{Latent Diffusion}
 
-Die bisher vorgestellte Variante von Diffusions-Modellen operiert ausschließlich in der Bilddomäne. Dies ist insbesonder bei hohen Auflösungen enorm Rechenintensiv, sowohl beim Training als auch bei der Inferenz. Latent Diffusion Modelle (LDM)\footnote{
+Die bisher vorgestellte Variante von DMs operiert ausschließlich in der Datendomäne. Dies ist insbesondere bei hohen Dimensionalitäten enorm Rechenintensiv, sowohl beim Training als auch bei der Inferenz. Latent Diffusion Modelle (LDM)\footnote{
     Vgl. Rombach et al.: Latent Diffusion Models
     \cite{rombach2022high}
 }  sind ein Ansatz um dieses Problem zu mitigieren. \\
-Grundlegend bestehen LDMs aus zwei Komponenten: Ein, auf den für das DM gedachten Trainingsdaten, vortrainierter VAE, sowie ein DM, wie es in bereits 2.2.3 beschrieben wurde. \\
-Die Rolle des VAEs hierbei ist die Eingangsdaten in ihrer dimensionalität zu Reduzieren, sodass das DM auf signifikant weniger Dimensionen operiert. Da der nötige Rechenaufwand des DMs in aller Regel, insbesondere durch die sequenzielle Verarbeitung während der Inferenz, deutlich höher ist als die Ver- und Entschlüsselung durch einen VAE reduziert dies den Aufwand enorm.  \footnote{
+Grundlegend bestehen LDMs aus zwei Komponenten: Einem vortrainierten VAE, sowie einem DM wie es in bereits beschrieben wurde. \\
+Die Rolle des VAEs hierbei ist die Eingangsdaten in ihrer dimensionalität zu Reduzieren, sodass das DM auf signifikant weniger Dimensionen operiert. Da der nötige Rechenaufwand des DMs in aller Regel, insbesondere durch die sequenzielle Verarbeitung während der Inferenz, deutlich höher ist als die Ver- und Entschlüsselung durch einen VAE, reduziert dies den Aufwand enorm. \footnote{
     Vgl. Peebles, Xie: Diffusion Transformers, S. 8
     \cite{peebles2023scalable}
 } \\
-Die grundlegenden Algorithmen für Training und Inferenz bleiben hierbei weitestgehend unverändert. Beim Training müssen die Trainingsdaten nur zunächst kodiert werden und können dann genutzt werden. Bei der Inferenz muss lediglich das Resultat des Reverse-Prozesses einmal entschlüsselt werden.
+Die grundlegenden Algorithmen für Training und Inferenz bleiben hierbei weitestgehend unverändert. Beim Training müssen die Trainingsdaten nur zunächst kodiert werden und können dann genutzt werden. Bei der Inferenz muss lediglich das Resultat des Reverse-Prozesses abschließend vom \ac{VAE} entschlüsselt werden.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PTG

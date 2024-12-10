@@ -28,6 +28,7 @@ doc/thesis/images/*
 *.lof
 *.lol
 *.bbl
+*.blg
 *.bcf
 *.fdb_latexmk
 *.fls
