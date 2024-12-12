@@ -1,18 +1,104 @@
 \chapter{Methodik}
 
-\section {Latent Diffusion Model}
+Dieses Kapitel ist der ausführlichen Darlegung und Erläuterung der Konzeption für die Terraingenerierung mit Diffusionsmodellen gewidmet. Die erarbeiteten Lösungsentwürfe haben die Aufgabe die in Abschnitt 1.3 definierten Kernziele zu adressieren und dienen als Grundlage für die weiterfolgende Implementierung. \\
+Hierzu wird zuerst das Diffusionsmodell und seine zentralen Kernkomponenten eingehend betrachtet. Die jeweilige Anwendung der in Kapitel \ref{ch:Grundlagen} vorgestellten theoretischen Grundlagen wird hierfür nachvollziehbar begründet. \\
+Darauf aufbauend werden die unterschiedlichen generativen Prozesse detailliert beschrieben. Diese nutzen die Potenziale der Generierung unter Anwendung des erarbeiteten Modells aus, um die Möglichkeiten, die Diffusion für die Terraingenerierung bietet, demonstrieren zu können.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LDM
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section {Latent Terrain Diffusion Model}
+
+Das in dieser Arbeit vorgestellte Diffusionsmodell hat zum Ziel das Potenzial dieser Technologie für die Terrainsynthese aufzuweisen und vorzuführen. Es ist daher zwingend notwendig Methoden zu verwenden, welche auf dem aktuellen Stand der Technik basieren. Aus diesem Grund orientiert sich die Konzeption und Implementierung des beschriebenen Modells an der Umsetzung der aktuell leistungsfähigsten Modelle auf dem Gebiet der Bildsynthese. Hierbei handelt es sich in den allermeisten Fällen um LDMs. Gleichzeitig soll allerdings auch die Flexibilität gewährleistet sein, die nötig ist, um die immer weiter wachsende Bandbreite an möglichen Ansätzen integrieren zu können.\\
+Grundlegend bestehen somit aus einem \ac{VAE} und einem \ac{DM}. Im folgenden werden diese zentralen Bestandteile des LDM insbesondere deren Relevanz für die Generierung von Terrains detailliert betrachtet.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection {Variational Autoencoder}
-\subsubsection {Training}
-\subsubsection {Inferenz}
 
-\subsection {Diffusion Backbone}
-\subsubsection {Training}
-\subsubsection {Inferenz}
+Um hochauflösende Terrains generieren zu können ist es unerlässlich, dass Eingabedaten zunächst in ihrer Dimensionalität reduziert werden. Andernfalls würde der nötige Rechenaufwand für Training und Sampling viel zu hoch ausfallen. \\
+Der genutzte VAE muss zweierlei grundlegende Funktionen sicherstellen, um eine möglichst hohe Qualität der Samples des übergeordneten LDMs zu gewährleisten
+\begin{enumerate}
+    \item Die vom Encoder erzeugten latenten Repräsentationen der Eingabedaten müssen ausreichend strukturiert und aussagekräftig sein, damit das DM diesen Raum modellieren kann.  
+    \item Die Qualität der, vom Decoder erstellten, Rekonstruktionen muss maximal Hoch sein. Es muss unbedingt verhindert werden, dass Artefakte der Kompression, wie beispielsweise die für VAEs übliche Verwaschenheit oder Verlust von kleinen Details zu erkennen sind. Gerade bei Terrains, welche sich durch fast fraktale Strukturen auszeichnen, ist dies enorm wichtig.
+\end{enumerate}
+Die sich hierfür anbietende Variante von VAEs sind VAE-GANs, da diese, durch ihre erlernte visuelle Qualitätsmetrik, eine hohe Rekonstruktionsqualität erreichen können. Durch eine geeignete Wahl des Diskriminators kann hier ebenfalls ein besonderes Augenmerk auf kleine Details gelegt werden. Gleichzeitig wahrt ein VAE-GAN auch das ursprüngliche Ziel eines VAEs, den latenten Raum möglichst Normalverteilt zu halten. \\
+Rombach et al.\footnote{
+    Vgl. Rombach et al.: Latent Diffusion Models, S. 3f. 
+    \cite{rombach2022high}
+} schlagen unter anderem für die Implementierung eines VAE-GAN den Ansatz \textit{KL-reg.} vor. Dieser entspricht in den meisten Teilen der bereits bekannten Definition des VAE-GAN. Es wurde allerdings noch eine weitere visuelle Qualitätsmetrik in Form von LPIPS ergänzt. \\
+Diese Umsetzung hat sich aufgrund der nachweislich hohen Qualität der latenten Repräsentationen und Rekonstruktionen als bewährter Standart in der Praxis für die Verwendung in LDMs etabliert. Aus diesem Grund wird die grundlegende Konzeption in dieser Arbeit aufgegriffen und bei der Implementierung an geeigneter Stelle an die spezifischen Anforderungen der Terrain-Generierung angepasst.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection {Optimierungsziel}
+
+Um die oben geschilderten Ziele des VAEs umzusetzen wird das Trainingsobjektiv wie folgt definiert:
+\begin{equation}
+    L_\text{VAE-GAN} := \lambda_1 L_\text{prior} + L_\text{recon.} + \lambda_2  L_\text{GAN} + \lambda_3 L_\text{LPIPS}  
+\end{equation}
+$L_\text{recon.}$ meint hierbei das ursprüngliche Rekonstruktionsziel eines VAE. Die gewichte $\lambda_1$, $\lambda_2$ und $\lambda_3$ dienen zur Balancierung der einzelnen Verlustterme gegenüber der Rekonstruktion. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {Diffusionsmodell}
+
+Das DM hat allererster Linie die Aufgabe die, in den latenten Raum des VAE-GAN Decoders abgebildete Datenverteilung der Terraindaten zu erlernen.  Dies ist notwendig, damit bei der Generation möglichst überzeugende Samples erzeugt werden können. Zu diesem Zweck sollen die im Bezug auf die Verbesserung der Log-Likelihood vorgestellten Verbesserungen angewandt werden. \\
+Eines der Kernziele dieser Arbeit ist die Demonstration der einfachen und intuitiven Kontrollierbarkeit von DMs, dazu muss das DM grundlegend die Bereiche des ImageToImage und Inpaintings unterstützen. Die genaue jeweilige Relevanz dieser Techniken wird jeweils genauer im folgenden Abschnitt \ref{sec:Terraingenerierung} zur Methodik bei der Terraingenerierung spezifiziert. \\
+Das Modell soll zusätzlich durch die Angabe von Kontrollsignalen gesteuert werden können, um die Kontrolle der Samples weiter zu präzisieren. Hierfür wird der etablierte Standart der CFG angewandt. Dazu muss bei der Implementierung eine geeignete Form der Repräsentation dieser Signale ermittelt werden. \\
+Ebenfalls sollen Experimente mit Methoden, welche vielversprechend sind, sich jedoch nicht in allen Bereichen als gängige Praxis durchgesetzt haben, ermöglicht werden. Dies soll die jeweilige Eignung für die Terraingenerierung beleuchten und gegebenenfalls positiv oder negativ untermauern. Hierbei ist insbesondere die gegenüberstellende Betrachtung der grundlegenden Modellarchitektur hervorzuheben. Die zwei wesentlichen Techniken sind dabei:  
+\begin{itemize}
+    \item \textbf{U-Net} (vgl. \ref{subsec:Unet}): \\
+    U-Nets wurden seit den ersten Implementierungen von DMs bis zu modernsten Ansätzen. Sie benötigen, je nach Implementierung, vergleichsweise wenig Rechenaufwand. 
+    \item \textbf{DiT} (vgl. \ref{subsubsec:DiT}): \\
+    DiTs versprechen hohe Skallierbarkeit und teilweise bessere Ergebnisse und finden deshalb besonders in den leistungsfähigsten Modellen immer mehr Verwendung. Allerdings erfordern sie für überzeugende Ergebnisse einen höheren Rechenaufwand als auf U-Nets basierende Ansätze. 
+\end{itemize}
+Zusätzlich soll ebenfalls die Nutzung einer linearen- der einer Kosinus Noise Schedule gegenübergestellt werden. 
 
 
+\subsubsection {Optimierungsziel}
+
+Experimentel wurde erwiesen, dass das Erlernen der Varianz zusätzlich zum Rauschen höhere Log-Likelihoods aufweist. Somit soll auch der hier verfolgte Ansatz diese Erkenntnis aufgreifen und das folgende Kriterium optimieren:
+\begin{equation}
+    L_\text{hybrid} := L_\text{simple} + \lambda L_\text{vlb}
+\end{equation}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PTG
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Terrain Generierung}
-\subsection {Ungesteuerte Generierung}
-\subsection {Skizzenbasierte Generierung}
-\subsection {Unendliche Generierung}
-\subsection {Maskierte Generierung}
+\label{sec:Terraingenerierung}
+
+Um die Eignung von Diffusionsmodellen im Bereich der Terraingenerierung überzeugend demonstrieren zu können, muss ihre Leistungsfähigkeit gezielt in relevanten Anwendungsbereichen vorgeführt und untersucht werden. \\
+Auf Grundlage der in Abschnitt \ref{sec:Zielsetzung} definierten Kernziele, welche aus den zentralen Anforderungen an die Generierung, nämlich Realismus, intuitive Kontrolle und die Möglichkeit zur unendlichen Generierung, bestehen, werden in diesem Abschnitt die geplanten Prozesse zur Umsetzung dieser Ziele beschrieben. \\
+Um diese Bereiche allerdings überhaupt zielführend betrachten zu können, muss zuerst die Form der erwarteten Ergebnisse definiert werden. Hierzu gehört die Begründung des gewählten Formats sowie die Erörterung der betrachteten Landschaftsformen. \\
+Die Gesichtspunkte hierbei sind die Realistische Generierung von Landschaften. Die intuitive Steuerung dieser Generation. Sowie die Möglichkeit praktisch unendliche Landschaften zu generieren, ohne dabei auf Artefakte oder Randfälle zu stoßen. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {Ergebnisformat}
+
+Die Grundlage der Generierung bilden DEMs. Aufgrund ihrer engen Verwandschaft zu Bilddaten sind sie besonders gut geeignet, um mit Methoden der Bildsynthese verarbeitet und generiert zu werden. Dies ermöglicht eine direkte Anwendung etablierter Diffusionsansätze, was einen Direkten Transfer der bereits gewonnenen Erkenntnisse auf diesem Gebiet auf Terrain-Daten ermöglicht. Somit  gliedert sich diese Arbeit zu den bereits vorgestellten Veröffentlichungen im Bereich der Terraingenerierung mit DMs, welche allesamt ebenfalls auf DEMs operieren.
+
+\subsubsection {Räumliche Ausdehnung}
+
+Ein Kernziel, welches das Modell zu erfüllen hat, ist die Generation realistischer Landschaften. Um dies Umzusetzen erfordern die generierten Gebiete eine gewisse Weitläufigkeit. Andernfalls würde es schwer Fallen die charakteristischen Merkmale großflächiger Landschaftsstrukturen wie Gebirgsketten oder ausgedehnte Täler vollständig zu modellieren. \\
+Darüber hinaus bieten größere Gebiete den Vorteil, dass sie natürliche Übergänge zwischen unterschiedlichen Geländetypen bereits inhärent innehaben. Sie bieten somit also eine optimale Grundlage für eine unendliche Generierung, welche eben solche Übergänge für eine nahtlose Erscheinung unbedingt erfordern.  
+
+\subsubsection {Geographische Abdeckung}
+
+Um eine hohe Flexibilität des Modells bezüglich seiner möglichen Anwendungsfälle sicherzustellen, ist es notwendig möglichst eine globale Abdeckung der zu modellierenden Terrains anzustreben. Somit wären alle auf diesem Planeten vorkommenden Geländetypen abgedeckt. Dies ist auch bei der Generierung von glaubwürdigen, unendlichen Terrains von Vorteil. So wird hier Problemen wie Eintönigkeit und unnatürlichen Verteilungen von Merkmalen wie Gebirgen oder Wüsten vorgebeugt, welche bei einer unvorsichtigen Selektion der Daten auftreten könnten. Diese Bedingung limitiert zwar die Wahl geeigneter Datensets erheblich, erhöht allerdings hoffentlich die Aussagefähighkeit des Modells.  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection {Samplingprozess}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection {Ungesteuert}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection {Skizzenbasiert}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection {Unendliche Generierung}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection {(Maskierte Bearbeitungen)}

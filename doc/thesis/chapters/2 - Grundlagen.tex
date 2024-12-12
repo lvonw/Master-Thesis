@@ -1,9 +1,10 @@
 \chapter{Grundlagen}
+\label{ch:Grundlagen}
 
 In diesem Kapitel werden die Grundlagen der verwendeten Themen und Technologien --- Begriffe und Sachverhalte --- erläutert, die für das Verständnis der folgenden Arbeit notwendig sind.
 Die Grundlagen werden ohne Bezug auf das konkrete Projekt, allgemein dargestellt. Sie sind zielgerichtet auf das Verständnis des Hauptteils bezogen.
 
-Der Abschnitt zur Mathematik dient sowohl zur Einführung eventuell neuer Konzepte sowie zur Definition der in dieser Arbeit verwendeten Nomenklatur von bereits Bekanntem.
+
 
 % \paragraphnl ist ein custom command. Ein \paragraph plus ein line-break / new-line.
 % (Nach \paragraphnl{Paragraph} muss eine Zeile frei gelassen werden.)
@@ -13,6 +14,8 @@ Der Abschnitt zur Mathematik dient sowohl zur Einführung eventuell neuer Konzep
 % Mathematics
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Mathematik}
+
+Der Abschnitt zur Mathematik dient sowohl zur Einführung eventuell neuer Konzepte sowie zur Definition der in dieser Arbeit verwendeten Nomenklatur von bereits Bekanntem.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Wahrscheinlichkeitsdichtefunktionen}
@@ -80,8 +83,8 @@ Im bereich des Machine Learning ist es oft das Ziel, die Likelihood einer parame
 }. 
 \begin{equation}
     \arg\max_\theta p_\theta(y|x)
-\end{equation}'
-Dies entspricht sinngemäß der parametrisierung der WDF, unter welcher, die beobachteten Daten, beziehungsweise die Trainingsdaten maximal wahrscheinlich sind. \\
+\end{equation}
+Dies entspricht sinngemäß der Parametrisierung der WDF, unter welcher, die beobachteten Daten, beziehungsweise die Trainingsdaten maximal wahrscheinlich sind. \\
 Diese Maximierung entspricht $\arg\max_\theta \log p_\theta(y|x)$ welche auch als die Maximierung der \textit{Log-Likelihood} bezeichnet wird. Diese Formulierung wird der einfachen Likelihood in der Praxis oft vorgezogen, da sie bei der Differenzierung Vorteile hat.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -277,7 +280,22 @@ Diese Variante von VAEs ist in der Lage deutlich ähnlicher scheinende Rekonstru
 
 % SUPPORTING MODELS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{UNET}
+\subsection{U-Net}
+\label{subsec:Unet}
+
+Eine in der Image-To-Image Domäne weitverbreitete Modellarchitektur ist das  sogenannte U-Net\footnote{
+    Ronneberger, Fischer, Brox: Convolutional Networks for Image Segmentation
+    \cite{ronneberger2015unetconvolutionalnetworksbiomedical}
+}. Ursprünglich wurde Sie für Bildsegmentierung, also dem Kennzeichnen zusammenhängender oder relevanter Bildelemente, entwickelt. Mitlerweile findet sie jedoch in vielen weiteren Bereichen, welche Bilddaten zu Bilddaten verarbeiten verwendung. \\
+Ihr Aufbau wird in ihrer Vorstellung wie folgt dargelegt\footnote{
+    Vgl. Ronneberger, Fischer, Brox: Convolutional Networks for Image Segmentation, S. 4
+    \cite{ronneberger2015unetconvolutionalnetworksbiomedical}
+}. Sie besteht aus einem Kompressions- und einem Expansionsarm. der Kompressionsarm hat hierbei die übliche Struktur eines Convolutional Networks. Er besteht aus wiederholter Anwendung von 3x3 Konvolutionen und folgendem Downsampling, welches die Dimensionen halbiert und die Anzahl der Featurekanäle verdoppelt. \\
+Der Expansionsarm kehrt die Kompression um und besteht somit aus Upsampling-Blöcken, welche die Anzahl der Featurekanäle halbieren. Diesem Upsampling folgen wiederum wiederholte 3x3 Konvolutionen. Hierbei werden in der ursprünglichen Umsetzung die komprimierten Features des Kompressionsarms mit den expandierten konkatteniert. In bestimmten Anwendungsfällen kann dies jedoch ausgelassen werden. 
+
+
+
+
 
 \subsection{Transformer}
 
@@ -492,16 +510,17 @@ Aufgrund des Umstands, dass diese Ersetzung in jedem Zeitschritt stattfindet ist
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Diffusion Transformer}
+\label{subsubsec:DiT}
 
 \ac{DiT}\footnote{
     Peebles, Xie: Scalable Diffusion Models with Transformers
     \cite{peebles2023scalable}
-} stellen eine Alternative zu UNets für die Umsetzung der Modellarchitektur von \ac{DM}s dar. \ac{DiT}s sind eine speziell für Diffusion angepasste Variante der sogenannten Vision Transformer\footnote{
+} stellen eine Alternative zu U-Nets für die Umsetzung der Modellarchitektur von \ac{DM}s dar. \ac{DiT}s sind eine speziell für Diffusion angepasste Variante der sogenannten Vision Transformer\footnote{
     Dosovitskiy et al.: An Image is Worth 16x16 Words 
     \cite{dosovitskiy2021imageworth16x16words}
 }.\\
 Ihre grundlegende Funktionsweise ist dabei stark verwandt zu der von normalen Transformern. Die Eingabedaten werden zunächst in kleinere Patches, vergleichbar mit Tokens, unterteilt. Diese Patches werden anschließend mit einem Positional Encoding versehen, welches beispielsweise bei Bildern auch mehrdimensional sein kann. Diese angereicherten Patches werden anschließend in vielen Iterationen mittels sogenannter \ac{DiT} Blöcke, welche aus abwechselnden Self-Attention und AdaLN-Blöcken beziehungsweise Cross-Attention-Blöcken bestehen, verarbeitet. Abschließend werden die einzelnen Patches wieder zu ihrer ursprünglichen Anordnung zusammengefügt. \\
-Diese Methode hat sich in einigen Kontexten als Leistungsfähiger im Vergleich zu UNets erwiesen. Allerdings erfordern sie ebenfalls mehr Rechenkapazität um vergleichbare oder bessere Ergebnisse zu erzeugen. Aufgrund dieser Leistungsfähigkeit werden \ac{DiT}s in einigen der aktuell leistungsfähigsten Modellen wie beispielsweise Stable Diffusion 3 verwendet.
+Diese Methode hat sich in einigen Kontexten als Leistungsfähiger im Vergleich zu U-Nets erwiesen. Allerdings erfordern sie ebenfalls mehr Rechenkapazität um vergleichbare oder bessere Ergebnisse zu erzeugen. Aufgrund dieser Leistungsfähigkeit werden \ac{DiT}s in einigen der aktuell leistungsfähigsten Modellen wie beispielsweise Stable Diffusion 3 verwendet.
 
 
 % LDM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -510,7 +529,7 @@ Diese Methode hat sich in einigen Kontexten als Leistungsfähiger im Vergleich z
 Die bisher vorgestellte Variante von DMs operiert ausschließlich in der Datendomäne. Dies ist insbesondere bei hohen Dimensionalitäten enorm Rechenintensiv, sowohl beim Training als auch bei der Inferenz. Latent Diffusion Modelle (LDM)\footnote{
     Vgl. Rombach et al.: Latent Diffusion Models
     \cite{rombach2022high}
-}  sind ein Ansatz um dieses Problem zu mitigieren. \\
+} sind ein Ansatz um dieses Problem zu mitigieren. \\
 Grundlegend bestehen LDMs aus zwei Komponenten: Einem vortrainierten VAE, sowie einem DM wie es in bereits beschrieben wurde. \\
 Die Rolle des VAEs hierbei ist die Eingangsdaten in ihrer dimensionalität zu Reduzieren, sodass das DM auf signifikant weniger Dimensionen operiert. Da der nötige Rechenaufwand des DMs in aller Regel, insbesondere durch die sequenzielle Verarbeitung während der Inferenz, deutlich höher ist als die Ver- und Entschlüsselung durch einen VAE, reduziert dies den Aufwand enorm. \footnote{
     Vgl. Peebles, Xie: Diffusion Transformers, S. 8
@@ -524,11 +543,11 @@ Die grundlegenden Algorithmen für Training und Inferenz bleiben hierbei weitest
 
 \section{Terrain-Generierung}
 
-Terrain-Generierung ist ein zentrales Gebiet der Computergraphik. 
+Terrain-Generierung ist ein zentrales Gebiet der Computergraphik. Sie umfasst eine vielzahl von Algorithmen, Methoden und Datenstrukturen, welche für das Erzeugen von virtuellen Landschaften genutzt werden.
 
 \subsection{Digital Elevation Models}
 
-\textit{Digital Elevation Models} (DEMs) sind eine Datenstruktur für das Repräsentation von Höhenwerten. In ihnen werden beispielsweise Terrains somit über ihr Oberfläche definiert. Durch die Abbildung einer solchen dreidimensionalen Struktur auf zwei Dimensionen haben DEMs zwar den Nachteil, dass keine überhängenden Strukturen abgebildet werden können, da diese allerdings bei Landschaften nur sehr selten vorkommen, ist dies, insbesondere größeren Gebieten oft zu vernachlässigen.\\
+\textit{Digital Elevation Models} (DEMs) sind eine Datenstruktur für die Repräsentation von Höhenwerten einer Oberfläche. In ihnen werden beispielsweise Terrains somit über ihr Oberfläche definiert. Durch die Abbildung einer solchen dreidimensionalen Struktur auf zwei Dimensionen haben DEMs zwar den Nachteil, dass keine überhängenden Strukturen abgebildet werden können, da diese allerdings bei Landschaften nur sehr selten vorkommen, ist dies, insbesondere größeren Gebieten oft zu vernachlässigen.\\
 Eine Variante von DEMs, welche die Höhenwerte den koordinaten eines zweidimensionalen Rasters zuordnet, wird im Bereich der Computergraphik auch oft als \textit{Heightmap} bezeichnet. Diese, sehr simple Datenstruktur, ist einfach und effizient zu Verarbeiten, weswegen sie oft in der Terraingenerierung angewandt wird. Aufgrund dieser Repräsentation als zweidimensionales Array sind DEMs insbesondere für die Verwendung mit Bildsynthese-Ansätzen der generativen KI geeigenet.
 
 \subsection{Rauschbasierte Generierung}
@@ -545,31 +564,73 @@ Reines statistisches Rauschen, welches beispielsweise auf einer Normalverteilung
 Eine Verschärfung des Gitterrauschens ist das Gittergradientenrauschen. Hierbei werden jedem Eckpunkt des Gitters Zufallsgradienten, anstelle von Zufallswerten, zugeordnet. Die wohl populärste Methode dieser Kategorie ist das sogenannte Perlin Rauschen\footnote{
     Perlin: An Image Synthesizer
     \cite{perlin1985image}
-}. 
+}. \\
+Zunächst werden allen Eckpunkten des Gitters pseudozufällig ausgerichtete Gradienten mit länge eins zugewiesen. Die Bestimmung eines Pixelwertes funktioniert nun wie folgt:
+\begin{enumerate}
+    \item Ermittle die Gradienten der Eckpunkte, die zur Gitterzelle dieses Punktes gehören.
+    \item Berechne das Skalarprodukt zwischen jedem dieser Gradienten und dem Verbindungsvektor des jeweiligen Eckpunktes zur relativen Position des Pixels innerhalb der Gitterzelle.
+    \item Interpoliere nun systematisch zwischen je zwei Skalarprodukten, beziehungswiese Interpolationen, $g_1$ und $g_2$, anhand der relevanten koordinate der Position $x$ des Pixels, mit der folgenden Funktion:
+    \begin{equation}
+        f_\text{interp}(x, g_1, g_2) = (g_2 - g_1)(6x^5 - 15x^4 + 10x^3) 
+        + g_1
+    \end{equation}
+\end{enumerate}
+Dieser Algorthmus eignet sich ebenfalls zur Generierung von unendlichen Rauschfeldern, sofern dafür gesorgt ist, dass gleichen Eckpunkten immer die gleichen pseudozufälligen Gradienten zugewiesen werden. 
 
-\subsubsection{Fraktales Perlin Rauschen}
 
-Sed lacinia fermentum odio quis faucibus. Phasellus blandit orci vitae ipsum rutrum aliquam. 
+\subsubsection{Fraktales Rauschen}
 
-\subsection{KI-Basierte Generierung}
+Eine einfache Rauschfunktion ist in ihrem Detailgrad fest an ihre Definition gebunden. Beim Perlin Rauschen beispielsweise ist er definiert über die Auflösung des Gitternetzes. Somit ist es hier nicht möglich feine und große Strukturen gleichzeitig abzubilden. Eine oft angewandte Lösung für dieses Dilemma ist die Kombination der gleichen Rauschfunktion mit unterschiedlichen Amplituden und Frequenzen, sogenanntem fraktalen Rauschen. \\
+Hierbei werden hier $O$ Oktaven einer Rauschfunktion $f$ summiert. Die jeweilige Änderung der Amplitude und Frequenz in jeder Oktave werden über die Persistenz $p$ und Lakunarität $l$ definiert:  
+\begin{equation}
+    f_\text{fractal}(x) = \sum_{o=0}^{O-1} p^{o}f(l^ox)
+\end{equation}
+Übliche Belegungen sind hierbei $l=2$ und $p=\frac{1}{2}$. Die Frequenz wird also in jeder Oktave verdoppelt, wohingegen die Amplitude halbiert wird.
 
-Fusce ipsum nisl, luctus in interdum non, sodales sed lacus. 
+\subsection{KI-Basierte Terraingenerierung}
+
+Nebst Rauschfunktionen und Simulationen existieren in der Terraingenerierung ebenfalls ansätze, welche Methoden der generativen KI anwenden, um die Beschaffenheit von Landschaften zu erlernen.
 
 \subsubsection{Generierung mit GAN}
 
-Curabitur tincidunt mauris ac venenatis accumsan. 
+Vlt ischt das hier doch net so wichtig
 
-\subsubsection{Generierung mit Diffusion}
 
-Mauris efficitur sit amet mauris in sodales. 
+\subsubsection{Terraingenerierung mit Diffusionsmodellen}
 
-\subsubsection{Unter-Unterabschnitt\#3}
+Diffusionsmodelle haben erst vor wenigen Jahren die generative Qualität von GANs übertreffen können. Dementsprechend ist im Bereich der Terraingenerierung nur wenig mit ihnen experimentiert worden. \\
+Die erste Veröffentlichung hierzu erfolgte von Lochner et al.\footnote{
+    Vgl. Lochner et al.: Interactive Terrain Authoring using Diffusion Models
+    \cite{lochner2023interactive}
+}. Ihr vorgeschlagenes Diffusionsmodell operiert im Bildraum und wurde auf $8\times8\text{km}$ DEMs trainiert. Als Konditionierung wurden hierbei Skizzen von Landschaftseigenschaften, auch Signaturen genannt, verwendet. Diese wurden für das Training algorithmisch aus den DEMs ermittelt. Sie erlauben bei der Generierung eine Interaktive Definition von Klippen, Gebirgskämmen, Abflüssen und flachen Gebieten. Hierbei kann bei der Generierung zwischen verschiedenen Geländetypen ausgewählt werden wie Gebirgen, Canyons und Hügellandschaften. Die Autoren erwähnen ebenfalls, dass die interaktive Kontrolle der Generation inkonsistente Ergebnisse erzeugt.\\
+Hu et al.\footnote{
+    Vgl. Hu et al.: Terrain Generation with Geological Sketch Guidance
+    \cite{hu2024terrain}
+} folgen einem ähnlichen Ansatz, wenn auch auf deutlich größeren Gebieten von $921\times921\text{km}$. Sie verwenden ebenfalls Signaturskizzen zur Steuerung des Terrains. Allerdings verwenden sie mehrere vortrainierte Autoencoder\footnote{
+    Es handelt sich hierbei explizit um einen AE. Also kein VAE oder VAE-GAN.
+} um die Eingabedaten zu komprimieren. Dabei ist jeder AE für die Kodierung eines einzigen Typs von Signatur, beispielsweise Flüssen, zuständig. Zusätzlich nutzen sie drei unterschiedliche DMs um unterschiedliche Detailgrade in der Terrainstruktur abbilden zu können. \\
+Jain, Sharma und Rajan\footnote{
+    Vgl. Jain, Sharma, Rajan: Procedural Infinite Terrain Generation with Diffusion Models
+    \cite{jain2022adaptive}
+} fokussieren sich hingegen auf eine unendliche Generierung. Dazu trainieren sie zunächst mehrere DMs auf $512\times512\text{m}$ DEMs welche jeweils unterschiedliche Frequenzen der DEMs Erlernen. Dies soll verschiedene sogenannte Levels of Detail (LOD) abbilden, um Echtzeitgenerierung zu ermöglichen. Dazu werden sie jeweils mittels Fourriertransformation in einzelne Frequenzbereiche aufgeteilt. Beim Sampling werden diese Frequenzbilder nach der Generation wieder zusammengefügt. Die sich hieraus ergebenen, einzelnen, Landschaftsausschnitte werden von den Autoren über Kernelblending mit Perlin Rauschen nahtlos zusammengefügt. 
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Geomorphologie
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Geomorphologie}
+
+Die Geomorphologie studiert die phyischen Oberflächen-Eigenschaften von Landschaften und untersucht die ihrer Entstehung zugrundeliegenden Prozesse\footnote{
+    Hugget: Fundamentals of Geomorphology, S. 3
+    \cite{huggett2022fundamentals}
+}. Als integrativer Wissenschaftszweig verbindet sie unter anderem Aspekte der Geologie, Klimatologie und Hydrologie, um die Beschaffenheit von Gebirgsketten, Tälern und allem dazwischen zu analysieren. Diese Prozesse umfassen eine Vielzahl natürlicher Mechanismen, darunter beispielsweise Erosion, Sedimentation und chemische Verwitterung. \\
+In der vorliegenden Arbeit spielen zwei Bereiche der Geomorphologie eine besondere Rolle. Zum einen die topographische Klassifikation von Landmassen, welche eine systematische Beschreibung verschiedener Landschaftsformen ermöglicht. Zum anderen wird der Einfluss klimatischer Bedingungen betrachtet, da Klimafaktoren wie Temperatur und Niederschlag maßgeblich zur Entwicklung geomorphologischer Strukturen beitragen\footnote{
+    Hugget: Fundamentals of Geomorphology, S. 17
+    \cite{huggett2022fundamentals}
+}.
 
 
 \subsection{Terrain Klassifizierung}
