@@ -1,4 +1,5 @@
 \chapter{Methodik}
+\label{ch:Methodik}
 
 Dieses Kapitel ist der ausführlichen Darlegung und Erläuterung der Konzeption für die Terraingenerierung mit Diffusionsmodellen gewidmet. Die erarbeiteten Lösungsentwürfe haben die Aufgabe die in Abschnitt 1.3 definierten Kernziele zu adressieren und dienen als Grundlage für die weiterfolgende Implementierung. \\
 Hierzu wird zuerst das Diffusionsmodell und seine zentralen Kernkomponenten eingehend betrachtet. Die jeweilige Anwendung der in Kapitel \ref{ch:Grundlagen} vorgestellten theoretischen Grundlagen wird hierfür nachvollziehbar begründet. \\
@@ -8,6 +9,7 @@ Darauf aufbauend werden die unterschiedlichen generativen Prozesse detailliert b
 % LDM
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Latent Terrain Diffusion Model}
+\label{sec:Planung_LDM}
 
 Das in dieser Arbeit vorgestellte Diffusionsmodell hat zum Ziel das Potenzial dieser Technologie für die Terrainsynthese aufzuweisen und vorzuführen. Es ist daher zwingend notwendig Methoden zu verwenden, welche auf dem aktuellen Stand der Technik basieren. Aus diesem Grund orientiert sich die Konzeption und Implementierung des beschriebenen Modells an der Umsetzung der aktuell leistungsfähigsten Modelle auf dem Gebiet der Bildsynthese. Hierbei handelt es sich in den allermeisten Fällen um LDMs. Gleichzeitig soll allerdings auch die Flexibilität gewährleistet sein, die nötig ist, um die immer weiter wachsende Bandbreite an möglichen Ansätzen integrieren zu können.\\
 Grundlegend bestehen somit aus einem \ac{VAE} und einem \ac{DM}. Im folgenden werden diese zentralen Bestandteile des LDM insbesondere deren Relevanz für die Generierung von Terrains detailliert betrachtet.
@@ -75,8 +77,10 @@ Die Gesichtspunkte hierbei sind die Realistische Generierung von Landschaften. D
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection {Ergebnisformat}
+\label{subsec:Ergebnisformat}
 
-Die Grundlage der Generierung bilden DEMs. Aufgrund ihrer engen Verwandschaft zu Bilddaten sind sie besonders gut geeignet, um mit Methoden der Bildsynthese verarbeitet und generiert zu werden. Dies ermöglicht eine direkte Anwendung etablierter Diffusionsansätze, was einen Direkten Transfer der bereits gewonnenen Erkenntnisse auf diesem Gebiet auf Terrain-Daten ermöglicht. Somit  gliedert sich diese Arbeit zu den bereits vorgestellten Veröffentlichungen im Bereich der Terraingenerierung mit DMs, welche allesamt ebenfalls auf DEMs operieren.
+Die Grundlage der Generierung bilden DEMs. Aufgrund ihrer engen Verwandschaft zu Bilddaten sind sie besonders gut geeignet, um mit Methoden der Bildsynthese verarbeitet und generiert zu werden. Dies ermöglicht eine direkte Anwendung etablierter Diffusionsansätze, was einen Direkten Transfer der bereits gewonnenen Erkenntnisse auf diesem Gebiet auf Terrain-Daten ermöglicht. Somit  gliedert sich diese Arbeit zu den bereits vorgestellten Veröffentlichungen im Bereich der Terraingenerierung mit DMs, welche allesamt ebenfalls auf DEMs operieren. \\
+Da DMs allerdings auf ebene von Standardnormalverteilung operieren, ist es bei der Verarbeitung der DEMs notwendig ihren Wertebereich auf $[-1,1]$ abzubilden.
 
 \subsubsection {Räumliche Ausdehnung}
 
@@ -84,21 +88,56 @@ Ein Kernziel, welches das Modell zu erfüllen hat, ist die Generation realistisc
 Darüber hinaus bieten größere Gebiete den Vorteil, dass sie natürliche Übergänge zwischen unterschiedlichen Geländetypen bereits inhärent innehaben. Sie bieten somit also eine optimale Grundlage für eine unendliche Generierung, welche eben solche Übergänge für eine nahtlose Erscheinung unbedingt erfordern.  
 
 \subsubsection {Geographische Abdeckung}
+\label{subsubsec:Geographische_Abdeckung}
 
 Um eine hohe Flexibilität des Modells bezüglich seiner möglichen Anwendungsfälle sicherzustellen, ist es notwendig möglichst eine globale Abdeckung der zu modellierenden Terrains anzustreben. Somit wären alle auf diesem Planeten vorkommenden Geländetypen abgedeckt. Dies ist auch bei der Generierung von glaubwürdigen, unendlichen Terrains von Vorteil. So wird hier Problemen wie Eintönigkeit und unnatürlichen Verteilungen von Merkmalen wie Gebirgen oder Wüsten vorgebeugt, welche bei einer unvorsichtigen Selektion der Daten auftreten könnten. Diese Bedingung limitiert zwar die Wahl geeigneter Datensets erheblich, erhöht allerdings hoffentlich die Aussagefähighkeit des Modells.  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection {Samplingprozess}
+\subsection {Samplingprozesse}
+
+Zur Beleuchtung der Eignung von DMs für die Terraingenerierung werden in dieser Arbeit drei konkrete Kernbereiche untersucht. \\
+Als erstes die Generierung ohne jegliche Form der Einflussnahme. \\
+Folgend das durch Skizzen gesteurte Sampling, dieser Bereich bildet die Eignung für Produktion von beispielsweise Videospiel Landschaften ab. \\
+Abschließend die Betrachtung der Generierung von unendlichen Landschaften. Hierbei wird die Fähigkeit unterschiedliche Terraintypen kohärent verbinden zu können. Eine wichtige Fähigkeit welche implikationen sowohl für die Vorproduktion als auch Live hat. \\
+Für diese drei Bereiche werden im Folgenden Methoden vorgestellt, welche auf dem in Abschnitt \ref{sec:Planung_LDM} konzipierten LDM basieren. 
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection {Ungesteuert}
 
+Mit der Betrachtung der ungesteuerten Synthese soll die Fähigkeit des Modells auch ohne äußere Angabe Strukturen in Landschaften erlernen zu können überprüft werden. Da die Kontrollsignale auf Klassen und nicht auf Skizzen basieren, beanspruchen diese keinen Menschengesteueren Einfluss auf die Struktur der Landschaften. Somit wird die Betrachtung ihres Einflusses auf die erlernten Terrains in diesen Prozess eingeschlossen. \\
+Unter Anwendung auf das spezifizierte LDM kann diese Form der Generierung durch einen einfachen Rückwärtsprozess wie er in Unterabschnitt \ref{subsec:Grundlagen_DMs} beschrieben wurde abgebildet werden. Somit müssen an dieser Stelle keine weiteren Vorkehrungen getroffen werden. 
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection {Skizzenbasiert}
+\subsubsection {Skizzenbasierte Steuerung}
+
+Die skizzenbasierte Steuerung des Generierungsprozesses erfordert zunächst die Definition des Skizzenformats. Hierfür gibt es mehrere Möglichkeiten, die zwei naheliegendsten werden folgend kurz abgewägt. 
+\begin{enumerate}
+    \item Skizzen in Form von Landschaftssignaturen: \\
+    Landschaftssignaturen sind in der Forschung zur Terraingenerierung gängige Praxis. So auch in den Veröffentlichung zur Generierung mit DMs. Ihre Eignung für die Steuerung wurde somit bereits grundsätzlich demonstriert. \\
+    Allerdings lassen sich auch einige theoretische Nachteile erkennen. Zum einen erfolgt die Kontrolle über eine Abstraktionsebene, welche somit der intuitiven Steuerung schadet. Desweiteren erfordert dieser Ansatz eine Konditionierung des Modells auf Signaturskizzen was einige unerwünschte implikationen mit sich führt. Zum einen geht eine genaue Kontrolle der höhenwerte verloren, zum anderen können bereits kleine Anpassungen globale Veränderungen verursachen.\footnote{
+        Vgl. Lochner er al.: Interactive Terrain Authoring using Diffusion Models, S. 8f. 
+        \cite{lochner2023interactive}
+    }
+    \item Skizzen in Form von DEMs: \\
+    Auch DEMs sind eine in der Praxis oft gewählte Form der Kontrolle. Da sie direkt die Terrains abbilden werden Änderungen auf ihnen eins zu eins übertragen. Somit sind sie eine sehr einfache und intuitive Methode für die Erstellung von Landschaften. Da sie ebenfalls die Domäne des LDMs und somit die Trainingsdaten darstellen, ist es nicht nötig, das Modell gesondert auf ihnen zu Konditionieren. Allerdings gehen im vergleich zu Signaturen auch semantische Informationen verloren, da nun nicht mehr zwischen verschiedenen bereits definierten Eigenschaften unterschieden wird.  Dies könnte dazu führen, dass die Kontrolle über DEMs eine höhere Varianz aufweist.
+\end{enumerate}
+
+In Anbetracht beider Optionen erscheint die Kontrolle mittels DEMs als aussichtsreicher und wird somit der weiter verfolgte Ansatz. Dies erlaubt es die Kontrolle über den in Unterabschnitt vorgestellte Image to Image Ansatz umzusetzen. Dies hat ebenfalls den Vorteil, dass die Stärke der Skizzenkontrolle dynamisch festgelegt werden kann. Somit besteht die Möglichkeit sowohl grobe als auch detaillierte Skizzen sinnvoll verarbeiten zu können. \\
+Ein weitere praktische Möglichkeit unter diesem Ansatz ist die lokal eingeschränkte Kontrolle der Generierung durch die Nutzung von Masken. Dies erhöht die Kontrollierbarkeit noch weiter.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection {Unendliche Generierung}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection {(Maskierte Bearbeitungen)}
+Die unendliche Generierung erfordert genaue Planung, da irgendwas irgendwas Gitterstruktur. DMs erzeugen grundsätzlich nur Daten einer fest definierten größe. Somit müssen diese Landschaftspatches als Grundlage für eine weiterführende Verbindung dienen.\\
+Jain, Sharma und Rajan\footnote{
+    Vgl. Jain, Sharma, Rajan: Procedural Infinite Terrain Generation with Diffusion Models
+    \cite{jain2022adaptive}
+} stellen zwar bereits einen möglichen Ansatz vor, allerdings ist die nur bedingt nachvollziehbar begründet und demonstriert. Auch anzuzweifeln ist, dass Perlinrauschen basierendes Kernelblending aufgrund der nicht kontrollierbaren Natur von Rauschen in der Lage ist Übergänge zwischen großen Gebieten und unterschiedlichen Terraintypen überzeugend abzubilden. \\
+Chancenreicher erscheint eine Methode, welche Übergänge zwischen verschiedenen Geländetypen erlernen kann, und somit auf die Nähte zwischen Terrainpatches angewandt werden kann um diese zu verbinden. Bei genauerer Betrachtung fällt hierbei auf, dass das bereits definierte LDM die Übergange von Terraintypen bei geeigneter Wahl der Trainingsdaten wie in Unterabschnitt \ref{subsubsec:Geographische_Abdeckung} spezifiziert, bereits erlernt hat. Somit muss diese Informationen noch gezielt auf die Übergänge zwischen Patches angewandt werden. \\
+Tatsächlich ist dies unter der beim Inpainting üblichen Nutzung von Masken möglich. Somit müssten lediglich die Randbereiche bereits gerierter Patches als Maskierter Bereich einer neuen Samples definiert werden. Dieser Vorgang würde allerdings zwei separate Rückwärtsdurchläufe erfordern. \\
+Tatsächlich kann die Generierung der Naht direkt mit der Generation des neuen Patches verbunden werden. So kann ein Bereich der bereits generierten benachbarten Zellen als Maskierter bereich definiert werden, alle freibleibenden werden neu erstellt. Dieser limitation erfordert zwar, dass neue Patches nur kleinere bereiche darstellen können, dies erscheint allerdings in anbetracht des geringeren Rechenaufwands für das erstellen eines Übergangs vorzuziehen. Somit wird dies den in dieser Arbeit vervolgten Ansatz darstellen
+

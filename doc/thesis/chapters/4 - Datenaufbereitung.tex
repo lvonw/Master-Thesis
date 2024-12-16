@@ -1,32 +1,147 @@
+
 \chapter{Datenaufbereitung}
 
+Um die in Kapitel \ref{ch:Methodik} konzipierten Prozesse umsetzen zu können, muss das zugrundeliegende LDM trainiert werden. Die hierfür zu nutzenden Daten müssen sorgfältig ausgewählt werden, sodass das Modell alle wichtigen Terrainstrukturen erlernen kann, die für die Erfüllung der in Abschnitt \ref{sec:Zielsetzung} gestetzten Ziele erforderlich sind. \\
+In diesem Kapitel werden somit die für das Training genutzten Datensätze behandelt. Zu diesem Zweck werden sie zunächst vorgestellt und ihre Nutzung begründet. Daran anschließend werden ihre Daten analyisert und anhand der hieraus resultierenden Erkenntnisse ihre Aufbereitet dargelegt. \\
+Die eigentlichen Schritte zur Aufbereitung werden hier in zwei Abschnitte geteilt zum eine eine Vor- und eine Laufzeitverarbeitung. Dies ist grundlegend damit zu begründen, dass dies Flexibilität für Anpassungen erlaubt, ohne dabei für jede Änderung ein neues Datenset zu erfordern, was unnötig viel Speicherplatz in Anspruch nehmen würde. Konzeptionell sind beide Bereiche allerdings eng miteinander verbunden.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Datensätze}
 
-\subsection{SRTM-GL1}
+Das Training eines Modells erfordert Daten. Diese Daten müssen, um das jeweils zu lösende Problem optimal zu bewältigen, nach Möglichkeit dem erwarteten Zieldaten entsprechen. Die diesbezüglich erarbeiteten Anforderungen für diese Arbeit wurden bereits in Unterabschnitt \ref{subsec:Ergebnisformat} geschildert. Die für ihre Umsetzung gewählten Datensätze werden folgend vorgestellt und infolgedessen ihre Auswahl in Anbetracht der Anforderungen begründet.
 
-\subsection{Global Terrain Classification}
+\subsection{Terrain DEM}
 
-\subsection{Global Climate Model}
+Im Mittelpunkt der Betrachtung von Trainingsdaten eines Modells für Terraingenerierung stehen selbstverständlich die Terraindaten. Diese geben die Datenverteilung vor, welche von dem Modell approximiert werden soll. Ein geeigneter Datensatz hat die gemäß Unterabschnitt \ref{subsec:Ergebnisformat} erläuterten Bedigungen zu erfüllen, dass die Areale einzelner Datenpunkte Weitläufigkeit sind, sowie dass die geographische Abdeckung möglichst hoch ist. \\
+Der hierfür ausgewählte Datensatz ist der von der NASA Shuttle Radar Topography Mission aufgenommene Datensatz mit globaler Abdeckung und einer Auflösung von einer Bogensekunde\footnote{
+    Aufgrund der sphärischen Projektion variiert die länge einer Bogensekunde je nach Längengrad. Am Äquator entspricht sie in etwa 30 Metern.
+} SRTM-GL1\footnote{
+    NASA JPL: NASA Shuttle Radar Topography Mission Global 1 Arc Second
+    \cite{nasa2013srtm}
+}. \\
+Dieser Datensatz besteht aus 14280 DEMs mit jeweils einer Flächenabdeckung von $1^{\circ}\times1^{\circ}$ was mit einer Auflösung von einer Bogensekunde einer Bildauflösung von $3601\times3601$ entspricht. Die einzelnen Pixelwerte entsprechen dem jeweiligen Höhenwert in Metern und reichen von $-12269$ bis $22894$ wobei $0$ dem Meeresspiegel entspricht. Die Abdeckung reicht insgesamt von $60^{\circ}\text{N}$ bis $56^{\circ}\text{S}$ wobei hier die Breitengrade vollständig abgebildet sind, also von $180^{\circ}\text{W}$ bis $180^{\circ}\text{O}$ reichen. Das erfasste Areal umschließt somit eine Fläche von $119.560.000\text{km}^2$ beziehungsweise etwa $80\%$ der Erdlandmasse.\\
+Jedes DEM enthält dabei keinen Datenpunkt welcher ausschließlich eine Wasseroberfläche abbildet. Es eignet sich aufgrund der Abdeckung, des Formats und der Größe der einezlnen DEMs somit hervorragend für die weitere Nutzung im Rahmen dieser Arbeit. Darüberhinaus erleichtert eine hohe Äuflösung die Verarbeitung und bietet Optionen für eine nachträgliche Verkleinerung des betrachteten Areals.
 
+\subsection{Globale Terrain-Klassifizierung}
 
+Eine der spezifizierten Komponenten des Kontrollsignals stellt eine Klassifikation der topographischen Struktur eines Landschaftsabschnitts dar. Um diese den jeweiligen DEMs zuordnen zu können ist es ebenfalls hierbei wichtig, dass die Abdeckung möglichst global Ausfällt. \\
+Nach Untersuchung zahlreicher Optionen ist die Wahl letztendlich auf die von Iwahashi et al.\footnote{
+    Iwahashi et al.: Global Terrain Classification
+    \cite{iwahashi2018global}
+} erstellte globale Terrain-Klassifikation gefallen. Diese ordnet einer Position in einem Raster eine von 16 Kategorien mit zunehmender Flachheit, inklusiver eines Null-Wertes zur Darstellung eines unkategorisierten Punktes, zu. Jede Rasterzelle repräsentiert dabei ein Gebiet von $9\times9$ Bogensekunden. Die Abdeckung des Rasters ist hierbei die vollständige Erdoberfläche, allerdings werden Wasserflächen und einige wenige Landmassen nicht kategorisiert. Die Klassifikation sieht die in Tabelle \ref{tab:GTC} zusammengefasst dargestellten Kategorien vor\footnote{
+    Vgl. Iwahashi et al.: Global Terrain Classification, S. 21 
+    \cite{iwahashi2018global}
+}. \\
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{l r}
+        \hline\hline
+        \thead{Kategorie} & \thead{Rasterzellwerte} \\
+        \hline
+        Steile Berge            & 1-2   \\
+        Moderate Berge          & 3-4   \\
+        Hügel                   & 5-6   \\
+        Hochland                & 7-8   \\
+        Plateaus                & 9-12  \\
+        Flachland               & 13-15 \\
+        Keine Klassifikation    & 0     \\
+        \hline\hline
+    \end{tabular}
+    \caption{Einfache und Zusammenfassende Umschreibung der Kategorien der von Iwahashi et al. vorgeschlagenen Terrain-Klassifikation}
+    \label{tab:GTC}
+\end{table} \\
+Dieses Datenset ist hochaktuell, global, hochauflösend und bietet vergleichsweise feine Terrainkategorien, weswegen es für die weitere Verwendung ausgewählt wurde.
+
+\subsection{Globale Klima Klassifikation}
+
+Für das Klima-Kontrollsignal wurde die von Peel, Finlayson und McMahon\footnote{
+    Peel, Finlayson, McMahon: Updated world climate classification 
+    \cite{hess-11-1633-2007}
+} aktualisierte globale Version der Köppen-Geiger Klassifikation gewählt. Dieser Datensatz ist wie die Terrain-Klassifikation eine Rasterdarstellung der gesamten Erdoberfläche hier jedoch mit einer Auflösung von $0.5^{\circ}\times0.5^{\circ}$. Jeder Zellwert ist dabei eine von 33 Kategorien\footnote{
+    Vgl. Peel, Finlayson, McMahon: Updated world climate classification, S. 4 
+    \cite{hess-11-1633-2007}
+}, welche in Tabelle \ref{tab:Climate_Classes} zusammengefasst dargestellt sind. Diese Klassen beinhalten Informationen über Temperatur, Feuchtigkeit und jeweilige Trocken- oder Monsunphasen.\\
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{l r}
+        \hline\hline
+        \thead{Kategorie} & \thead{Rasterzellwerte} \\
+        \hline
+        Tropisch                & 1-3   \\
+        Trocken                 & 4-7   \\
+        Gemäßigt                & 8-16  \\
+        Kalt                    & 17-28 \\
+        Polar                   & 29-32 \\
+        Keine Klassifikation    & 0     \\
+        \hline\hline
+    \end{tabular}
+    \caption{Einfache Zusammenfassung der Klimaklassen}
+    \label{tab:Climate_Classes}
+\end{table} \\
+Ausgewählt wurde dieses Datenset aufgrund ihrer globalen Abdeckung und feingliedrigen Klassifikationen.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Analyse}
 
+Wertebereich so klein wie möglich ist.  blablabla irgendwelche diagramme oder so kein plan
 
 \section{Vorverarbeitung}
 
+Dieser Abschnitt erläutert die einzelnen Schritte welche bei der Vorverarbeitung der Datensätze durchlaufen werden. Diese sollen die Fähigkeit des Modells die Datenverteilung zu erlernen unterstützen. Um eine akkurate Abbildung der Datenverteilung zu erlernen, muss nach Möglichkeit verhindert werden, dass diese Verfälscht wird. Dies ist insbesondere bei der Generierung unendlicher Terrains wichtig, da bei dieser unrealistische Verteilung, wie beispielsweise zu häufig vorkommende Gebirgsketten, besonders auffallen würde. Entsprechend werden hier möglichst wenige Anpassungen getätigt.
+
+
 \subsection{Skallierung}
 
-\subsection{Aussortieren}
+Die DEMs des SRTM-GL1 haben eine Auflösung von $3601\times3601$ Höhenwerten. Die synthetisiertern DEMs sollen jedoch eine Auflösung von $256\times256$ Pixeln haben entsprechend müssen die Ausgangsdaten skalliert werden. \\ 
+Diese Skallierung wird unter bilinearer Interpolation auf eine Bildgröße von $512\times512$ vollzogen. Diese Skallierung unter der Nutzung der bilinearen Interpolation hat zugleich den Vorteil, dass Ausreißer und verrauschte Areale herausgeglättet werden. Der Grund für die Skallierung auf 512 anstelle der eigentlichen Endgröße von 256 ist eine Methode der Datenaugmentierung, welche in dem folgenden Unterabschnitt \ref{subsec:Augmentierung} detailliert behandelt wird. 
+Es wurden ebenfalls noch geringer Aufgelöste Datensätze erstellt, um kleinere Tests zu ermöglichen. 
 
-\subsubsection{Meeresspiegel Anteil}
+\subsection{Datenfilterung}
+
+Aus der Sichtung der Daten wird offensichtlich, dass viele der Datenpunkte zu einem maßgeblichen Anteil aus Wasserflächen bestehen. Diese sind Bereiche komplett flach und enthalten somit keinerlei zu erlernene Topographie. Hier muss also eine Lösung gefunden werden, die die für uns relevanten Datenverteilung nicht allzusehr verändert und gleichzeitig dafür sorgt, dass in jedem Datenpunkt genug relevante Informationen enthalten sind. Zwei probierte Lösungsansätze sind hierfür wie folgt:
+\begin{enumerate}
+    \item Filtern der Daten anhand ihrer Standardabweichung: \\
+    Dieser Ansatz sieht vor einen geeigneten Minimalwert für die Standardabweichung der Höhenwerte zu ermitteln. Die Idee hierbei ist, dass sehr flache Gebiete, wie Wasserflächen, herausgefiltert werden, da die Abwechslung ihrer Höhenwerte nicht hochgenug ist. Somit würden, in der Theorie, Bilder mit hohem Wasseranteil weiterhin betrachtet werden, solange der Rest des Bildes interessant genug ist. In der Praxis erwies sich  dieser Ansatz allerdings als ungeeignet. Des liegt daran, dass ein großer Teil der Landmasse eine so geringe Standardabweichung aufweist, dass ein Grenzwert, welche große Wasserflächen herausfiltert zwangsläufig auch viele tatsächlich relevante Datenpunkte ausschließt.
+    \item Filtern der Daten anhand ihres Meeresspiegelanteils: \\
+    Der zweite denkbare Ansatz ist eine untere Grenze für den Landmasseanteil, beziehungsweise eine obere Grenze für den Meeresspiegelanteil. Dieser Ansatz stellte sich in der Praxis als geeignet heraus, da störende DEMs komplett herausgefiltert wurden konnten, ohne dass der Datensatz zu sehr reduziert werden musste.
+\end{enumerate}
+Aus dem genannten Grund wurde der zweite Ansatz gewählt. Experimentell hat sich eine Grenze von mindestens 50\% Landmasseanteil als geeigneter Kompromiss aus Informationserhöhung und Datenerhalt erwiesen. Nach dieser Aussortierung umfasst das Datenset 11514 Datenpunkte.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Laufzeitverarbeitung}
+
+Dieser Abschnitt enthält einige Schritte, welche auch bei der Vorverarbeitung hätten vollzogen werden können. Aus Speicheroptimierungs- und Implementierungsgründen werden diese allerdings zur Laufzeit vorgenommen.
+
+
+\subsection{Augmentierung}
+\label{subsec:Augmentierung}
+
+Datenaugmentierung bedeutet die künstliche Erweiterung eines Datensatzes. Dies kann je nach größe des ursprünglichen Datensatzes die Leistungsfähigkeit eines Modells maßgeblich verbessern. Hierfür existieren viele Methoden - von einfachen operationen wie Spiegelungen bishin zu komplexen synthetisierten Daten. Ein generatives Modell hat als Ziel die Abbildung der Datenverteilung, somit ist es wichtig, dass diese Methoden die Verteilung nicht verändern. Deshalb werden in dieser Arbeit lediglich Methoden genutzt, die zum einen nur reale Daten nutzen und zum anderen die Struktur der Daten nicht verändern.
+Die DEMs des SRTM-GL1 decken einen Bereich von $1^{\circ}\times1^{\circ}$ zu groß
+
+
+\subsection{Anpassung des Wertebereichs}
+
+Um es einem Modell zu erleichtern Akkurat Samples innerhalb des Wertebereichs der Datenverteilung zu erzugen, ist es von Vorteil, diesen Wertebereich so eng wie möglich zu halten. Andernfalls verringert sich die relative größe der relevanten Bereiche und es wird somit unwahrscheinlicher, diese genau zu treffen. Entsprechend sollen auch hier die Daten angepasst werden. 
+Die Analyse der Höhenwerte aller DEMs hat ergeben, dass die weitaus meisten Höhenwerte zwischen 0 und 8092 liegen. Dieser Bereich ist mit einer Abdeckung von TODO\% mehr als aussagekräftig genug und reduziert den ursprünglichen Wertebereich gleichzeitig um 27071 beziehungsweise um ca. 77\%. 
+Diese sehr umfassende Grenze wurde gewählt, um die Datenverteilung so wenig wie möglich abzuändern. 
 
 \subsection{Normalisierung}
 
+LDMs operieren grundlegend auf Ebene von Standardnormalverteilungen dementsprechend ist es erforderlich, den Wertebereich der Daten auf den Bereich $\left [ -1, 1\right ]$ abzubilden. Die Abbildung kann hierbei auf mehrere Arten vollzogen werden, die einfachste Art ist hierbei eine lineare Abbildung aber auch komplexere Methoden sind vorstellbar. 
+% Im Rahmen dieser Arbeit wurden zusätzlich mit einer einfachen logistischen und einer kombination von logistischen Abbildungen experimentiert, um zu überüfen, ob der extreme Bias gegen 0 unvorteilhaft für die Generierung von selteneren Höhenwerten, wie sie beispielsweise bei Gebirgen auftreten ist. Die konkreten Definitionen sind hierbei wie folgt:
+% \begin{itemize}
+%     \item Einfach Logistisch: \\
+%     \begin{equation}
 
-\section{Laufzeitverarbeitung}
-
-\subsection{Augmentierung}
+%     \end{equation}
+%     \item Kombiniert Logistisch: \\
+%     \begin{equation}
+%     \end{equation}
+% \end{itemize}
+% Die Idee hinter diesen Funktionen ist jeweils steilere Bereiche für weniger häufig auftretende Höhenwerte zu haben, was den Fehler in diesen Bereichen erhöht und somit die Genauigkeit erhöht.
 
 \subsection{Geographische Zuordnung}
+
+Um bei einem 
 
