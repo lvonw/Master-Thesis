@@ -116,8 +116,17 @@ Dieser Abschnitt enthält einige Schritte, welche auch bei der Vorverarbeitung h
 \subsection{Augmentierung}
 \label{subsec:Augmentierung}
 
-Datenaugmentierung bedeutet die künstliche Erweiterung eines Datensatzes. Dies kann je nach größe des ursprünglichen Datensatzes die Leistungsfähigkeit eines Modells maßgeblich verbessern. Hierfür existieren viele Methoden - von einfachen operationen wie Spiegelungen bishin zu komplexen synthetisierten Daten. Ein generatives Modell hat als Ziel die Abbildung der Datenverteilung, somit ist es wichtig, dass diese Methoden die Verteilung nicht verändern. Deshalb werden in dieser Arbeit lediglich Methoden genutzt, die zum einen nur reale Daten nutzen und zum anderen die Struktur der Daten nicht verändern.
-Die DEMs des SRTM-GL1 decken einen Bereich von $1^{\circ}\times1^{\circ}$ zu groß
+Datenaugmentierung bedeutet die künstliche Erweiterung eines Datensatzes. Dies kann je nach größe des ursprünglichen Datensatzes die Leistungsfähigkeit eines Modells maßgeblich verbessern. Hierfür existieren viele Methoden - von einfachen operationen wie Spiegelungen bishin zu komplexen synthetisierten Daten. Ein generatives Modell hat als Ziel die Abbildung der Datenverteilung, somit ist es wichtig, dass diese Methoden die Verteilung nicht verfälschen. Deshalb werden in dieser Arbeit lediglich Methoden genutzt, die zum einen nur reale Daten nutzen und zum anderen die Struktur der Daten nicht verändern. Diese werden folgend dargelegt und in derselben Reihenfolge durchlaufen:
+\begin{enumerate}
+    \item \textbf{Zufälliger Bildausschnitt}: \\
+    Die DEMs des SRTM-GL1 decken einen Bereich von $1^{\circ}\times1^{\circ}$ ab. Bei der Zielauflösung von $256\times256$ entspricht eine Rasterzelle am Äquator also ungefähr $440^2\text{m}^2$. Würde man die Längen des Bildbereichs jedoch halbieren wäre die Auflösung verfierfacht. Dies würde einer Abdeckung von immernoch $0.5^{\circ}\times0.5^{\circ}$ entsprechen, was genug Fläche für große Strukturen bietet. Dies stellt die Begründung für die zuvor Angesprochene skallierung der DEMs auf $512\times512$ dar. \\ 
+    Eine Verkleinerung des Bildausschnitts hat somit bereits einige Vorteile. Hinzu kommt nun noch, dass diese Bildbereiche zufällig aus dem Ursprungs-DEM herausgeschnitten werden können. Dies erhöht die Anzahl der theoretisch unterschiedlichen Datenpunkte enorm. Da in der Praxis eine Verschiebung um einen Rasterpunkt aller Wahrscheinlichkeit keinen nennenswerten Effekt haben wird ist es nicht einfach möglich die genaue Anzahl an gewonnenen Bedeutungsvollen Daten zu bestimmen. Sie ist aber durch die Anzahl aller disjunkten Teilbereiche der größe $256\times256$ im Bildbereich $512\times512$ nach unten begrenzt. Somit ist die Vergrößerung des Datensatz im schlechtesten Fall vierfach.
+    \item \textbf{Zufällige Rotation um ein Vielfaches von $90^{\circ}$}: \\
+    Eine Rotation eines Bildes um Vielfache von $90^{\circ}$ erfordert keine Änderung der Rastergröße. Bei Terraindaten ist außerdem nicht davon auszugehen, dass die Ausrichtung ihre Strukturverändert, wie es beispielsweise bei Schrift der Fall wäre. Somit ist dies eine einfache Methode die Anzahl der Datenpunkte zu vervierfachen.
+    \item \textbf{Zufällige horizontale oder vertikale Spiegelung}: \\
+    Eine Spiegelung ist ebenfalls eine sehr einfache Operation, die Terraindaten in keiner Weise in ihrer Struktur verändert. Hier wird die Anzahl der Daten verdreifacht, da eine gleichzeitige horizontale und vertikale Spiegelung einer Rotation um $180^{\circ}$ entspricht und somit bereits abgedeckt wurde. 
+\end{enumerate}
+Die endgültige Größe des genutzten Datensatzes entspricht somit mindestens der unteren Grenze von $11514\times4\times4\times3 = 552672$, wobei in der Praxis von einer deutlich höheren Anzahl auszugehen ist.
 
 
 \subsection{Anpassung des Wertebereichs}
@@ -143,5 +152,11 @@ LDMs operieren grundlegend auf Ebene von Standardnormalverteilungen dementsprech
 
 \subsection{Geographische Zuordnung}
 
-Um bei einem 
-
+Bis zu diesem Zeitpunkt wurden lediglich die DEMs, beziehungsweise die Datenverteilung betrachtet. Allerdings müssen die Kontrollsignale diesen jeweiligen Datenpunkten zugeordnet werden. Aufgrund der Augmentierung dich zufällige Bildausschnitte ist es nicht möglich diese Zuordnung statisch im Voraus vorzunehmen. Sie muss dementsprechend zur Laufzeit anhand des gewählten Ausschnitts erfolgen. \\
+Zu diesem Zweck können wir anhand der geographischen Koordinaten des jeweiligen DEMs die korrespondierende Position in den Rastern der Terrain- und Klimasets ermitteln. Dies ist möglich da für beide die Abdeckung bekannt ist und beide genordet ausgerichtet sind. Diese Umstände erlauben es uns die jeweiligen Rasterkoordinaten $(x,y)$ wiefolgt zu ermitteln:
+\begin{equation}
+    x = \frac{(\text{Breitengrad} - x_0)}{\text{Pixelbreite}}, 
+    y = \frac{(\text{Längengrad} - y_0)}{\text{Pixellänge}}
+\end{equation}
+Wobei $(x_0, y_0)$ die Abbildung des Rastersursprungs (also die \enquote{obere linke Ecke}) auf geographische Koordinaten. Da beide Raster eine globale Abdeckung haben bedeutet dies also konkret, dass $x_0 = -180$ und $y_0 = 90$. Die Pixelbreiten und Längen bezeichnen entsprechend die Längen beziehungsweise Breiten einer Rasterzelle im Bogenmaß. \\
+Auf diese Weise kann also eine Genaue Zuordnung des, für das aktuelle DEM relevante Rasterfensters erfolgen. Anschließend müssen bei der Augmentierung lediglich die exakt gleichen Operationen auf das Rasterfenster angewandt werden, wie zuvor auf das DEM.  

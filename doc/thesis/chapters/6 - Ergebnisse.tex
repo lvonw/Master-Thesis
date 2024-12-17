@@ -1,12 +1,120 @@
-\chapter{Ergebnisse}
-5-10 seiten
+\chapter{Ergebnisse und Diskussion}
+
+In diesem Kapitel werden die Ergebnisse der in Kapitel \ref{ch:Methodik} konzipierten und in Kapitel \ref{ch:Implementierung} umgesetzten Methoden und Modelle Präsentiert und systematisch auf die Erfüllung der in Abschnitt \ref{sec:Zielsetzung} definierten geprüft. \\
+Dazu werden zuerst die Rekonstruktionsqualität des VAEs demonstriert, welcher Grundlage für die Generierung des LDMs ist. Daraufhin wird die Fähigkeit des LDMs überzeugende Samples zu synthetisieren anhand der definierten Generierungsprozesse kritisch geprüft. Der einzelnen Betrachtung folgt in diesem Kapitel eine zusammenfassende Betrachtung der Zielerfüllung durch die erzeugten Resultate. Hieran abgeleitet werden gesondert auch die Limitationen explizit und gesammelt aufgeführt und eingordnet. Abschliessend folgt ein Vergleich, der diese Arbeit in das Forschungsfeld der Terraingenierung mit DMs einordnet.  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Variational Autoencoder}
 
+Der VAE hat als vortrainierte Komponente eines LDM zweierlei Aufgaben. Zum einen haben die erzeugten latenten Repräsentationen für ein DM sinnvoll zu verarbeiten zu sein. Zum anderen muss die Rekonstruktion der Daten maximal gut sein. \\
+Die erste dieser Anforderungen kann nicht alleinestehend bewertet werden da dies das Training des DMs erfordert. Somit wird dieser bereich nicht weiter betrachtet und mit den Ergebnissen des LDMs als ganzes als gegeben hingenommen. Enstprechend wird im Folgenden die Rekonstruktionsqualität im Vordergrund stehen. 
+
+
+
+
+
+Der finale VAE wurde für 167000 Trainingsschritte bei einer Batchgröße von 64 trainiert. 
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{l r r}
+        \hline\hline
+        \thead{Kategorie} & \thead{Rasterzellwerte} & \thead{Rasterzellwerte} \\
+        \hline
+
+        \hline\hline
+    \end{tabular}
+    \caption{Aufbau des finalen VAEs}
+    \label{tab:vae_167k_aufbau}
+\end{table}
+
+
+
+Wie sich anhand der hier präsentierten Ergebnisse erkennen lässt, ist der finale VAE in der Lage eingabedaten in Form von Terrains überzeugend zu Rekonstruieren. Große Strukturen werden durchweg akkurat und mit großer Genaugikeit widergegeben. \\
+Durch die genutzten Techniken welche die visuelle Ähnlichkeit verbessern, wie die Nutzung eines Diskriminators und LPIPS werden auch kleine Details abgebildet. Allerdings nimmt die bildliche Schärfe der kleinen fraktalen Strukturen einer Landschaft sichtbar ab. Auch lassen sich auf dieser Ebene kleine punktuelle Artefakte erkennen, welche wahrscheinlich auf die Nutzung des Patch-GAN Diskriminators zurückzuführen sind. \\
+Trotz der qualitativen Mängel in Details lässt sich zusammenfassend feststellen, dass der VAE für eine akkurate Rekonstruktion für Terraindaten gut geeignet ist. Er bietet somit eine gelungene Grundlage für die weitere Verwendung in dem LDM.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Terrain Generierung}
+
+In diesem Abschnitt werden die Ergebnisse des LDMs beleuchtet. Hierbei werden alle definierten Generierungsprozesse durchlaufen und einzelnd auf ihre Erfüllung der gestellten Anforderungen kritisch geprüft. Hieraus ergibt sich somit eine Gesamtbetrachtung des LDMs unter den definierten Gesichtspunkten. Begonnen wird allerdings mit dem Vergleich der zwei grundlegenden Optionen für die Architektur des DMs. 
+
+
+\subsection {U-Net vs DiT}
+
+Beide Architekturen wurden auf der selben Maschine unter den gleichen Bedingungen für jeweils 10 Stunden auf einer NVIDIA H100 GPU trainiert. 
+
+Das U-Net erreichte in der gleichen Zeit 706 Epochen bei einem über die letzten 200 Schritte gemittelten finalen $L_\text{hybrid}$ von etwa 0.0503 und was einer Verbesserung von etwa 40\% gegenüber des DiT Ansatzes entspricht. Hierbei ist allerdings anzumerken, dass durch die Nutzung des MSE für $L_\text{simple}$ diese Reduktion nicht einer linearen sondern quadratischen Verbesserung entspricht. Entsprechend lassen sich bei den Ergebnissen erhebliche Qualitative unterschiede Feststellen. Wohingegen die einzelnen Patches des DiT ganz eindeutig zu erkennen sind, sind die Ergebnisse durchgängig kohärent und ohne wahrnehmbare Artefakte. \\
+Aufgrund dieser eindeutigen qualitativen Mängel des DiT- im direkten Vergleich zum U-Net-DM wird im weiteren Verlauf dieses Kapitels ausschließlich die U-Net Architektur verwendet und bewertet. 
+
 \subsection {Ungesteuerte Generierung}
+
+asd
+
 \subsection {Skizzenbasierte Generierung}
+
+asd
+
 \subsection {Unendliche Generierung}
+
+asd
+
 \subsection {Maskierte Generierung}
+
+asd
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Evaluation}
+
+asd
+
+
+\subsection{Limitation}
+
+asd
+
+\subsubsection{Generierung ohne Skizze}
+
+asd
+
+
+\subsubsection{Geringer Detailgrad}
+
+asd
+
+
+\subsubsection{Keine globale Kohärenz}
+
+asd
+
+\subsection{Zielerfüllung}
+
+Im folgenden werden die bisher gewonnenen Erkenntnisse konkret für die Bewertung der Erfüllung der Ziele, die diese Arbeit umrahmen, Zusammengefasst. Dabei wird jedes einzelne Kernziel betrachtet und das Maß der jeweiligen Erfüllung anhand der vorgestellten Ergebnisse begründet.
+
+\begin{enumerate}
+    \item \textbf {Entwicklung eines leistungsfähigen Variatonal-Autoencoders:} \\
+    Der entwickelte VAE nutzt die in der Praxis etablierten Techniken zur Verbesserung der Rekonstruktion und der Eignung für LDMs. Entsprechend weisen die Ergebnisse eine sehr hohe Rekonstruktionsqualität, vor allem bei großen Strukturen auf. Bei kleinen Details erweisen sich zwar die für VAEs üblichen und zu erwartenden Schwächen auf auch lassen sich hier Artefakte des Patch-GAN Ansatzes erkennen. Insgesamt ist die Bewertung der Ergebnisse als sehr gut gelungen einzustufen, weswegen dieses Ziel als vollumfänglich erfüllt angesehen wird. 
+    
+    \item \textbf {Erstellung eines mächtigen Latent Diffusion Modells:} \\
+    Es wurde ein LDM vorgestellt das auf Methoden welche dem aktuellen Stand der Technik entsprechen basiert. Darunter fallen unter Anderem die Nutzung eines VAE-GAN, das Erlernen der Varianz und die Nutzung von Classifier Free Guidance. Weitere übliche Techniken wie eine Kosinus Noise-Schedule oder DiT wurden ausprobiert und für die weitere Verwendung als ungeeignet oder unnütz befunden. \\
+    Das LDM kann vorallem auf Basis von Skizzen sehr gute Samples synthetisieren. Es enttäuscht allerdings bei der Generierung ohne eine solche Kontrolle mit qualitativ unbrauchbaren Ergebnissen. Dies liegt an der ungenügenden Fähigkeit des Modells große Strukuren eigenständig wiederzugeben. Die zugrundeliegende Skizze kann allerdings sehr simpel sein und nur schwach umgesetzt werden weswegen dieses Ziel im Ganzen als erfüllt angesehen wird, wenngleich mit der Einschränkung bei unktrollierter Generierung.
+
+    \item \textbf {Intuitive Steuerung der Generierung durch Skizzen:} \\
+    Die Nutzung von DEMs als Skizzen hat sich als sehr einfache, intuitive und mächtige Art der Steuerung bewiesen. Durch sie ist es, auf einer zuvor unmöglichen Weise, möglich detaillierte sowie grobe Skizzen in eine, jeweils angemessenen Maß zu verarbeiten. Durch diesen Ansatz ist es ebenfalls erstmals möglich Rauschbilder wie Perlin-Rauschen als Skizzen zu verwenden, da keinerlei Landschaftssignaturen sondern lediglich Höhenwerte verwendet werden. \\
+    Aufgrund der sehr guten Ergebnisse in allen untersuchten Bereichen wird dieses Ziel als vollständig erfüllt bewertet. 
+
+    \item \textbf {Nahtlose Zellbasierte unendliche Generierung:} \\
+    Durch den vorgestellten innovativen Ansatz zur unendliche Generierung welcher auf der Nutzung der Inpainting-Technik von DMs beruht ist erzeugt bei geeigneter Definition der Maske wie der vorgeschlagene Kosinus-Ansatz durchweg überzeugende Ergebnisse, welche selbst bei komplett unterschiedlichen benachbarten Zellen glaubwürdige und kohärente Übergänge erzeugen kann. Nähte lassen in extremen Fällen zwar in großen strukturen erahnen, bei Betrachtung auf kleiner Ebene sind diese allerdings nicht mehr zu erkennen. \\
+    Aufgrund dieser Ergebnisse ist dieses Ziel als vollumfänglich erfüllt anzusehen.     
+
+\end{enumerate}
+Zusammenfassend wurden alle gesetzten Kernziele erfüllt. Die ungesteuerte Genierung bleibt zwar hinter allen Erwartungen zurück und ist somit bei der Bewertung der Leistungsfähigkeit des vorgestellten LDMs ein wesentlicher Kritikpunkt in allen anderen Bereichen wurden jedoch qualitativ sehr überzeugende Ergebnisse erzielt. 
+ 
+\subsection{Vergleich}
+
+asd
+
+
+
+
