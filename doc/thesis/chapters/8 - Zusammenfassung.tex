@@ -1,28 +1,36 @@
 \chapter{Zusammenfassung}
-2-4 seiten
 
+In diesem Kapitel werden die in dieser Arbeit erarbeiteten Ergebnisse und gewonnenen Erkenntnisse in einem Fazit zusammengefasst. Folgend wird diese Arbeit durch einen Ausblick, welcher Perspektiven für weitere Forschung und Experimente auf dem Gebiet der Terraingenierung mit DMs bietet, abgeschlossen.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Fazit}
 
-Proin gravida dictum faucibus. Sed at semper lectus. Nam ultrices volutpat porta. Nulla non eros sagittis, sodales diam eget, cursus arcu. Integer ipsum metus, convallis a felis in, convallis aliquet urna. Morbi vel odio sed magna aliquam finibus. Proin blandit quis est ac mollis.\cite{join_study}
+Terraingenerierung mit Diffusionsmodellen ist ein neues und bisher nur wenig erforschtes Gebiet. Diese Arbeit hatte zum Ziel die Eignung dieser Technologie unter Nutzung von auf dem Stand der Technik basierenden Methoden wie Classifier Free Guidance, das Erlernen der Varianz und Kosinus Noise Schedule, in unterschiedlichen Anwendungsgebieten zu prüfen. \\
+Zur Erfüllung dieser Zielstellung wurden zunächst ein LDM konzipiert und im zugedessen ein leistungsfähiges VAE-GAN implementiert und trainiert. Basierend hierauf wurde das DM erarbeitet wobei die zwei in der Praxis üblichen Architekturen des DiT und U-Nets verglichen wurden. Hieraus wurde erkenntlich, dass ein DiT wesentliche Artefakte erzeugt und somit für dieses Anwendungsgebiet in der geprüften Form ungeeignet ist. \\
+Auf diesem erarbeiteten LDM aufbauend wurden Prozesse für unterschiedliche Anwendungsgebiete in der Terraingenerierung konzipiert. Hierbei stand im Vordergrund die Flexibilität von DMs zu testen. Konkret wurden hierzu drei Bereiche getestet: Unkontrollierte Generierung, Generierung auf der Basis von Skizzen und unendliche Generierung. \\
+Das erste dieser Gebiete wies wesentliche Mängel in der Qualität auf. Es wurde vermutet, dass diese auf die Simplifizierungen des Kontrollsignals zurückzuführen sind, welche für eine intuitivere Skizzenkontrolle unternommen wurden. So ist anzunehmen, dass diese Kontrollsignale für eine kohärente globale Struktur der Samples nicht ausreichend stark sind. \\
+Eben diese Vereinfachungen ermöglichen es jedoch mittels Skizzen, welche direkt auf DEMs basieren und die Steuerung der Synthese durch Kaperung des Rückwärtsprozesses umsetzen, zu verwenden. Somit werden, im gegensatz in bisherigen Publikationen, hierbei keine Landschaftssignaturen verwendet, auf welchen das LDM zusätzlich konditioniert werden muss. Dies ermöglicht nicht nur eine intuitivere Kontrolle, da keine Abstraktionsebene vorhanden ist, sondern lässt auch eine deutlich genauere Kontrolle genauer Höhenwerte zu und ist zusätlich über eine Angabe eines Startzeitschrittes sowohl für sehr grobe, als auch sehr detaillierte Skizzen zu verwenden. Desweiteren ist es somit auch möglich Skizzen zu verwenden, welche nicht durch Signaturen abgebildet werden können wie beispielsweise Perlin-Rauschen. \\
+Abschließend wurde ein neuartiger Ansatz für die Generierung unendlicher Landschaften erarbeitet, welcher auf der Technik des Inpaintings basiert. Hierbei wird Gitterbasiert anhand bereits generierter benachbarter Zellen ein sich an die Ränder nahtlos und kohärent eingliederndes Terrain generiert. Ermöglicht wird dies durch die Nutzung einer geeigneten Maskendefinition, für welche in dieser Arbeit eine auf dem Kosinus basierende Funktion vorgeschlagen wurde. \\
+Die erzielten Ergebnisse in diesen Bereichen demonstrieren eindrucksvoll die flexible Einsatzfähigkeit von DMs beziehungsweise LDMs für die Terraingenerierung, wenngleich sie auch aufweisen, dass das Potenzial noch bei weitem nicht Ausgeschöpft zu sein scheint.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Ausblick}
 
-Fusce luctus eros sem, id porttitor odio vestibulum sed. Etiam nisl eros, mollis rhoncus dolor vel, consectetur dignissim eros. 
+Durch die Betrachtung der Ergebnisse haben sich einige Bereiche aufgetan, die sich für den weitere Entwicklung der hier gelegten Grundlage anbieten.  
 
-\subsection{Alternative Sampling Algorithmen}
+\subsection{Verbesserte ungesteuerte Terraingenerierung}
 
-asd
+Die wohl gravierenste Limitation die durch das in dieser Arbeit beschriebene LDM resultiert ist die minderwertige Qualität von ungesteuerten Synthesen, welche nur durch Kontrollsignale beeinflusst werden. Dies liegt vermutlich an der simplifizierung der Konditionen welche nun nicht mehr alleinig für eine kohärente globale Struktur der Terrains ausreichen. \\
+Hieraus ergeben sich zwei denkbare Lösungsansätze welche für weitere Untersuchungen geeignet wären. Zum einen eine hierarchische Struktur von LDMs wobei ein LDM beispielsweise auf deutlich geringeren Auflösungungen der Terraindaten trainiert wird. Dies würde es erlauben ohne Kenntniss von kleinen Details die Verteilung der großflächigen Eigenschaften einer Landschaft zu erlernen. Zusätzlich könnte dies zur Generierung von unterschiedlichen LODs dienen, um einer Generierung zur Laufzeit näher zu kommen.\\
+Zum anderen könnten mit unterschiedlichen strengeren Kontrollsignalen experimentiert werden, wobei hierbei zu beachten ist, dass diese nicht zu Komplex werden dürfen um die skizzenbasierte Generierung nicht negativ zu beeinträchtigen.  
 
+\subsection{Alternative Samplingalgorithmen}
 
-\subsection{Hierarchische Terrain Generierung}
+Aktuell sieht das implementierte Modell vor das dem normalen DDPM entsprechend, für das Sampling alle Zeitschritte durchlaufen werden müssen. Dies ist Zeit- und Rechenintensiv. Aus diesem Grund existieren bereits viele alternative Samplingalgorithmen welche darauf abzielen mit weniger Zeitschritten bereits gute Ergebnisse zu erzeugen, wie DDIM, DPM oder DPM++. Die Eignung dieser Algorithmen zu überprüfen ist eine vielversprechende Option um die nötige Rechenzeit drastisch zu reduzieren.
 
-asd
+\subsection{Flow Matching}
 
-
-
-
-\subsection{Verbesserte Masken Integration}
-
-asd
+In jüngster Forschung hat sich eine der Diffusion sehr verwandte Technik der Bildsynthese, das sogenannte Flow Matching entwickelt. Dieses verspricht schnellere Ergebnisse und höhere Samplequalität. Aufgrund der unmittelbaren Nähe zur Diffusion ist davon auszugehen, dass sich diese Technik ebenfalls für die Terraingenerierung eignet. Eine genauere Untersuchung hiervon könnte die Leistungsfähigkeit in diesem Bereich allerdings noch weiter erhöhen.  
 
 
