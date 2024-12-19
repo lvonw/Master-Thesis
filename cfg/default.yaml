@@ -17,54 +17,60 @@ Main:
 Generate:  
   save_array: true
   save_plots: true
-  show_3d:    true
+  show_3d:    #true
 
   Perlin:
-    seed:                   42
+    seed:                   12314 #42
     lacunarity:             2
     persistance:            0.5
     octaves:                4
 
     chunks_per_image_side:  2
     image_side_resolution:  256
-    cells_per_chunk_side:   1
+    cells_per_chunk_side:   1 #4 
   # ---------------------------------------------------------------------------
   Unguided:
-    active:     false
-    samples:    4
-    iterations: 10
+    active:     #true
+    samples:    1
+    iterations: 4
     labels:
-      - [1, 1]
+      - [[1, 1]]
+      - [[1, 5]]
+      - [[1, 12]]
+      - [[1, 28]]
   # ---------------------------------------------------------------------------
   Image2Image:
-    active:             true
+    active:             #true
     use_perlin:         true
-    combine:            true
+    combine:            #true
     combination_alpha:  0.8
 
     samples:    1
     iterations: 1
     labels:
-      - [1, 12]
-    weight:     0.9
+      - [[1, 1]]
+      - [[5, 1]]
+      - [[10, 1]]
+      - [[15, 1]]
+    weight:     0.8
     sketch:     test_image6.png
   # ---------------------------------------------------------------------------
   Grid:
-    active:     #true
+    active:     true
     use_perlin: true
-    grid_x:     3
-    grid_y:     3
+    grid_x:     2
+    grid_y:     2
     iterations: 1
     regenerate_first_chunk: true
     labels:
-      - [1, 12]
+      - [[1, 12]]
     weight:     0.75
   # ---------------------------------------------------------------------------
   Inpainting:
     active: false
     samples: 10
     labels:
-      - [1, 1]
+      - [[1, 1]]
 
 # =============================================================================
 # TRAINING

@@ -19,10 +19,10 @@ MODEL           = "ltd_v3"
 PROJECT_PATH    = "E:\Developer\Master-Thesis"
 DIFFUSION       = "data\log\diffusion"
 # Enter the heightmap file here
-FILENAME        = "infinite_asd_11-25_15-59-24_2"
-FILE            = f"{FILENAME}.npy"
+FILE            = "infinite_asd_12-18_17-20-32_1.npy"
 HEIGHTMAP_PATH  = f"{PROJECT_PATH}\{DIFFUSION}\{MODEL}\heightmaps\{FILE}"
 RENDER_PATH     = f"{PROJECT_PATH}\{DIFFUSION}\{MODEL}\\renders\{FILE}"
+DO_RENDER       = False
 
 # Heightmap Params ============================================================
 # Scale of points in x and y in meters (1u = 8092m)
@@ -32,7 +32,7 @@ HEIGHT_SCALE    = 1/2
 
 HEIGHTMAP_BASE_RESOLUTION = 256
 
-TERRAIN_TYPE    = "Desert"
+TERRAIN_TYPE    = "European"
 
 # Lights and Camera ===========================================================
 CAMERA_POSITION     = (HEIGHTMAP_SCALE/2, -4.15, 9.3)
@@ -270,7 +270,7 @@ MATERIAL_TABLE  = MaterialLookupTable( biome_entries =
             height_entries  = [
                 # Lake
                 HeightEntry(
-                    height          = 0.28,
+                    height          = 0.23,
                     material_values = MaterialValues(
                         colour      = (0.06, 0.16, 0.17, 1),
                         roughness   = 0.1 
@@ -278,7 +278,7 @@ MATERIAL_TABLE  = MaterialLookupTable( biome_entries =
                 ), 
                 # Grass
                 HeightEntry(
-                    height          = 0.4,
+                    height          = 0.35,
                     material_values = [
                         # Fresh Grass
                         MaterialValues(
@@ -566,6 +566,13 @@ bpy.context.scene.render.resolution_y   = int(
 background = bpy.context.scene.world.node_tree.nodes["Background"]
 background.inputs["Color"].default_value    = BACKGROUND_COLOUR
 background.inputs["Strength"].default_value = BACKGROUND_STRENGTH
+
+# Rendering ===================================================================
+if DO_RENDER:
+    bpy.context.scene.render.filepath   = RENDER_PATH
+    bpy.context.scene.render.engine     = "CYCLES"
+
+    bpy.ops.render.render(write_still=True)
 
 
 print ("Finished!")

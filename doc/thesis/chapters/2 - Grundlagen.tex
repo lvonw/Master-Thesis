@@ -339,11 +339,11 @@ Sollen zwei Vektoren zu einander in beziehung gesetzt werden, so wird einer der 
 Diese Berechnung kann auch mehrfach mit unterschiedlichen $W^Q$, $W^K$ und $W^V$ durchgeführt werden, um unterschiedliche Interpretationsmöglichkeiten der Sequenz abbilden zu können. Dies wird \textit{Multi-Head Attention} genannt.
 
 % DDPM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Diffusionmodelle}
+\subsection{Diffusionsmodelle}
 \label{subsec:Grundlagen_DMs}
 
 Wie in vorherigen Abschnitten bereits erläutert, sind Log-Likelihood basierte Modelle in strenge mathematische Bedingungen gebunden. Dies schränkt ihre mögliche Komplexität ein. Modelle welche andere Kriterien optimieren, wie GANs erlauben zwar höhere Komplexität in ihren Funktionen, haben allerdings praktische Fallstricke wie das Mode-Collapse Problem. Somit stellt sich die Frage, ob es eine Klasse von Modellen gibt, welche die Log-Likelihood als Optimierungsziel haben und gleichzeitig beliebig komplexe Funktionen erlauben. \\
-Eine Antwort hierauf stellen Diffusions Modelle (DM)\footnote{
+Eine Antwort hierauf stellen Diffusionsmodelle (DM)\footnote{
     Dickstein et al.: Diffusion Models
     \cite{pmlr-v37-sohl-dickstein15}
 }. Die Kernidee der Generierung dieser Klasse von Modellen ist dabei das, über viele Zeitschritte hinweg, iterative Herauskristallisieren von Informationen aus einem ursprünglichen Rauschbild. Intuitiv kann dies damit begründet werden, dass jeder einzelne Schritt hierbei eine Verhältnismäßig einfache Aufgabe ist, da das Ergebnis jedes Schrittes nur eine kleine Änderung des verrauschten Ausgangszustands darstellt. Alle Schritte zusammen jedoch ergeben ein sehr tiefes und mächtiges Modell. Vergleichbar ist dies mit einem Künstler welcher, beginnend mit einer Grundierung, Schicht für Schicht weitere Strukturen und Details auf eine Leinwand aufträgt. \\
@@ -578,6 +578,13 @@ Zunächst werden allen Eckpunkten des Gitters pseudozufällig ausgerichtete Grad
 \end{enumerate}
 Dieser Algorthmus eignet sich ebenfalls zur Generierung von unendlichen Rauschfeldern, sofern dafür gesorgt ist, dass gleichen Eckpunkten immer die gleichen pseudozufälligen Gradienten zugewiesen werden. 
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.35\textwidth]{images/foundations/basic_perlin.png} 
+    \caption{Perlin Rauschen}
+    \label{fig:basic_perlin}
+\end{figure}
+
 
 \subsubsection{Fraktales Rauschen}
 
@@ -587,6 +594,13 @@ Hierbei werden hier $O$ Oktaven einer Rauschfunktion $f$ summiert. Die jeweilige
     f_\text{fractal}(x) = \sum_{o=0}^{O-1} p^{o}f(l^ox)
 \end{equation}
 Übliche Belegungen sind hierbei $l=2$ und $p=\frac{1}{2}$. Die Frequenz wird also in jeder Oktave verdoppelt, wohingegen die Amplitude halbiert wird.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.35\textwidth]{images/foundations/fractal_perlin.png} 
+    \caption{Fraktales Perlin Rauschen mit 4 Oktaven.}
+    \label{fig:fractal_perlin}
+\end{figure}
 
 \subsection{KI-Basierte Terraingenerierung}
 

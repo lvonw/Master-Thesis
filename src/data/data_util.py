@@ -413,11 +413,15 @@ class DataVisualizer():
                                plot.data)
                         
                     case PlotType.IMAGE:
+                        # cax = ax.imshow(plot.data, 
+                        #                 cmap = plot.cmap, 
+                        #                 vmin = -1, 
+                        #                 vmax = 0)
                         cax = ax.imshow(plot.data, 
                                         cmap = plot.cmap, 
                                         vmin = plot.min_value, 
                                         vmax = plot.max_value)
-                        fig.colorbar(cax, ax = ax)
+                        # fig.colorbar(cax, ax = ax)
 
                     case PlotType.PLANE:
                         data    = np.flip(plot.data, 0)

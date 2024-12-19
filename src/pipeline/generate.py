@@ -39,7 +39,7 @@ def generate(model,
     data_visualizer     = DataVisualizer()
     printer             = Printer()
     generated_results   = []
-    perlin_transform    = lambda x : x#(x / 6) - 0.8
+    perlin_transform    = lambda x : (x / 2) - 0.5
     perlin_generator    = FractalPerlinGenerator(configuration["Perlin"],
                                                  perlin_transform)
 
@@ -190,7 +190,7 @@ def __generate_unguided(model,
                   colour    = "magenta",
                   disable   = False):
             
-        label = [labels[i % len(labels)]]
+        label = labels[i % len(labels)]
 
         sample = model.generate(
             label, 
@@ -266,7 +266,7 @@ def __generate_sketch_based(model,
                     colour    = "magenta",
                     disable   = False):
         
-        label = [labels[i % len(labels)]]
+        label = labels[i % len(labels)]
 
         sample = model.generate(label, 
                                 amount_samples, 
@@ -304,7 +304,6 @@ def __generate_grid(model,
     
     amount_cells = grid_x * grid_y
 
-
     # Generate all Samples ====================================================
     for i in range(iterations):
         for cell_idx in tqdm(range(amount_cells),
@@ -316,7 +315,9 @@ def __generate_grid(model,
                         disable   = False):
             
             coordinate  = (cell_idx % grid_x, cell_idx // grid_x)
-            label       = [labels[cell_idx % len(labels)]]
+            #coordinate  = ((cell_idx % grid_x) * 10, (cell_idx // grid_x) * 10)
+
+            label       = labels[cell_idx % len(labels)]
 
             __generate_chunk(model,
                              grid,
@@ -338,7 +339,7 @@ def __generate_grid(model,
                          (0, 0),
                          weight,
                          alpha,
-                         [labels[0]])
+                         labels[0])
     
     # Stitch final image ======================================================
     stitched_image, stitched_sketch = grid.stitch_image()
@@ -356,13 +357,15 @@ def __generate_chunk(model,
                      amount_samples = 1):
 
     if use_perlin:
-        # t = (coordinate[0]*10, coordinate[1]*12)
+        #t = (coordinate[0]*10, coordinate[1]*12)
         perlin_image    = perlin_generator.generate_image(coordinate)
         perlin_tensor   = (torch.tensor(perlin_image, 
                                         dtype = torch.float32)
                            .unsqueeze(dim=0)
                            .unsqueeze(dim=0)
                            .to(util.get_device()))
+        
+        #perlin_tensor *= 0.75 + np.random.rand() * 0.25
 
     mask, masked_image = grid.get_mask_for_coordinate(coordinate, 
                                                       alpha,
@@ -396,7 +399,7 @@ def __get_alpha(overlap_length,
 
     match interpolation_type:
         case MaskInterpolation.NONE:
-            alpha = 1
+            alpha = torch.full((overlap_length,), 1)
         case MaskInterpolation.LINEAR:
             alpha = torch.linspace(1, 
                                    0, 

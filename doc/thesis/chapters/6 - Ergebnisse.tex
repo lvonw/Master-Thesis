@@ -1,7 +1,8 @@
 \chapter{Ergebnisse und Diskussion}
 
 In diesem Kapitel werden die Ergebnisse der in Kapitel \ref{ch:Methodik} konzipierten und in Kapitel \ref{ch:Implementierung} umgesetzten Methoden und Modelle Präsentiert und systematisch auf die Erfüllung der in Abschnitt \ref{sec:Zielsetzung} definierten geprüft. \\
-Dazu werden zuerst die Rekonstruktionsqualität des VAEs demonstriert, welcher Grundlage für die Generierung des LDMs ist. Daraufhin wird die Fähigkeit des LDMs überzeugende Samples zu synthetisieren anhand der definierten Generierungsprozesse kritisch geprüft. Der einzelnen Betrachtung folgt in diesem Kapitel eine zusammenfassende Betrachtung der Zielerfüllung durch die erzeugten Resultate. Hieran abgeleitet werden gesondert auch die Limitationen explizit und gesammelt aufgeführt und eingordnet. Abschliessend folgt ein Vergleich, der diese Arbeit in das Forschungsfeld der Terraingenierung mit DMs einordnet.  
+Dazu werden zuerst die Rekonstruktionsqualität des VAEs demonstriert, welcher Grundlage für die Generierung des LDMs ist. Daraufhin wird die Fähigkeit des LDMs überzeugende Samples zu synthetisieren anhand der definierten Generierungsprozesse kritisch geprüft. Der einzelnen Betrachtung folgt in diesem Kapitel eine zusammenfassende Betrachtung der Zielerfüllung durch die erzeugten Resultate. Hieran abgeleitet werden gesondert auch die Limitationen explizit und gesammelt aufgeführt und eingordnet. Abschliessend folgt ein Vergleich, der diese Arbeit in das Forschungsfeld der Terraingenierung mit DMs einordnet. \\
+Um den Kontrast der DEM Darstellungen zu erhöhen, was der besseren Erkennbarkeit dient, werden im Folgenden, sofern nicht anders gekennzeichnet, relative Einfärbungen genutzt. Das bedeutet, dass die lokalen Minima, beziehungsweise Maxima maßgebend für Schwarz und Weiß sind, anstelle der globalen Grenzen von -1 und 1.  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Variational Autoencoder}
@@ -27,9 +28,61 @@ Der finale VAE wurde für 167000 Trainingsschritte bei einer Batchgröße von 64
     \label{tab:vae_167k_aufbau}
 \end{table}
 
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/source1.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/recon1.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/source2.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/recon2.png}
+    }
 
+    \vspace{-8pt}
+
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/source3.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/recon3.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/source4.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/recon4.png}
+    }
+    
+    \caption{Verschiedene Quellbild- und Rekonstruktions-Paare. Links Quellbild, rechts Rekonstruktion}
+    \label{fig:vae_recons}
+\end{figure}
 
 Wie sich anhand der hier präsentierten Ergebnisse erkennen lässt, ist der finale VAE in der Lage eingabedaten in Form von Terrains überzeugend zu Rekonstruieren. Große Strukturen werden durchweg akkurat und mit großer Genaugikeit widergegeben. \\
+
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/vae_artefact1.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/vae_artefact1a.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/vae_artefact2.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/vae/vae_artefact2a.png}
+    }
+    \caption{Ausgewählte Rekonstruktion, bei welcher die Artefakte wie kleine Patches und verwaschene Details besonders stark ausgeprägt sind. Der gelb umrandete Bereich wird jeweils rechts vergrößert abgebildet. Linkes paar sind Quelldaten, rechtes paar die Rekonstruktionen}
+    \label{fig:vae_artefacts}
+\end{figure}
+
 Durch die genutzten Techniken welche die visuelle Ähnlichkeit verbessern, wie die Nutzung eines Diskriminators und LPIPS werden auch kleine Details abgebildet. Allerdings nimmt die bildliche Schärfe der kleinen fraktalen Strukturen einer Landschaft sichtbar ab. Auch lassen sich auf dieser Ebene kleine punktuelle Artefakte erkennen, welche wahrscheinlich auf die Nutzung des Patch-GAN Diskriminators zurückzuführen sind. \\
 Trotz der qualitativen Mängel in Details lässt sich zusammenfassend feststellen, dass der VAE für eine akkurate Rekonstruktion für Terraindaten gut geeignet ist. Er bietet somit eine gelungene Grundlage für die weitere Verwendung in dem LDM.
 
@@ -43,6 +96,38 @@ In diesem Abschnitt werden die Ergebnisse des LDMs beleuchtet. Hierbei werden al
 
 Beide Architekturen wurden auf der selben Maschine unter den gleichen Bedingungen für jeweils 10 Stunden auf einer NVIDIA H100 GPU trainiert. 
 
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.32\textwidth]{images/results/dit/dit1.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.32\textwidth]{images/results/dit/dit2.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.32\textwidth]{images/results/dit/dit4.png}
+    }
+    \caption{Samples des LDM unter Nutzung eines DiT. Die Artefakte der Patches sind klar erkennnbar.}
+    \label{fig:dit_results}
+\end{figure}
+
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.32\textwidth]{images/results/unet/unet1.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.32\textwidth]{images/results/unet/unet2.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.32\textwidth]{images/results/unet/unet3.png}
+    }
+    \caption{Samples des LDM unter Nutzung eines U-Nets. Die Qualität der Ergebniss variiert stark, es ist trotzdem eine deutlich höhere Kohärenz als beim DiT offensichtlich.}
+    \label{fig:unet_results}
+\end{figure}
+
+
 Das U-Net erreichte in der gleichen Zeit 706 Epochen bei einem über die letzten 200 Schritte gemittelten finalen $L_\text{hybrid}$ von etwa 0.0503 und was einer Verbesserung von etwa 40\% gegenüber des DiT Ansatzes entspricht. Hierbei ist allerdings anzumerken, dass durch die Nutzung des MSE für $L_\text{simple}$ diese Reduktion nicht einer linearen sondern quadratischen Verbesserung entspricht. Entsprechend lassen sich bei den Ergebnissen erhebliche Qualitative unterschiede Feststellen. Wohingegen die einzelnen Patches des DiT ganz eindeutig zu erkennen sind, sind die Ergebnisse durchgängig kohärent und ohne wahrnehmbare Artefakte. \\
 Aufgrund dieser eindeutigen qualitativen Mängel des DiT- im direkten Vergleich zum U-Net-DM wird im weiteren Verlauf dieses Kapitels ausschließlich die U-Net Architektur verwendet und bewertet. 
 
@@ -50,43 +135,233 @@ Aufgrund dieser eindeutigen qualitativen Mängel des DiT- im direkten Vergleich 
 
 asd
 
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_terrain1.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_terrain5.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_terrain10.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_terrain15.png}
+    }
+    \caption{Samples von moderatem Klima mit variierender Terrainklasse. Um die unterschiede der Terrainhöhen hervorzuheben handelt es sich hier um eine absolute Einfärbung. Von links nach Rechts: Steile Berge, Hügel, Plateau, Flachland.}
+    \label{fig:unc_terrain}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_climate1.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_climate5.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_climate12.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_climate28.png}
+    }
+    \caption{Samples von Steilen Bergen mit variierender Klimaklasse. Von links nach Rechts: Tropisch, Trocken, Moderat, Kalt.}
+    \label{fig:unc_climate}
+\end{figure}
+
+
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_climate1.png}
+    }
+    \subfloat{%
+        \raisebox{0.25\height}{\includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_climate1r.png}}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_climate28.png}
+    }
+    \subfloat{%
+        \raisebox{0.25\height}{\includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_climate28r.png}}
+    }
+    \caption{Samples und korrespondierender Render}
+    \label{fig:unc_climate_renders}
+\end{figure}
+
+
 \subsection {Skizzenbasierte Generierung}
 
 asd
 
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/sketch.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/str900.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/str800.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/str700.png}
+    }
+    \caption{Skizzenbasierte Samples mit drei unterschiedlichen Startzeitschritten. Von links nach rechts: Skizze, 900, 800, 700}
+    \label{fig:sketch_strengths}
+\end{figure}
+
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/sk_terrain_800_1.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/sk_terrain_800_5.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/sk_terrain_800_10.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/sk_terrain_800_15.png}
+    }
+    \caption{Skizzenbasierte Samples mit variierender Terrainklasse. Von links nach Rechts: Steile Berge, Hügel, Plateau, Flachland.}
+    \label{fig:sketch_terrains}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/sk_climate_800_1.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/sk_climate_800_5.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/sk_climate_800_12.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/sketch/sk_climate_800_28.png}
+    }
+    \caption{Skizzenbasierte Samples mit variierender Klimaklasse. Von links nach Rechts: Tropisch, Trocken, Moderat, Kalt.}
+    \label{fig:sketch_climates}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.32\textwidth]{images/results/sketch/sk_perlin_750s.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.32\textwidth]{images/results/sketch/sk_perlin_750.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.32\textwidth]{images/results/sketch/sk_perlin_750r.png}
+    }
+    \caption{Skizzenbasiertes Sample mit Perlin Rauschen als Skizze und Startzeitschritt 750.}
+    \label{fig:sketch_perlin}
+\end{figure}
+
+
+
+
 \subsection {Unendliche Generierung}
 
-asd
 
-\subsection {Maskierte Generierung}
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/infinite/2x2_none.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/infinite/2x2_lin.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/infinite/2x2_exp.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.24\textwidth]{images/results/infinite/2x2_cos.png}
+    }
+    \caption{Unendliche generierung unter Nutzung unterschiedlicher Maskefunktionen. Von links nach rechts: Konstant, linear, exponential, Kosinus}
+    \label{fig:masks}
+\end{figure}
 
-asd
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.40\textwidth]{images/results/infinite/2x2_sk.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.40\textwidth]{images/results/infinite/2x2_cos.png}
+    }
+    \caption{Unendliche generierung unter Nutzung der Kosinusfunktion im Detail}
+    \label{fig:cos_detail}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.40\textwidth]{images/results/infinite/3x3_norm.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.40\textwidth]{images/results/infinite/3x3_regen.png}
+    }
+    \caption{Unendliche Generierung im $3\times3$ Gitter mit Sonderbehandlung der ersten Zelle. Links ohne Sonderbehandlung, rechts mit Sonderbehandlung}
+    \label{fig:1st_regen}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.40\textwidth]{images/results/infinite/disconnected_sk.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.40\textwidth]{images/results/infinite/disconnected_sampl.png}
+    }
+    \caption{Unendliche generierung mit nicht flüssigen Zellübergängen in der Skizze}
+    \label{fig:disconnected}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.40\textwidth]{images/results/infinite/disconnected_sampl.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.40\textwidth]{images/results/infinite/disconnected_r.png}
+    }
+    \caption{Unendliche generierung mit nicht flüssigen Zellübergängen in der Skizze im Detail}
+    \label{fig:disconnected_render}
+\end{figure}
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Evaluation}
 
-asd
+In diesem Abschnitt werden die aus den Ergebnissen gewonennen Erkenntnisse noch einmal Zusammengefasst betrachtet. Sie sollen somit in Zusammenhang gesetzt werden.  
 
 
 \subsection{Limitation}
 
-asd
+Aus der Betrachtung der erzielten Ergebnisse wurden einige Kernlimitationen des vorgeschlagenen LDMs offensichtlich. Diese werden an dieser Stelle noch einmal klar in Äußerung und möglicher Ursache zusammengefasst.
 
-\subsubsection{Generierung ohne Skizze}
+\subsubsection{Geringe Aussagekraft der Kontrollsignale}
 
-asd
-
+Wie bereits geschildert ist die Qualität der generierten Terrainsamples ohne jegliche Steuerung durch Skizzen enttäuschend gering. Die vermutete Begründung ist hierfür, dass die, für die Ermöglichung der Skizzensteuerung durch DEMs anstelle von Signaturen, simplifizierte Konditionierung des Modells verglichen mit bisherigen Ansätzen, nicht ausreichend aussagekräftig ist, um kohärente Ergebnisse zu Erzeugen. 
 
 \subsubsection{Geringer Detailgrad}
 
-asd
-
-
-\subsubsection{Keine globale Kohärenz}
-
-asd
+Die Konzeption des LDMs sah vor großflächige Landschaften zu generieren. Mit einer entsprechenden Sampleauflösung von $256\times256$ und folglich einer seitenlänge eines einzelnen Höhenwertes von ca. 220 Metern ist hier kein hoher Detailgrad zu erwarten. Nichtsdestotrotz hat diese grobe Auflösung zur Folge, dass die Landschaften in ihrer generierten Form nicht ohne Weiteres für eine Verwendung in der Praxis genutzt werden können. \\
+Da dies keineswegs ein für das Anwendungsgebiet der Terraingenerierung exklusives Problem ist sondern für DMs im generellen gilt, existieren hierfür bereits mehrere Lösungsansätze. Die vielleicht am besten Untersuchte Methoden dieses Problem zu Lösen sind Upscaling-Ansätze. Diese werden auch bereits in anderen Ansätzen zur Terraingeneriung vorgeschlagen wie von Lochner et al.\footnote{
+    Vgl. Lochner et al.: Interactive Terrain Authoring using Diffusion Models, S. 3
+    \cite{lochner2023interactive}
+} \\
+Eine Integration eines solchen Upscaling Modells wäre also für eine weitere Verfolgung des hier vorgestellten LDMs eine geeignete Lösung. Dies könnte ebenfalls eine Nutzung in der Praxis ermöglichen.   
 
 \subsection{Zielerfüllung}
 
@@ -113,7 +388,8 @@ Zusammenfassend wurden alle gesetzten Kernziele erfüllt. Die ungesteuerte Genie
  
 \subsection{Vergleich}
 
-asd
+Ein qualitativer Vergleich zu bisherigen Ansätzen unter der Nutzung von DMs fällt aus unterschiedlichen Gründen schwer. Zum einen ist die Zielsetzung dieser Arbeit was den Anspruch an die Generierung angeht grundsätzlich eine Andere. Dies hat als Auswirkung, dass die Genutzten Daten nicht speziell ausgewählt wurden, um faire Vergleiche zwischen vorgeschlagenen Methoden zu ermöglichen, sondern um die Lösung der gestellten Probleme möglichst gut umsetzten zu können. \\
+Zum anderen sind Quellcode und Gewichte der Diffusionsmodelle bei keiner der Veröffentlichungen zugänglich gemacht worden. Somit ist keine eigene Einschätzung oder Anpassung der Testbedingung möglich. Die einzigen Möglichkeit eines Vergleiches bestehen somit aus den Referenzangaben welche aus den Publikationen selbst entnommen werden können, und vergleiche der Methodiken und ihrer beschriebenen Vor- beziehungsweise Nachteile. 
 
 
 
