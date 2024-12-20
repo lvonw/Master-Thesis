@@ -30,14 +30,12 @@ Generate:
     cells_per_chunk_side:   1 #4 
   # ---------------------------------------------------------------------------
   Unguided:
-    active:     #true
+    active:     true
     samples:    1
     iterations: 4
     labels:
-      - [[1, 1]]
-      - [[1, 5]]
-      - [[1, 12]]
-      - [[1, 28]]
+      - [[0, 0]]
+
   # ---------------------------------------------------------------------------
   Image2Image:
     active:             #true
@@ -56,7 +54,7 @@ Generate:
     sketch:     test_image6.png
   # ---------------------------------------------------------------------------
   Grid:
-    active:     true
+    active:     #true
     use_perlin: true
     grid_x:     2
     grid_y:     2
