@@ -1,35 +1,237 @@
 \chapter{Implementierung}
 \label{ch:Implementierung}
-10 seiten
+
+Dieses Kapitel widmet sich den relevanten Details der Implementierung der in Abschnitt \ref{ch:Methodik} konzipierten Generierungsprozesse sowie den dafür nötigen generativen Modellen. Die Implementierung wurde auf Basis von PyTorch vorgenommen, alle in dieser Arbeit genutzten Modellarchitekturen wurden eigens umgesetzt. Für die Verarbeitung von DEMs wurde GDAL genutzt.\\
+Die hier dargestellten Quellcode-Ausschnitte sind zur besseren Lesbarkeit stark gekürzt und stellenweise vereinfacht, wenn weitere Details dem Verständnis schaden würden. Gegebenenfalls wurden Symbole und Funktionen umbenannt um an der, in dieser Arbeit verwendeten, Terminologie anzuknüpfen. Semantisch bleibt der Inhalt durch diese Anpassungen allerdings unverändert.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Grundlegende Programmstruktur}
 
-asd
+asdas
+
+
+\section {Datenframework}
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def __getitem__(self, index):
+    cache       = GeoDatasetCache()
+    # DEMs
+    file = self.dem_list[index]
+    dem_tensor, dem_shape, dataset = self.load(file)  
+    # Ermittle die Geokoordinaten aus dem DEM
+    (tl_geo, br_geo), dem_geo_transform = (
+        self.get_geo_coordinates(dataset, dem_shape))    
+    cache.geo_coordinates   = (tl_geo, br_geo)
+    cache.geo_transform     = dem_geo_transform
+    # Ordne die jeweiligen Labelausschnitte dem DEM zu 
+    for cache in self.label_sets:
+        label, label_frame = self.__load_label(cache, 
+            tl_geo, br_geo)
+        cache.label_tensor = label
+        cache.label_frames.append(label_data_frame)
+    label_frames = cache.label_frames
+    # Wende die Datenaugmentierungs Transformationen an 
+    data_entry, label_frames = self.aug_transforms(
+        data_entry, label_frames)
+    # Ermittle die Klassen aus den Ausschnitten 
+    labels = []
+    for _, label_frame in enumerate(label_frames):
+        label = torch.median(label_frame)
+    return data_entry, label
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Laufzeitverarbeitung der DEM- und Klassendaten}
+    \label{fig:Data_runtime}
+\end{figure}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Variational Autoencoder}
 
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def encode(self, x):
+    x = self.encoder(x)
+    mu, log_var = torch.chunk(x, 2, dim=1) 
+    sigma   = log_var.exp().sqrt()
+    # Reparametrisierung
+    latents = mu + sigma * torch.randn(mu.shape)
+    return LatentEncoding(latents, mu, log_var)
+
+def decode(self, z):
+    return self.decoder(z)
+
+def forward(self, x):
+    latent_encoding = self.encode(x) 
+    z = latent_encoding.latents
+    recon = self.decode(z)
+    return recon, latent_encoding
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Encoding und Decoding Funktionen des VAE-GAN}
+    \label{fig:vae_forward}
+\end{figure}
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def training_step(self, inputs, step_idx, optim_idx):
+    recons, latents = self(inputs)
+    # Diskriminator Training 
+    if self.use_discriminator and optim_idx == 1:
+        input_logits    = self.disc(inputs)
+        recon_logits    = self.disc(recons)
+        return hinge_loss(input_logits, recon_logits)
+    # VAE Training
+    recon_loss  = torch.abs(recons - inputs)
+    kl_d        = self.normal_kl_d(latents)      
+    if self.use_perceptual_loss:   
+        percep_loss = self.percep_loss(inputs, recons)
+    if self.use_discriminator 
+        and step_idx >= self.disc_warmup:    
+        disc_loss = -torch.mean(self.disc(recons))
+    return recon_loss + self.weight_kl * kl_d 
+        + self.weight_d * disc_loss 
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Trainingsschrittroutine des VAE-GAN}
+    \label{fig:vae_training}
+\end{figure}
+
+
 asd
 
 \subsection{Architektur}
 
 asd
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section {Diffusions Backbone}
-
-asd
-
-\subsection{Architektur}
-
 asd
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Latent Diffusions Model}
 
-asd
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def training_step(self, x, labels):
+    x = self.latent_model.encode(x).latents
+    # Vorwaertsprozess bei Zeitschritt t
+    t = self.__sample_from_timesteps(self.training_T)
+    noised_images, noise = self.__add_noise(x, t)
+    # Classifier Free Guidance
+    if self.use_classifier_free_guidance: 
+        mask = torch.rand() < self.no_class_probability
+        labels = torch.where(mask, const.NULL_LABEL, 
+            labels)   
+    # Rauschvorhersage
+    x_t = self.model(noised_images, labels, t)
+    return l_hybrid(noise, x, noised_images, x_t, t)
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Trainingsschrittroutine des LDM}
+    \label{fig:ldm_training}
+\end{figure}
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def sample(self, ctrl_signal, sketch, i2i_strength,
+    mask, masked_input):
+    # Normales Sampling
+    starting_offset = 0
+    if sketch is None:
+        x = torch.randn()
+    # Skizzensteuerung
+    else:
+        start_t = i2i_strength * self.sample_T
+        timesteps = self.sample_steps[start_t]
+        x   = self.latent_model.encode(sketch).latents
+        x, _= self.__add_noise(x, timesteps)
+    # Masking 
+    if mask is not None:
+        masked_input = self.latent_model
+            .encode(masked_input).latents
+        mask = resize_to_latent_size(mask)
+        inverted_mask = 1 - mask
+    # Rueckwaertsprozess
+    for t in tqdm(self.sample_steps[start_t:])  
+        x_t = self.model(x, ctrl_signal, t)
+        # Classifier Free Guidance 
+        if self.use_classifier_free_guidance:       
+            null_labels = const.NULL_LABEL
+            uncon_x_t  = self.model(x, null_labels, t)
+            x_t = lerp(uncon_x_t, x_t, self.cfg_w)
+        # Entrauschen
+        x = self.__predict_mean_variance(t, x, x_t)        
+        # Wende Maske an
+        if mask is not None:
+            noised_mask, _ = self.__add_noise(
+                masked_input, t) 
+            x = noised_mask * mask + x * inverted_mask
+    # Dekodierung 
+    return self.latent_model.decode(x)
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Samplefunktion des LDM}
+    \label{fig:ldm_sample}
+\end{figure}
+
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def forward(self, x, ctrl_signal, t):
+    timestep = self.__get_time_embedding(t, 
+        self.embedding_size)
+    timestep = self.time_embedding(t)
+    ctrl_signal = self.label_embedding(ctrl_signal)
+    x = self.model(x, ctrl_signal, t)
+    return x
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Diffusionsmodell-Wrapper Inferenzfunktion}
+    \label{fig:DM_forward}
+\end{figure}
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def unet_forward(self, x, ctrl_signal, t):
+    skip_connections = []
+    # Adjusting Input
+    x = self.input_conv(x)
+    skip_connections.append(x)
+    # Encoding
+    for layers in self.encoder:
+        x = layers(x, ctrl_signal, t)
+        skip_connections.append(x)
+    # Bottleneck
+    x = self.bottleneck(x, ctrl_signal, t)
+    # Decoding
+    for layers in self.decoder:
+        x = torch.cat((x, skip_connections.pop())) 
+        x = layers(x, ctrl_signal, t)
+    return self.output_conv(x)
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Inferenzfunktion des U-Nets}
+    \label{fig:UNET_forward}
+\end{figure}
+
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def dit_forward(self, x, ctrl_signal, t):
+    x = self.patchify(x)
+    x = self.positional_encoding(x)
+    ctrl_signal += t
+    # DiT Bloecke
+    for dit_block in self.dit_blocks:
+        x = dit_block(x, ctrl_signal)
+    # Zusammensetzen der Patches
+    x = self.output_layer(x)
+    return self.__unpatchify(x)
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Inferenzfunktion des DiT}
+    \label{fig:DiT_forward}
+\end{figure}
+
+
+
 
 
 \subsection{Architektur}
@@ -39,26 +241,99 @@ asd
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section {Terrain Generierung}
+\section {Terraingenerierung}
 
 asd
 
-\subsection {Ungesteuerte Generierung}
+\subsection {Ungesteuert}
 
-asd
 
-\subsection {Skizzenbasierte Generierung}
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def __generate_unguided(model, labels, n, iterations):
+    samples = []
+    for i in range(iterations):
+        label = labels[i % len(labels)]
+        sample = model.sample(label, n)
+        samples.append(sample)
+    return samples
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Einfacher Generierungsprozess ohne Skizze}
+    \label{fig:gen_unguided}
+\end{figure}
 
-asd
 
-\subsection {Unendliche Generierung}
+\subsection {Skizzenbasiert}
 
-asd
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def __generate_sketch(model, labels, n, iterations,
+    cfg_weight, sketch_path):
+    
+    samples = []
+    input_array = np.array(Image.open(sketch_path))
+    sketch = get_normalized_array(input_array)
+    for i in range(iterations):
+        label = labels[i % len(labels)]
+        sample = model.sample(label, n, sketch,
+            i2i_strength  = weight)
+        samples.append(sample)
+    return samples
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Skizzenbasierte Generierung}
+    \label{fig:gen_sketch}
+\end{figure}
 
-\subsection {Maskierte Generierung}
+\subsection {Unendlich}
 
-asd
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def __generate_infinite(model, labels, grid_x, grid_y,
+    cfg_weight, sketch, alpha)
+    # Erstelle das Gitternetz
+    grid = GenerationGrid(const.OVERLAP_SIZE)
+    alpha = __get_alpha(const.OVERLAP_SIZE, alpha)
+    amount_cells = grid_x * grid_y
+    # Generiere alle Gitterzellen der Reihe nach
+    for i in range(amount_cells):
+        coord = (i % grid_x, i // grid_x)
+        label = labels[cell_idx % len(labels)]
+        __generate_chunk(model, grid, coord, sketch
+            cfg_weight, alpha, label)
+    # Fuege das finale DEM anhand des Gitters zusammen
+    return grid.stitch_image()
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Unendliche Generierung}
+    \label{fig:gen_infinite}
+\end{figure}
 
+\begin{figure}[htbp]
+\begin{lstlisting}[language=python]
+def __generate_chunk(model, grid, coordinate, sketch
+    cfg_weight, alpha, label):
+
+    mask, masked_image = grid.get_mask(coordinate, 
+        alpha, sketch)
+    samples = model.sample(label, sketch, cfg_weight,
+        mask, masked_image)
+    final_image = grid.create_final_image(samples, 
+        masked_image, mask)
+    grid.insert(final_image, coordinate)
+\end{lstlisting}
+    \captionsetup{type=figure}
+    \captionof{figure}{Generierung einer einzelnen Gitterzelle}
+    \label{fig:gen_chunk}
+\end{figure}
+
+\begin{itemize}
+    \item \textit{Konstant}: $\alpha(x) = 1$
+    \item \textit{Linear}: $\alpha(x) = 1 - x$
+    \item \textit{Exponentiell}: $\alpha(x) = 2^{-7x}$
+    \item \textit{Sinus}: $\alpha(x) = -\sin(\frac{x\pi}{2}) + 1$
+\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Visualisierung}
@@ -66,6 +341,3 @@ asd
 asd
 
 \subsection {Blender Pugin}
-
-asd
-

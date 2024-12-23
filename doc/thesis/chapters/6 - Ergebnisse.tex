@@ -353,7 +353,7 @@ Durch die DEM basierte Skizzenkontrolle im Vergleich zu Signaturen ist es mögli
 \subsection {Unendliche Generierung}
 
 Der finale zu untersuchende Bereich der Generierung ist die unendliche Genierung. Um in diesen Ergebnissen großflächige Strukturen zu erzeugen werden auf basis der in den vorherigen Unterabschnitt gewonnenen Erkenntissen Perlin-Rauschbilder als Skizzenverwendet. Zunächst werden diese kleineren Rauschbilder aus benachbarten Zellen entnommen, womit sie ein kohärentes ganzheitliches Bild ergeben. Im weiteren Verlauf wird allerdings diese Flüssigkeit aufgebrochen um die Fähigkeit dieser Methode mit solchen Fällen umzugehen geprüft wird. \\
-Zunächst allerdings folgt die Untersuchung der unterschiedlichen definierten Alphafunktionen der Masken. Wie sich an den in Abbildung \ref{fig:masks} dargelegten Ergebnissen erkennen lässt weist lediglich die Kosinusfunktion keine sichtbaren Artefakte auf. Bei allen anderen sind die Übergänge einzelner Zellen klar zu erkennen. 
+Zunächst allerdings folgt die Untersuchung der unterschiedlichen definierten Alphafunktionen der Masken. Wie sich an den in Abbildung \ref{fig:masks} dargelegten Ergebnissen erkennen lässt weist lediglich die Sinusfunktion keine sichtbaren Artefakte auf. Bei allen anderen sind die Übergänge einzelner Zellen klar zu erkennen. 
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -368,7 +368,7 @@ Zunächst allerdings folgt die Untersuchung der unterschiedlichen definierten Al
     \subfloat{%
         \includegraphics[width=0.24\textwidth]{images/results/infinite/2x2_cos.png}
     }
-    \caption{Unendliche generierung unter Nutzung unterschiedlicher Alphafunktionen für die Masken in einem $2\times2$ . Von links nach rechts: Konstant, linear, exponential, Kosinus}
+    \caption{Unendliche generierung unter Nutzung unterschiedlicher Alphafunktionen für die Masken in einem $2\times2$ . Von links nach rechts: Konstant, linear, exponential, Sinus}
     \label{fig:masks}
 \end{figure} \\
 Tatsächlich sind jegliche Übergänge nur im direkten Vergleich zu den anderen Ansätzen in der groben Struktur von Gebirgskämmen zu erahnen. Vergleicht man das generierte Terrain jedoch nur mit der zugrundeliegenden Skizze sind diese nicht zu Erkennen, siehe Abbildung \ref{fig:cos_detail}. Dieser Ansatz ist somit eindrucksvoll in der Lage schlüssige und überzeugende Übergänge zwischen bereits Generiertem und aktuellen Samples zu erschließen.
@@ -380,7 +380,7 @@ Tatsächlich sind jegliche Übergänge nur im direkten Vergleich zu den anderen 
     \subfloat{%
         \includegraphics[width=0.40\textwidth]{images/results/infinite/2x2_cos.png}
     }
-    \caption{Unendliche generierung unter Nutzung der Kosinusfunktion im Detail}
+    \caption{Unendliche generierung unter Nutzung der Sinusfunktion im Detail}
     \label{fig:cos_detail}
 \end{figure} \\
 Eine Beobachtung die bei genauerer Betrachtung jedoch auffällt, ist das die erste generierte Zelle sich in ihrer Struktur deutlich von den restlichen unterscheidet. Dies ist klar in der oberen linken Ecken des ersten Samples in der Abbildung \ref{fig:1st_regen} zu erkennen. Diese Zelle weist deutlich tiefere und zerfranstere Merkmale in der Bergstruktur im vergleich zum Rest auf, obwohl die Kontrollsignale gleich geblieben sind. Die Vermutung für die Begründung hiervon ist, dass die bereits vorgegebenen Ränder der Zelle die Freiheitsgrade und somit die Varianz der Samples deutlich einschränken. Da die erste Zelle diese Bedingung nicht hat, könnte dies zu den beobachteten Unterschieden führen. \\ 
@@ -406,22 +406,15 @@ Damit dies untersucht werden kann werden nun weitentfernte Zellen des Rauschens 
     \subfloat{%
         \includegraphics[width=0.40\textwidth]{images/results/infinite/disconnected_sampl.png}
     }
+
+    \vspace{-8pt}
+
+    \subfloat{%
+        \includegraphics[width=0.70\textwidth]{images/results/infinite/disconnected_r.png}
+    }
     \caption{Unendliche generierung mit nicht flüssigen Zellübergängen in der Skizze}
     \label{fig:disconnected}
 \end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \subfloat{%
-        \includegraphics[width=0.40\textwidth]{images/results/infinite/disconnected_sampl.png}
-    }
-    \subfloat{%
-        \includegraphics[width=0.40\textwidth]{images/results/infinite/disconnected_r.png}
-    }
-    \caption{Unendliche generierung mit nicht flüssigen Zellübergängen in der Skizze im Detail}
-    \label{fig:disconnected_render}
-\end{figure}
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -469,7 +462,7 @@ Im folgenden werden die bisher gewonnenen Erkenntnisse konkret für die Bewertun
     Aufgrund der sehr guten Ergebnisse in allen untersuchten Bereichen wird dieses Ziel als vollständig erfüllt bewertet. 
 
     \item \textbf {Nahtlose Zellbasierte unendliche Generierung:} \\
-    Durch den vorgestellten innovativen Ansatz zur unendliche Generierung welcher auf der Nutzung der Inpainting-Technik von DMs beruht ist erzeugt bei geeigneter Definition der Maske wie der vorgeschlagene Kosinus-Ansatz durchweg überzeugende Ergebnisse, welche selbst bei komplett unterschiedlichen benachbarten Zellen glaubwürdige und kohärente Übergänge erzeugen kann. Nähte lassen in extremen Fällen zwar in großen strukturen erahnen, bei Betrachtung auf kleiner Ebene sind diese allerdings nicht mehr zu erkennen. \\
+    Durch den vorgestellten innovativen Ansatz zur unendliche Generierung welcher auf der Nutzung der Inpainting-Technik von DMs beruht ist erzeugt bei geeigneter Definition der Maske wie der vorgeschlagene Sinus-Ansatz durchweg überzeugende Ergebnisse, welche selbst bei komplett unterschiedlichen benachbarten Zellen glaubwürdige und kohärente Übergänge erzeugen kann. Nähte lassen in extremen Fällen zwar in großen strukturen erahnen, bei Betrachtung auf kleiner Ebene sind diese allerdings nicht mehr zu erkennen. \\
     Aufgrund dieser Ergebnisse ist dieses Ziel als vollumfänglich erfüllt anzusehen.     
 
 \end{enumerate}
