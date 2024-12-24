@@ -11,11 +11,13 @@ asdas
 
 
 \section {Datenframework}
+
+Bei der Implementierung des Datenframeworks war insbesondere die Datenagnostik der zentrale Leitgedanke. Es sollte einfach konfigurierbar sein, welche Daten genutzt werden sollten und welche nicht, sowohl für die DEMs als auch die Kontrollsignale. Zusätlich sollten die Augmentierungen frei konfigurierbar
+sein. Zu diesem Zweck wurde die Hauptroutine des Frameworks, welche zum Laden und zur Laufzeitverarbeitung der Daten zur Trainingszeit dient. Sie ist in Abbildung \ref{fig:Data_runtime} dargestellt. Hierbei werden die bereits in Kapitel \ref{ch:Datenaufbereitung} geschilderten Schritte Durchlaufen. Auffallend ist hierbei zusätzlich die Nutzung eines Caches, durch welchen die die geladenen Daten im Arbeitsspeicher gehalten werden, was die Laufzeiteffizienz deutlich erhöht.
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def __getitem__(self, index):
     cache       = GeoDatasetCache()
-    # DEMs
     file = self.dem_list[index]
     dem_tensor, dem_shape, dataset = self.load(file)  
     # Ermittle die Geokoordinaten aus dem DEM
@@ -42,12 +44,24 @@ def __getitem__(self, index):
     \captionsetup{type=figure}
     \captionof{figure}{Laufzeitverarbeitung der DEM- und Klassendaten}
     \label{fig:Data_runtime}
-\end{figure}
-
+\end{figure} \\
+Sollte sich dazu entschieden werden den Cache zu Nutzen kann dieser sowohl zur Trainingszeit als auch vorher gefüllt werden. Für die genaue Implementierung des Caches wurde eine Python distributed List verwendet, welche über den Itemindex angesprochen wird. Dies erlaubt es mehrere Threads effizienter beim Laden der Daten zu nutzen, was beim Training einen deutlichen Performanzunterschied macht, vor allem auf schwächeren Maschinen. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Variational Autoencoder}
 
+Wie spezifiziert handelt es sich bei der Implementierung des VAE um ein VAE-GAN, mit einer zusätzlichen visuellen Qualitätsmetrik. Maßgebliche Orientierung für die Implementierung ist hierbei die sich als Standard etablierte KL-reg. Variante von Rombach et al.\footnote{
+    Vgl. Rombach et al.: Latent Diffusion Models, S. 3f.
+    \cite{rombach2022high}
+}. Encoder und Decoder werden jeweils durch den Kompressions- und Expansionsarm umgesetzt, auf die Skipverbindungen wird dabei verzichtet. Für den Diskriminator wird ein einfaches PatchGAN vorgesehen, welches die Entscheidung für einzelne Patches anstelle des Gesamten Bildes vornimmt\footnote{
+    Vgl. Isola et al.: Image-to-Image Translation with Conditional GANs, S. 3f.
+    \cite{isola2018imagetoimagetranslationconditionaladversarial}
+}. \\
+Die weitere visuellen Qualitätsmetrik wurde die LPIPS Implementierung von Zhang et al. übernommen\footnote{
+    Zhang et al.: The Unreasonable Effectiveness of Deep Features as a Perceptual Metric
+    \cite{zhang2018unreasonableeffectivenessdeepfeatures}
+}, die Architektur muss dabei exakt die Selbe sein, da ein vortrainiertes Netz verwendet werden muss. Eine Detailanpassung der Umsetzung dabei ist allerdings, dass nun auch einkanälige Bilder verarbeitet werden können, wofür der eine Kanal verdreifacht wird, um auf die erforderlichen drei Kanäle zu kommen. \\
+Der Quellcode in Abbildung \ref{fig:vae_forward} zeigt die jeweiligen Operationen zur Ver- und Entschlüsselung, welche parallel zu jedem normalen VAE verläuft, wodurch noch einmal verdeutlicht wird, dass der GAN-Teil lediglich beim Training für die Verbesserung der Ergebnisse verwendet wird. 
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def encode(self, x):
@@ -70,17 +84,19 @@ def forward(self, x):
     \captionsetup{type=figure}
     \captionof{figure}{Encoding und Decoding Funktionen des VAE-GAN}
     \label{fig:vae_forward}
-\end{figure}
-
+\end{figure} \\
+Hierauf aufbauend folgt in \ref{fig:vae_training} die Implementierung eines Trainingsschrittes, welche den Verlust angibt. Diese setzt das bereits in Unterabschnitt \ref{subsubsec:vae_optim} definierte Trainingsobjektiv um. Besonders hervorzuheben ist bei dieser Implementierung zum einen die Zweiteilung des Prozesses die zeigt, dass Diskriminator und VAE werden seperat Traininert werden. Dies liegt an der zugrundeliegenden Implementierung des Trainings in PyTorch, da hier beim Training ein Graph der durchlaufenden Schritte durchlaufen wird, was bei dem Minimax-Ziel des VAE-GAN zu Problemen führen würde, würde man es gleichzeitig trainieren. \\ 
+Auch fällt die Nutzung von Logits für das Training des Diskriminators, dies hat grundlegend mit der Struktur des PatchGANs zu tun, da hier einzelne Bildbereiche bewertet werden. Zusätzlich bieten Logits in der Praxis ein besseres Trainingsverhalten als beispielsweise eine Sigmoid-Aktivierung. \\
+Letztlich ist die Rolle des Diskriminators im VAE Training gut zu erkennen, hier wird durch \texttt{-torch.mean(self.disc(recons))} angegeben, dass eine möglichst hohe Aktivierung hier erzielt werden soll, also eine Einstufung als reale Daten. 
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def training_step(self, inputs, step_idx, optim_idx):
     recons, latents = self(inputs)
     # Diskriminator Training 
     if self.use_discriminator and optim_idx == 1:
-        input_logits    = self.disc(inputs)
-        recon_logits    = self.disc(recons)
-        return hinge_loss(input_logits, recon_logits)
+        input_logits = self.disc(inputs)
+        recon_logits = self.disc(recons)
+        return disc_loss(input_logits, recon_logits)
     # VAE Training
     recon_loss  = torch.abs(recons - inputs)
     kl_d        = self.normal_kl_d(latents)      
@@ -95,10 +111,14 @@ def training_step(self, inputs, step_idx, optim_idx):
     \captionsetup{type=figure}
     \captionof{figure}{Trainingsschrittroutine des VAE-GAN}
     \label{fig:vae_training}
-\end{figure}
-
-
-asd
+\end{figure} \\
+Zusätlich zu diesen verwendeten Techniken werden auch die von Podell et al.\footnote{
+    Podell et al.: SDXL, S. 7 
+    \cite{podell2023sdxlimprovinglatentdiffusion}
+} vorgeschlagene Verbesserung des VAEs durch Nutzung eines EMA implementiert, welche neu gelernte Informationen nur graduell in ein sogenanntes EMA-Modell überführt, welches somit resistenter gegen Ausreißer und temporäre Fehlentwicklungen beim Training ist\footnote{
+    Vgl. Kingma, Ba: ADAM, S. 3ff. 
+    \cite{kingma2017adammethodstochasticoptimization}
+}. 
 
 \subsection{Architektur}
 
@@ -108,6 +128,8 @@ asd
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Latent Diffusions Model}
 
+Das LDM stellt das Herzstück der Arbeit dar und entsprechend viel Acht muss bei der Implementierung hiervon gegeben werden. Prosa Prosa \\ 
+Die Trainingsschrittfunktion des LDMs, siehe Abbildung \ref{fig:ldm_training}, stellt im Grunde den für DDPMs üblichen Trainingsalgorithmus dar. Jedoch sind hierbei klar die bereits angesprochenen Verbesserungen zu erkennen. Zuerst ist das die überführung der Daten in den latenten Raum, in welchem ebenfalls die Rauschvorhersage getroffen wird. Darauf folgend ist klar der Prozess der CFG zu erkennen bei welcher mit einer definierten Wahrscheinlichkeit die Kontrollsignale annulliert werden. Abschließend wird das verbesserte Trainingsziel $L_\text{hybrid}$ eins zu eins umgesetzt.
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def training_step(self, x, labels):
@@ -127,13 +149,17 @@ def training_step(self, x, labels):
     \captionsetup{type=figure}
     \captionof{figure}{Trainingsschrittroutine des LDM}
     \label{fig:ldm_training}
-\end{figure}
-
+\end{figure} \\
+Der Sampling-, beziehungsweise Rückwärtsprozess, zu sehen in Abbildung \ref{fig:ldm_sample} entspricht ebenfalls grundlegend der für DDPMs üblichen Form. Allerdings werden hier deutlich mehr Anpassungen getroffen, welche für die Umsetzung der definierten Generierungsprozesse erforderlich sind, als es noch beim Training der Fall war. \\
+Zuerst wird zwischen Skizzensteuerung und Generierung von Grund auf, also $t=T$, unterschieden. Für den Fall, dass eine Skizze angegeben wurde muss das entsprechende $t$ gefunden werden, sowie die Skizze auf ihre latente Repräsentation abgebildet und anschließend entsprechend $t$ verrauscht werden. \\ 
+Zusätzlich kann auch eine Maske definiert werden was erfordert, dass das zu maskierende Bild ebenfalls durch das VAE kodiert wird. Die Maske selbst wird entsprechend der Dimensionalität verkleinert, um später angewandt werden zu können. Auch wird ihre Gegenmaske an dieser Stelle einmal gebildet. \\
+Hiernach folgt die eigentliche Schleife des Rückwärtsprozesses beginnend bei dem definierten Startzeitschritt. Die CFG wird in diesem Ausschnitt durch zwei separate Modellaufrufe umgesetzt, tatsächlich kann dies aber auch in einem einzigen Durchlauf bewerkstelligt werden. Dies ist zwar therotisch schneller, kann aber durch die erhöhten Grafikspeicher-Anforderungen auf schwächeren GPUs in der Praxis langsamer sein, als zwei separate Inferenzen. \\
+Anschließend wird nach dem Entrauschen des aktuellen $x_t$ noch die Maske angewandt bei welcher, entsprechend den $\alpha$ Werten des Maskenbildes und der Gegenmaske die jeweiligen Bereiche des Maskenbildes übernommen. \\
+Abgeschlossen wird der Prozess durch die Entschlüsselung der latenten Repräsentation des Samples zurück in den Bildraum.
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def sample(self, ctrl_signal, sketch, i2i_strength,
     mask, masked_input):
-    # Normales Sampling
     starting_offset = 0
     if sketch is None:
         x = torch.randn()
@@ -149,7 +175,6 @@ def sample(self, ctrl_signal, sketch, i2i_strength,
             .encode(masked_input).latents
         mask = resize_to_latent_size(mask)
         inverted_mask = 1 - mask
-    # Rueckwaertsprozess
     for t in tqdm(self.sample_steps[start_t:])  
         x_t = self.model(x, ctrl_signal, t)
         # Classifier Free Guidance 
@@ -164,15 +189,13 @@ def sample(self, ctrl_signal, sketch, i2i_strength,
             noised_mask, _ = self.__add_noise(
                 masked_input, t) 
             x = noised_mask * mask + x * inverted_mask
-    # Dekodierung 
-    return self.latent_model.decode(x)
+        return self.latent_model.decode(x)
 \end{lstlisting}
     \captionsetup{type=figure}
     \captionof{figure}{Samplefunktion des LDM}
     \label{fig:ldm_sample}
-\end{figure}
-
-
+\end{figure} \\
+Die in diesen Ausschnitten verwendeten Modelle beziehen sich hierbei auf das reguläre DM. Jedoch wird in dieser Arbeit, da zwei unterschiedliche Architekturen für das DM getestet werden, eine Abstraktion der DM-Funktionalität welche agnostisch gegenüber der gewählten Architektur in Form eines Wrappers eingeführt, dessen \texttt{forward} Funktion in Abbildung \ref{fig:DM_forward} dargestellt ist. Diese übernimmt das Embedding des Zeitschrittes sowie der Kontrollsignale und leitet dies anschließend an die gewählte konkrete Implementierung des DMs weiter. 
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def forward(self, x, ctrl_signal, t):
@@ -180,14 +203,13 @@ def forward(self, x, ctrl_signal, t):
         self.embedding_size)
     timestep = self.time_embedding(t)
     ctrl_signal = self.label_embedding(ctrl_signal)
-    x = self.model(x, ctrl_signal, t)
-    return x
+    return self.model(x, ctrl_signal, t)
 \end{lstlisting}
     \captionsetup{type=figure}
     \captionof{figure}{Diffusionsmodell-Wrapper Inferenzfunktion}
     \label{fig:DM_forward}
-\end{figure}
-
+\end{figure} \\
+Die erste Architektur ist dabei das U-Net, von welchem die Samplingfunktion in Abbildung \ref{fig:UNET_forward} dargestellt ist. Die Implementierung ist hierbei genau der Üblichen entsprechend. Zuerst wird der Kompressionsarm durchlaufen wobei Kopien der jeweils relevanten Schritte erstellt werden, welche im Expansionsarm an die Aktivierungen konkatteniert werden.  
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def unet_forward(self, x, ctrl_signal, t):
@@ -199,7 +221,7 @@ def unet_forward(self, x, ctrl_signal, t):
     for layers in self.encoder:
         x = layers(x, ctrl_signal, t)
         skip_connections.append(x)
-    # Bottleneck
+    # Bottlenecki
     x = self.bottleneck(x, ctrl_signal, t)
     # Decoding
     for layers in self.decoder:
@@ -210,8 +232,11 @@ def unet_forward(self, x, ctrl_signal, t):
     \captionsetup{type=figure}
     \captionof{figure}{Inferenzfunktion des U-Nets}
     \label{fig:UNET_forward}
-\end{figure}
-
+\end{figure} \\
+Auch die Implementierung des DiTs entspricht der Vorlage, welche von Peebles und Xi\footnote{
+    Vgl. Peebles, Xie: Diffusion Transformers
+    \cite{peebles2023scalable}
+} vorgestellt wurde. Ihre Umsetzung für diese Arbeit wird in Abbildung \ref{fig:DiT_forward} umrissen. Hierbei wird zunächst das Eingebebild in Patches aufgeteilt welche anschließend mit dem Positionsembedding versehen werden. Anschließend folgt der Durchlauf aller DiT-Blöcke und zuguterletzt werden die Patches wieder zusammengefügt. 
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def dit_forward(self, x, ctrl_signal, t):
@@ -230,10 +255,6 @@ def dit_forward(self, x, ctrl_signal, t):
     \label{fig:DiT_forward}
 \end{figure}
 
-
-
-
-
 \subsection{Architektur}
 
 asd
@@ -243,11 +264,11 @@ asd
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Terraingenerierung}
 
-asd
+Vieles der Logik die für die Implentierung der definierten Generierungsprozesse ist bereits durch die Samplefunktion des LDMs umgesetzt. Jedoch erfordern die einzelnen Bereiche jeweils noch weitere Schritte um die nötigen Parametere zu erzeugen, die Samples zu vollenden und die Generierung der Samples sinnvoll zu organisieren. Hierzu werden die einzelnen Stationen im Folgenden betrachtet.
 
 \subsection {Ungesteuert}
 
-
+Die ungesteuerte Generierung ist ein sehr simpler Anwendungsfall wie sich an dem Auszug in Abbildung \ref{fig:gen_unguided} erkennen lässt. Es handelt sich lediglich um den wiederholten normalen Aufruf der Samplingfunktion des LDMs welche bereits behandelt wurde. Es werden keinerlei weiteren Vorkehrungen im Generationsprozess an dieser Stelle vorgenommen.   
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def __generate_unguided(model, labels, n, iterations):
@@ -263,17 +284,20 @@ def __generate_unguided(model, labels, n, iterations):
     \label{fig:gen_unguided}
 \end{figure}
 
-
 \subsection {Skizzenbasiert}
 
+Dieser Prozess erfordert mehr eigene Logik als der ungesteuerte, das Meiste der Funktionalität wird allerdings auch in diesem Fall von der Umsetzung des Sampling des LDMs durchgeführt. Neu hierbei ist nun die Definition der Skizze. Diese kann entweder über einen Pfad definiert werden in welchem Fall sie geladen und Anschließend in den Wertebereich $[-1,1]$ abgebildet wird, oder aber über Perlinrauschen. Dabei wird über einen Generator, welcher den normalen Perlin-Algorthmus umsetzt, das Rauschbild erzeugt. Die Angabe der Koordinate \texttt{(0, 0)} bezieht sich hierbei auf die Position des Rauschbildes im gesamten Rauschfeld. Dies spielt hier noch keine Rolle dementsprechend wurde die Koordinate hier festgelegt. Ansonsten ist die Implementierung parallel zur ungesteuerten Generierung.
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def __generate_sketch(model, labels, n, iterations,
     cfg_weight, sketch_path):
     
     samples = []
-    input_array = np.array(Image.open(sketch_path))
-    sketch = get_normalized_array(input_array)
+    if use_perlin:
+        sketch = perlin.generate_image((0, 0))
+    else:
+        input_array = np.array(Image.open(sketch_path))
+        sketch = get_normalized_array(input_array)
     for i in range(iterations):
         label = labels[i % len(labels)]
         sample = model.sample(label, n, sketch,
@@ -288,6 +312,15 @@ def __generate_sketch(model, labels, n, iterations,
 
 \subsection {Unendlich}
 
+Die unendliche Generierung erfordert die meiste eigene Logik zur für die Umsetzung des Gitternetzes, sowie der Masken. Die Generierung basiert hier auf den einzelnen Zellen des Gitters, auch Chunk genannt. Diese Generierung wird im Ganzen durch die in Abbildung \ref{fig:gen_infinite} gezeigte Funktion verarbeitet. Hier wird zunächst das Gitter sowie ein Alphavektor initialisiert. Hierbei sind die Längen der zu maskierenden Bereiche der benachbarten Zellen welche durch eine Konstante angegeben sind. Die einzelnen Alphavektoren werden durch die im weiteren Verlauf Alphafunktionen genannten Funktionen definiert. Konkret sind hier vier solche Alphafunktionen umgesetzt welche die folgenden Formen annehmen: 
+\begin{itemize}
+    \item \textit{Konstant}: $\alpha(x) = 1$
+    \item \textit{Linear}: $\alpha(x) = 1 - x$
+    \item \textit{Exponentiell}: $\alpha(x) = 2^{-7x}$
+    \item \textit{Sinus}: $\alpha(x) = -\sin(\frac{x\pi}{2}) + 1$
+\end{itemize}
+Dabei gilt, dass $x \in [0,1]$ und die relative Position eines Pixels im Bereich der Länge der maskierten Ränder. Ein $\alpha$ von 1 bedeutet im übrigen, dass hier das Maskenbild vollständig übernommen wird, also eine maximale Maskierung. Bei allen anderen Werten wird anhand dieses $\alpha$ linear zwischen Generiertem und Maskenbild interpoliert. \\
+Darauf folgt die Iteration über alle Zellen des Gitters wobei die einzelnen Generationschritte des Chunks ausgelagert werden. Abschließend wird über das Gitter das finale Bild zusammengefügt. Hierbei ist wichtig, dass die einzelnen Chunks anhand der Generierungsreiehenfolge in das Zielbild eingefügt werden, damit die überlappenden Bereiche bündig in einander übergehen. Dies liegt daran, dass nur die späteren Samples natürlich kenntniss über die bereits generierten Nachbarn haben können, somit also bei ihrer Generierung die flüssigen Übergänge durch maskierte Generierung der Randbereiche entstehen. 
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def __generate_infinite(model, labels, grid_x, grid_y,
@@ -302,14 +335,14 @@ def __generate_infinite(model, labels, grid_x, grid_y,
         label = labels[cell_idx % len(labels)]
         __generate_chunk(model, grid, coord, sketch
             cfg_weight, alpha, label)
-    # Fuege das finale DEM anhand des Gitters zusammen
     return grid.stitch_image()
 \end{lstlisting}
     \captionsetup{type=figure}
     \captionof{figure}{Unendliche Generierung}
     \label{fig:gen_infinite}
-\end{figure}
-
+\end{figure} \\
+Die einzelnen Chunks werden anhand der Funktion in Abbildung \ref{fig:gen_chunk} synthetisiert. Diese besteht zuerst aus erstellung des Maskenbildes und der Maske anhand der bereits generierten benachbarten Zellen des Gitters und dem Alphavektor. Die hieraus entstehende Maske hat die gleichen Dimensionen wie die Bilder und besteht an ihren Rändern aus den jeweils orientierten Alphavektoren. Das Maskenbild ist lediglich eine Zusammenfügung der Ränder der benachbarten Zellen, wobei der zwischenraum, also der unmaskierte Bereich mit einer Skizze aufgefüllt werden kann. Dies soll die Abbildung des Maskenbildes auf die latente Repräsentation untersützen, da es den sonst sehr unnatürlichen leeren Raum durch einen realistischeren Bereich auffüllt. \\
+Anschließend wird das Sample generiert und anschließend ein letztes mal mit dem Maskenbild interpoliert. Dieses mal allerdings im Bildbereich. Dies soll eventuell entstandene Artefakte durch die Rekunstrution an den Rändern entfernen um die Bündigkeit zu wahren. Abschließend wird der Chunk in das Gitter eingefügt, damit der nächste darauf aufbauen kann.
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def __generate_chunk(model, grid, coordinate, sketch
@@ -328,16 +361,9 @@ def __generate_chunk(model, grid, coordinate, sketch
     \label{fig:gen_chunk}
 \end{figure}
 
-\begin{itemize}
-    \item \textit{Konstant}: $\alpha(x) = 1$
-    \item \textit{Linear}: $\alpha(x) = 1 - x$
-    \item \textit{Exponentiell}: $\alpha(x) = 2^{-7x}$
-    \item \textit{Sinus}: $\alpha(x) = -\sin(\frac{x\pi}{2}) + 1$
-\end{itemize}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Visualisierung}
 
-asd
-
-\subsection {Blender Pugin}
+Die Visualisierung mittels der Blender Python API ist verhältnismäßig naiv. Es wird hierbei lediglich ein Shader aufgebaut welcher ein, durch das DEM definierte Mesh, anhand des Z Wertes der Vertices, sowie dem Winkel der Normalen bestimmt wird. Die jeweilige Materialien und Höhen- beziehungsweise Winkelwerte werden dabei in einer einfachen JSON Struktur definiert. 
