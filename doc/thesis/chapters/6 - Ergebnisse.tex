@@ -262,7 +262,7 @@ Die vermutete Begründung für diese Mängel ist eine fehlende Aussagekraft der 
         \includegraphics[width=0.40\textwidth]{images/results/uncontrolled/unc_climate1.png}
     }
     \subfloat{%
-        \raisebox{0.25\height}{\includegraphics[width=0.40\textwidth]{images/results/uncontrolled/unc_climate1r.png}}
+        \raisebox{0.07\height}{\includegraphics[width=0.47\textwidth]{images/results/uncontrolled/unc_climate1r.png}}
     }
     % \subfloat{%
     %     \includegraphics[width=0.24\textwidth]{images/results/uncontrolled/unc_climate28.png}
@@ -471,9 +471,17 @@ Zusammenfassend wurden alle gesetzten Kernziele erfüllt. Die ungesteuerte Genie
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Vergleich}
 
-Ein qualitativer Vergleich zu bisherigen Ansätzen unter der Nutzung von DMs fällt aus unterschiedlichen Gründen schwer. Zum einen ist die Zielsetzung dieser Arbeit was den Anspruch an die Generierung angeht grundsätzlich eine Andere. Dies hat als Auswirkung, dass die Genutzten Daten nicht speziell ausgewählt wurden, um faire Vergleiche zwischen vorgeschlagenen Methoden zu ermöglichen, sondern um die Lösung der gestellten Probleme möglichst gut umsetzten zu können. \\
-Zum anderen sind Quellcode und Gewichte der Diffusionsmodelle bei keiner der Veröffentlichungen zugänglich gemacht worden. Somit ist keine eigene Einschätzung oder Anpassung der Testbedingung möglich. Die einzigen Möglichkeit eines Vergleiches bestehen somit aus den Referenzangaben welche aus den Publikationen selbst entnommen werden können, und vergleiche der Methodiken und ihrer beschriebenen Vor- beziehungsweise Nachteile. 
-
-
-
+Ein qualitativer Vergleich zu bisherigen Ansätzen unter der Nutzung von DMs fällt aus unterschiedlichen Gründen schwer. Zum einen ist die Zielsetzung dieser Arbeit was den Anspruch an die Generierung angeht grundsätzlich eine Andere. In dieser Arbeit um die Beleuchtung der Eignung von DMs beziehungsweise LDMs und den Methoden durch sie möglichen geht. Dies soll neue Perspektiven eröffnen und neue Ansätze für breite Anwendungsfelder beiten. Hingegen ist bei den anderen Publikationen der Fokus auf die Verbesserung der Qualität durch DMs unter Nutzung bereits etablierter Methoden gelegt. \\
+Hinzu kommt, dass Datensätze primär ausgewählt wurden, um die Lösung der gestellten Kernziele möglichst gut umsetzten zu können. Dies hat als Auswirkung, dass die Genutzten Daten nicht gezielt ausgewählt wurden, um Vergleiche über Metriken wie FID zu anderen Methoden zu ermöglichen. Da Qualitätsmetriken die Ähnlichkeit von Samples zu dem zugrundeliegenden Datenverteilung zu Messen versuchen, sind ihre Ergebnisse über unterschiedliche Datensätze hinweg nicht aussagekräftig. \\ 
+Letztlich sind Quellcode und Gewichte der Diffusionsmodelle bei keiner der Veröffentlichungen zugänglich gemacht worden. Somit ist keine eigene Einschätzung oder Anpassung der Testbedingung möglich. Ein Vergleich besteht somit bestenfalls aus den Referenzangaben welche aus den Publikationen selbst entnommen werden können, was einen Fairen vergleich selbst unter der Nutzung gleicher Daten unmöglich macht. \\
+Aus allen diesen genannten Gründen ist klar ersichtlich, dass ein Vergleich über Metriken wie MSE, FID, LPIPS, etc. weder möglich noch sinnvoll ist. Vielmehr sollte eine Einordnung auf konzeptioneller Ebene stattfinden - die Methodiken und ihre beschriebenen Vor- beziehungsweise Nachteile. \\
+Im Bereich der Kontrollsignale mittels Terrain- und Klimakategorien hat sich der in dieser Arbeit vorgestellte Ansatz als eindeutig schwächer erwiesen als die Nutzung von Terrainsignaturen. Allerdings ist eine Simplifizierung nötig, um die Steuerung über DEM-Skizzen in der Form zu ermöglichen wie es hier vorgeschlagen wird. Somit ist an dieser Stelle noch keine klar geeignete Lösung zu erkennen und es werden weitere Experimente auf diesem Gebiet nötig sein. \\
+Die Steuerung über Skizzen auf DEMs bietet sich durch die Eigenschaften von DMs an und ist gut geeignet um Generierung zu steuern. Sie bietet eine gelungene Alternative zu der Steuerung über die Konditionierung durch Signaturen. Auch wird durch die direkte Angabe von Höhenwerten eine Steuerung der Höhen im Resultat möglich. Zusätzlich kann durch Maskieren diese Kontrolle lokal begrenzt werden. Zwei Limitationen die bisweilen existierten und Lochner et al.\footnote{
+    Vgl. Lochner et al.: Interactive Terrain Authoring using Diffusion Models, S. 8f.
+    \cite{lochner2023interactive}
+} als Kerneinschränkung diskutiert wurden. \\
+Ebenfalls neuartig ist der vorgestellte Ansatz von beliebig großen bishin zu unendlichen Terrains. Die einzige bisher vorgestellte Möglichkeit wurde von Jain, Sharma und Rajan\footnote{
+    Vgl. Jain, Sharma, Rajan: Procedural Infinite Terrain Generation with DMs, S. 6
+    \cite{jain2022adaptive}
+} über Kernel Blending mit Perlin-Rauschen auf kleinen Patches vorgestellt. Da dies durch das Rauschen auf probabilistischer Ebene funktionert, ist eine hohe Glaubwürdigkeit im allgemeinen Fall in Frage zu stellen. Die hier dargelegte Methode basiert auf erlernten Zusammenhängen welche bereits Generierte Bereiche in die Generierung von neuem mit einbezieht. Somit ist dies nicht nur qualitativ auf dem selben Niveau wie die restliche Generierung, sondern auch auf beliebige Patchgrößen anwendbar, sofern das LDM diese Größe unterstützt. Aus diesen Gründen wird der hier vorgestellte Ansatz als klar zu präferieren eingestuft.  
 

@@ -350,7 +350,27 @@ Eine Antwort hierauf stellen Diffusionsmodelle (DM)\footnote{
 Die Formulierung eines Diffusionsmodells ist in zwei Prozesse aufgeteilt, wobei $t \in [0,T]$ den jeweiligen Zeitschritt angibt. Hierbei ist eine gängige Konvention $T=1000$: 
 \begin{itemize}
     \item \textbf{Vorwärtsprozess} $q(x_{1:T}|x_0)$: \\
-    Das Ziel des Vorwärtsprozesses ist das iterative Einführen von zunehmenden, in der Regel gaußschen Rauschen in die Eingabedaten $x_0$. Die Daten zum letzten Zeitschritt $x_T$ stellen hierbei reines Rauschen dar, in welchem die Informationen von $x_0$ gänzlich zerstört wurden. Dieser Prozess ist der Grund für die Namensgebung von Diffusionsmodellen, da er dem Vorgang der Diffusion in der Physik ähnelt. Definiert ist er wie Folgt:
+    \begin{figure}[htbp]
+        \centering
+        \subfloat{%
+            \includegraphics[width=0.15\textwidth]{images/foundations/diffusion/t0.png}
+        }
+        \subfloat{%
+            \includegraphics[width=0.15\textwidth]{images/foundations/diffusion/t300.png}
+        }
+        \subfloat{%
+            \includegraphics[width=0.15\textwidth]{images/foundations/diffusion/t700.png}
+        }
+        \subfloat{%
+            \includegraphics[width=0.15\textwidth]{images/foundations/diffusion/t950.png}
+        }
+        \subfloat{%
+            \includegraphics[width=0.15\textwidth]{images/foundations/diffusion/t1000.png}
+        }
+        \caption{Illustration des Vorwärtsprozesses mit zunehmendem $t$}
+        \label{fig:forward_process}
+    \end{figure} \\
+    Das Ziel des Vorwärtsprozesses ist das iterative Einführen von zunehmenden, in der Regel gaußschen Rauschen in die Eingabedaten $x_0$, wie in Abbildung \ref{fig:forward_process} illustriert. Die Daten zum letzten Zeitschritt $x_T$ stellen hierbei reines Rauschen dar, in welchem die Informationen von $x_0$ gänzlich zerstört wurden. Dieser Prozess ist der Grund für die Namensgebung von Diffusionsmodellen, da er dem Vorgang der Diffusion in der Physik ähnelt. Definiert ist er wie Folgt:
     \begin{equation}
         q(x_{1:T}|x_0) := \prod_{t=1}^T q(x_t | x_{t-1}) 
     \end{equation}
@@ -369,7 +389,27 @@ Die Formulierung eines Diffusionsmodells ist in zwei Prozesse aufgeteilt, wobei 
     Mit $\alpha_t := 1 - \beta_t$ und $\bar\alpha_t := \prod_{s=1}^t \alpha_s$.
 
     \item \textbf{Rückwärtsprozess} $p_\theta(x_{0:T})$: \\
-    Der Rückwärtsprozess versucht, dem Namen entsprechend, die im Vorwärtsprozess getätigten Diffusionsschritte umzukehren - also aus dem Rauschen $x_T$ die Ursprungsdaten $x_0$ iterativ zu rekonstruieren. Entsprechend ist auch die mathematische Formulierung:
+    \begin{figure}[htbp]
+        \centering
+        \subfloat{%
+            \includegraphics[width=0.15\textwidth]{images/foundations/diffusion/t1000.png}
+        }
+        \subfloat{%
+            \includegraphics[width=0.15\textwidth]{images/foundations/diffusion/t950.png}
+        }
+        \subfloat{%
+            \includegraphics[width=0.15\textwidth]{images/foundations/diffusion/t700.png}
+        }
+        \subfloat{%
+            \includegraphics[width=0.15\textwidth]{images/foundations/diffusion/t300.png}
+        }
+        \subfloat{%
+            \includegraphics[width=0.15\textwidth]{images/foundations/diffusion/t0.png}
+        }
+        \caption{Illustration des Rückwärtsprozesses mit abnehmendem $t$}
+        \label{fig:reverse_process}
+    \end{figure} \\
+    Der Rückwärtsprozess versucht, dem Namen entsprechend, die im Vorwärtsprozess getätigten Diffusionsschritte umzukehren - also aus dem Rauschen $x_T$ die Ursprungsdaten $x_0$ iterativ zu rekonstruieren, siehe Abbildung \ref{fig:reverse_process}. Entsprechend ist auch die mathematische Formulierung:
     \begin{equation}
         p_\theta(x_{0:T}) := p(x_T) \prod_{t=1}^T p_\theta(x_{t-1} | x_{t}) 
     \end{equation}
@@ -548,6 +588,23 @@ Terrain-Generierung ist ein zentrales Gebiet der Computergraphik. Sie umfasst ei
 
 \subsection{Digital Elevation Models}
 
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.20\textwidth]{images/foundations/DEM/source1.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.20\textwidth]{images/foundations/DEM/source2.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.20\textwidth]{images/foundations/DEM/source3.png}
+    }
+    \subfloat{%
+        \includegraphics[width=0.20\textwidth]{images/foundations/DEM/source4.png}
+    }
+    \caption{Digital Elevation Models CITATION}
+    \label{fig:DEMs}
+\end{figure}
 \textit{Digital Elevation Models} (DEMs) sind eine Datenstruktur für die Repräsentation von Höhenwerten einer Oberfläche. In ihnen werden beispielsweise Terrains somit über ihr Oberfläche definiert. Durch die Abbildung einer solchen dreidimensionalen Struktur auf zwei Dimensionen haben DEMs zwar den Nachteil, dass keine überhängenden Strukturen abgebildet werden können, da diese allerdings bei Landschaften nur sehr selten vorkommen, ist dies, insbesondere größeren Gebieten oft zu vernachlässigen.\\
 Eine Variante von DEMs, welche die Höhenwerte den koordinaten eines zweidimensionalen Rasters zuordnet, wird im Bereich der Computergraphik auch oft als \textit{Heightmap} bezeichnet. Diese, sehr simple Datenstruktur, ist einfach und effizient zu Verarbeiten, weswegen sie oft in der Terraingenerierung angewandt wird. Aufgrund dieser Repräsentation als zweidimensionales Array sind DEMs insbesondere für die Verwendung mit Bildsynthese-Ansätzen der generativen KI geeigenet.
 
