@@ -1,51 +1,51 @@
 \chapter{Datenaufbereitung}
 \label{ch:Datenaufbereitung}
 
-Um die in Kapitel \ref{ch:Methodik} konzipierten Prozesse umsetzen zu können, muss das zugrundeliegende LDM trainiert werden. Die hierfür zu nutzenden Daten müssen sorgfältig ausgewählt werden, sodass das Modell alle wichtigen Terrainstrukturen erlernen kann, die für die Erfüllung der in Abschnitt \ref{sec:Zielsetzung} gestetzten Ziele erforderlich sind. \\
-In diesem Kapitel werden somit die für das Training genutzten Datensätze behandelt. Zu diesem Zweck werden sie zunächst vorgestellt und ihre Nutzung begründet. Daran anschließend werden ihre Daten analyisert und anhand der hieraus resultierenden Erkenntnisse ihre Aufbereitet dargelegt. \\
-Die eigentlichen Schritte zur Aufbereitung werden hier in zwei Abschnitte geteilt zum eine eine Vor- und eine Laufzeitverarbeitung. Dies ist grundlegend damit zu begründen, dass dies Flexibilität für Anpassungen erlaubt, ohne dabei für jede Änderung ein neues Datenset zu erfordern, was unnötig viel Speicherplatz in Anspruch nehmen würde. Konzeptionell sind beide Bereiche allerdings eng miteinander verbunden.
+Um die in Kapitel \ref{ch:Methodik} konzipierten Prozesse umsetzen zu können, muss das zugrundeliegende \ac{LDM} trainiert werden. Die hierfür zu nutzenden Daten müssen sorgfältig ausgewählt werden, sodass das Modell alle relevanten Terrainstrukturen erlernen kann, die für die Erfüllung der in Abschnitt \ref{sec:Zielsetzung} gestetzten Ziele erforderlich sind. \\
+In diesem Kapitel werden die für das Training genutzten Datensätze behandelt. Zu diesem Zweck werden sie zunächst vorgestellt und ihre jeweilige Auswahl begründet. Daran anschließend werden ihre Inhalte analyisert und anhand der hieraus resultierenden Erkenntnisse eine folgende Aufbereitung dargelegt. \\
+Die jeweiligen Schritte hierfür werden im Folgenden in zwei Abschnitte geteilt - eine Vor- und eine Laufzeitverarbeitung. Dies ist damit begründet, dass so Flexibilität für Anpassungen in der Umsetzung dieser Prozesse erlaubt ist, ohne dabei für jede Änderung einen neu erstellten Datensatz zu erfordern. Dies würde unnötig viel Speicherplatz in Anspruch nehmen. Auf konzeptioneller Ebene sind beide Bereiche allerdings eng miteinander verbunden.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Datensätze}
 
-Das Training eines Modells erfordert Daten. Diese Daten müssen, um das jeweils zu lösende Problem optimal zu bewältigen, nach Möglichkeit dem erwarteten Zieldaten entsprechen. Die diesbezüglich erarbeiteten Anforderungen für diese Arbeit wurden bereits in Unterabschnitt \ref{subsec:Ergebnisformat} geschildert. Die für ihre Umsetzung gewählten Datensätze werden folgend vorgestellt und infolgedessen ihre Auswahl in Anbetracht der Anforderungen begründet.
+Das Training eines Modells erfordert Daten. Diese müssen, um das jeweils zu lösende Problem optimal zu bewältigen, nach Möglichkeit den erwarteten Zieldaten entsprechen. Die diesbezüglich erarbeiteten Anforderungen bereits in Unterabschnitt \ref{subsec:Ergebnisformat} geschildert. Für ihre Umsetzung wurden die folgenden Datensätze gewählt. Infolge ihrer Vorstellung wird ihre in Auswahl in Anbetracht dieser Anforderungen begründet.
 
 \subsection{Terrain-Quelldaten}
 
+Im Mittelpunkt der Betrachtung der Trainingsdaten eines Modells für die Terraingenerierung stehen selbstverständlich die Terrain-Quelldaten. Diese geben die Datenverteilung vor, welche von dem Modell approximiert werden soll. Ein geeigneter Datensatz hat die gemäß Unterabschnitt \ref{subsec:Ergebnisformat} erläuterten Bedigungen zu erfüllen, dass die Areale einzelner Datenpunkte in einem gewissen Maße Weitläufig sind, sowie dass die geographische Abdeckung des Datensatzes möglichst hoch ist. 
 \begin{figure}[htbp]
     \centering
     \subfloat{%
-        \includegraphics[width=0.20\textwidth]{images/Data/source1.png}
+        \includegraphics[width=0.23\textwidth]{images/Data/source1.png}
     }
     \subfloat{%
-        \includegraphics[width=0.20\textwidth]{images/Data/source2.png}
+        \includegraphics[width=0.23\textwidth]{images/Data/source2.png}
     }
     \subfloat{%
-        \includegraphics[width=0.20\textwidth]{images/Data/source3.png}
+        \includegraphics[width=0.23\textwidth]{images/Data/source3.png}
     }
     \subfloat{%
-        \includegraphics[width=0.20\textwidth]{images/Data/source4.png}
+        \includegraphics[width=0.23\textwidth]{images/Data/source4.png}
     }
     \caption{Digital Elevation Models CITATION}
     \label{fig:SRTM}
-\end{figure}
-Im Mittelpunkt der Betrachtung von Trainingsdaten eines Modells für Terraingenerierung stehen selbstverständlich die Terraindaten. Diese geben die Datenverteilung vor, welche von dem Modell approximiert werden soll. Ein geeigneter Datensatz hat die gemäß Unterabschnitt \ref{subsec:Ergebnisformat} erläuterten Bedigungen zu erfüllen, dass die Areale einzelner Datenpunkte Weitläufigkeit sind, sowie dass die geographische Abdeckung möglichst hoch ist. \\
-Der hierfür ausgewählte Datensatz ist der von der NASA Shuttle Radar Topography Mission aufgenommene Datensatz mit globaler Abdeckung und einer Auflösung von einer Bogensekunde\footnote{
+\end{figure} \\
+Der hierfür ausgewählte Datensatz sind die von der NASA Shuttle Radar Topography Mission erstellten Satellitenaufnahmen der Oberflächenstruktur der Erde, mit nahezu globaler Abdeckung und einer Auflösung von einer Bogensekunde\footnote{
     Aufgrund der sphärischen Projektion variiert die länge einer Bogensekunde je nach Längengrad. Am Äquator entspricht sie in etwa 30 Metern.
 } SRTM-GL1\footnote{
     NASA JPL: NASA Shuttle Radar Topography Mission Global 1 Arc Second
     \cite{nasa2013srtm}
-}. \\
-Dieser Datensatz besteht aus 14280 DEMs mit jeweils einer Flächenabdeckung von $1^{\circ}\times1^{\circ}$ was mit einer Auflösung von einer Bogensekunde einer Bildauflösung von $3601\times3601$ entspricht. Die einzelnen Pixelwerte entsprechen dem jeweiligen Höhenwert in Metern und reichen von $-12269$ bis $22894$ wobei $0$ dem Meeresspiegel entspricht. Die Abdeckung reicht insgesamt von $60^{\circ}\text{N}$ bis $56^{\circ}\text{S}$ wobei hier die Breitengrade vollständig abgebildet sind, also von $180^{\circ}\text{W}$ bis $180^{\circ}\text{O}$ reichen. Das erfasste Areal umschließt somit eine Fläche von $119.560.000\text{km}^2$ beziehungsweise etwa $80\%$ der Erdlandmasse.\\
-Jedes DEM enthält dabei keinen Datenpunkt welcher ausschließlich eine Wasseroberfläche abbildet. Es eignet sich aufgrund der Abdeckung, des Formats und der Größe der einezlnen DEMs somit hervorragend für die weitere Nutzung im Rahmen dieser Arbeit. Darüberhinaus erleichtert eine hohe Äuflösung die Verarbeitung und bietet Optionen für eine nachträgliche Verkleinerung des betrachteten Areals.
+}. Eine Auswahl der darin enthaltenen \ac{DEM}s ist in Abbildung \ref{fig:SRTM} vorgestellt. \\
+Dieser Datensatz besteht aus 14280 \ac{DEM}s mit jeweils einer Flächenabdeckung von $1^{\circ}\times1^{\circ}$, was bei einer Auflösung von einer Bogensekunde einer Bildauflösung von $3601\times3601$ entspricht. Die einzelnen Pixelwerte entsprechen dem jeweiligen Höhenwert in Metern relativ zum Meeresspiegel und reichen von $-12269$ bis $22894$ wobei $0$ dem Meeresspiegel entspricht, wodurch bereits einige Ausreißer zu vermuten sind. Die globale Abdeckung reicht insgesamt von $60^{\circ}\text{N}$ bis $56^{\circ}\text{S}$ wobei hier die Breitengrade jeweils vollständig abgebildet sind, also von $180^{\circ}\text{W}$ bis $180^{\circ}\text{O}$ reichen. Das erfasste Areal umschließt somit eine Fläche von $119.560.000\text{km}^2$ beziehungsweise etwa $80\%$ der Erdlandmasse. DEMs welche vollständig aus Wasseroberfläche bestehen wurden im vorhinein aussortiert. \\
+Dieser Datensatz eignet sich aufgrund der Abdeckung, des Formats und der Größe der einzelnen \ac{DEM}s somit hervorragend für die weitere Nutzung im Rahmen dieser Arbeit. Darüberhinaus erleichtert die vergleichsweise hohe Äuflösung die Verarbeitung und bietet Optionen für eine nachträgliche Verkleinerung des betrachteten Areals.
 
 \subsection{Terrain-Klassifizierung}
 
-Eine der spezifizierten Komponenten des Kontrollsignals stellt eine Klassifikation der topographischen Struktur eines Landschaftsabschnitts dar. Um diese den jeweiligen DEMs zuordnen zu können ist es ebenfalls hierbei wichtig, dass die Abdeckung möglichst global Ausfällt. \\
+Eine der spezifizierten Komponenten des Kontrollsignals stellt eine Klassifikation der topographischen Struktur eines Landschaftsabschnitts dar. Um diese den jeweiligen \ac{DEM}s zuordnen zu können ist es ebenfalls hierbei wichtig, dass die Abdeckung möglichst global Ausfällt. \\
 Nach Untersuchung zahlreicher Optionen ist die Wahl letztendlich auf die von Iwahashi et al.\footnote{
     Iwahashi et al.: Global Terrain Classification
     \cite{iwahashi2018global}
-} erstellte globale Terrain-Klassifikation gefallen. Diese ordnet einer Position in einem Raster eine von 16 Kategorien mit zunehmender Flachheit, inklusiver eines Null-Wertes zur Darstellung eines unkategorisierten Punktes, zu. Jede Rasterzelle repräsentiert dabei ein Gebiet von $9\times9$ Bogensekunden. Die Abdeckung des Rasters ist hierbei die vollständige Erdoberfläche, allerdings werden Wasserflächen und einige wenige Landmassen nicht kategorisiert. Die Klassifikation sieht die in Tabelle \ref{tab:GTC} zusammengefasst dargestellten Kategorien vor\footnote{
+} erstellte globale Terrain-Klassifikation gefallen. Diese ordnet einer Position in einem Raster eine von 16 Kategorien zu, inklusive eines Null-Wertes zur Darstellung eines unkategorisierten Punktes. Jede Rasterzelle repräsentiert dabei ein Gebiet von $9\times9$ Bogensekunden. Die Abdeckung des Rasters ist die vollständige Erdoberfläche, allerdings werden Wasserflächen und einige wenige Landmassen nicht kategorisiert. Die vorgeschlagene Klassifikation sieht die in Tabelle \ref{tab:GTC} zusammengefasst dargestellten Kategorien vor\footnote{
     Vgl. Iwahashi et al.: Global Terrain Classification, S. 21 
     \cite{iwahashi2018global}
 }. \\
@@ -74,7 +74,7 @@ Dieses Datenset ist hochaktuell, global, hochauflösend und bietet vergleichswei
 Für das Klima-Kontrollsignal wurde die von Peel, Finlayson und McMahon\footnote{
     Peel, Finlayson, McMahon: Updated world climate classification 
     \cite{hess-11-1633-2007}
-} aktualisierte globale Version der Köppen-Geiger Klassifikation gewählt. Dieser Datensatz ist wie die Terrain-Klassifikation eine Rasterdarstellung der gesamten Erdoberfläche hier jedoch mit einer Auflösung von $0.5^{\circ}\times0.5^{\circ}$. Jeder Zellwert ist dabei eine von 33 Kategorien\footnote{
+} aktualisierte globale Version der Köppen-Geiger Klima-Klassifikation gewählt. Dieser Datensatz ist wie die Terrain-Klassifikation eine Rasterdarstellung der gesamten Erdoberfläche hier jedoch mit einer Auflösung von $0.5^{\circ}\times0.5^{\circ}$. Jeder Zellwert ist dabei eine von 33 Kategorien\footnote{
     Vgl. Peel, Finlayson, McMahon: Updated world climate classification, S. 4 
     \cite{hess-11-1633-2007}
 }, welche in Tabelle \ref{tab:Climate_Classes} zusammengefasst dargestellt sind. Diese Klassen beinhalten Informationen über Temperatur, Feuchtigkeit und jeweilige Trocken- oder Monsunphasen.\\
@@ -95,7 +95,7 @@ Für das Klima-Kontrollsignal wurde die von Peel, Finlayson und McMahon\footnote
     \caption{Einfache Zusammenfassung der Klimaklassen}
     \label{tab:Climate_Classes}
 \end{table} \\
-Ausgewählt wurde dieses Datenset aufgrund ihrer globalen Abdeckung und feingliedrigen Klassifikationen.
+Ausgewählt wurde dieses Datenset aufgrund ihrer globalen Abdeckung und feingliedrigen Klassifikationen, welche eine präzise Definition des erwarteten Erscheingsbilds der Samples ermöglichen soll.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Sichtung}
@@ -104,25 +104,24 @@ Wertebereich so klein wie möglich ist.  blablabla irgendwelche diagramme oder s
 
 \section{Vorverarbeitung}
 
-Dieser Abschnitt erläutert die einzelnen Schritte welche bei der Vorverarbeitung der Datensätze durchlaufen werden. Diese sollen die Fähigkeit des Modells die Datenverteilung zu erlernen unterstützen. Um eine akkurate Abbildung der Datenverteilung zu erlernen, muss nach Möglichkeit verhindert werden, dass diese Verfälscht wird. Dies ist insbesondere bei der Generierung unendlicher Terrains wichtig, da bei dieser unrealistische Verteilung, wie beispielsweise zu häufig vorkommende Gebirgsketten, besonders auffallen würde. Entsprechend werden hier möglichst wenige Anpassungen getätigt.
-
+Dieser Abschnitt erläutert die einzelnen Schritte welche bei der Vorverarbeitung der Datensätze durchlaufen werden. Diese sollen die Fähigkeit des Modells die Datenverteilung zu erlernen unterstützen. Um eine akkurate Abbildung der Datenverteilung zu erlernen, muss nach Möglichkeit verhindert werden, dass diese Verfälscht wird. Dies ist insbesondere bei der Generierung unendlicher Terrains wichtig, da bei dieser eine unrealistische Verteilung, wie beispielsweise zu häufig vorkommende Gebirgsketten, besonders auffallen würde. Entsprechend werden hier möglichst wenige Anpassungen getätigt.
 
 \subsection{Skalierung}
 
-Die DEMs des SRTM-GL1 haben eine Auflösung von $3601\times3601$ Höhenwerten. Die synthetisiertern DEMs sollen jedoch eine Auflösung von $256\times256$ Pixeln haben entsprechend müssen die Ausgangsdaten skalliert werden. \\ 
-Diese Skalierung wird unter bilinearer Interpolation auf eine Bildgröße von $512\times512$ vollzogen. Diese Skalierung unter der Nutzung der bilinearen Interpolation hat zugleich den Vorteil, dass Ausreißer und verrauschte Areale herausgeglättet werden. Der Grund für die Skalierung auf 512 anstelle der eigentlichen Endgröße von 256 ist eine Methode der Datenaugmentierung, welche in dem folgenden Unterabschnitt \ref{subsec:Augmentierung} detailliert behandelt wird. 
-Es wurden ebenfalls noch geringer Aufgelöste Datensätze erstellt, um kleinere Tests zu ermöglichen. 
+Die \ac{DEM}s des SRTM-GL1 haben eine Auflösung von $3601\times3601$ Höhenwerten. Die synthetisiertern Samples sollen jedoch eine Auflösung von $256\times256$ Pixeln aufweisen, entsprechend müssen die Ausgangsdaten skalliert werden. Dies wird unter bilinearer Interpolation auf eine Bildgröße von $512\times512$ vollzogen. \\ 
+Der Grund für die Skalierung auf $512\times512$ anstelle der eigentlich zu erwartenden Zielauflösung von $256\times256$ ist eine Methode der Datenaugmentierung, welche in dem folgenden Unterabschnitt \ref{subsec:Augmentierung} detailliert behandelt wird. \\
+Die Nutzung der bilinearen Interpolation hat hierbei gegenüber Verfahren, die die Quelldaten möglichst nicht verändern wie beispielsweise Nearest Neighbour, den Vorteil, dass Ausreißer und verrauschte Areale durch Betrachtung der umliegenden Bereiche eines Wertes geglättet werden. 
 
 \subsection{Datenfilterung}
 
-Aus der Sichtung der Daten wird offensichtlich, dass viele der Datenpunkte zu einem maßgeblichen Anteil aus Wasserflächen bestehen. Diese sind Bereiche komplett flach und enthalten somit keinerlei zu erlernene Topographie. Hier muss also eine Lösung gefunden werden, die die für uns relevanten Datenverteilung nicht allzusehr verändert und gleichzeitig dafür sorgt, dass in jedem Datenpunkt genug relevante Informationen enthalten sind. Zwei probierte Lösungsansätze sind hierfür wie folgt:
+Aus der Sichtung der Daten wird offensichtlich, dass viele der Datenpunkte zu einem maßgeblichen Anteil aus Wasserflächen bestehen. Diese abgebildeten Bereiche komplett flach und enthalten somit keinerlei zu erlernende Topographie. Generierungen basierend auf dieser Verteilung hätte das Modell also einen grundlegenden Bias zu Samples mit hohem Wasseranteil. Dies würde dafür sorgen, dass generierte Landschaften strukturell vergleichsweise uninteressant wären. Hierfür muss also eine Lösung gefunden werden, welche die für die Synthese von Landmasse relevante Datenverteilung nicht allzusehr verändert. Gleichzeitig muss allerdings auch dafür gesorgt sein, dass in jedem Datenpunkt genügend relevante Informationen enthalten sind. Zwei hierfür probierte Lösungsansätze waren wie folgt:
 \begin{enumerate}
-    \item Filtern der Daten anhand ihrer Standardabweichung: \\
-    Dieser Ansatz sieht vor einen geeigneten Minimalwert für die Standardabweichung der Höhenwerte zu ermitteln. Die Idee hierbei ist, dass sehr flache Gebiete, wie Wasserflächen, herausgefiltert werden, da die Abwechslung ihrer Höhenwerte nicht hochgenug ist. Somit würden, in der Theorie, Bilder mit hohem Wasseranteil weiterhin betrachtet werden, solange der Rest des Bildes interessant genug ist. In der Praxis erwies sich  dieser Ansatz allerdings als ungeeignet. Des liegt daran, dass ein großer Teil der Landmasse eine so geringe Standardabweichung aufweist, dass ein Grenzwert, welche große Wasserflächen herausfiltert zwangsläufig auch viele tatsächlich relevante Datenpunkte ausschließt.
-    \item Filtern der Daten anhand ihres Meeresspiegelanteils: \\
-    Der zweite denkbare Ansatz ist eine untere Grenze für den Landmasseanteil, beziehungsweise eine obere Grenze für den Meeresspiegelanteil. Dieser Ansatz stellte sich in der Praxis als geeignet heraus, da störende DEMs komplett herausgefiltert wurden konnten, ohne dass der Datensatz zu sehr reduziert werden musste.
+    \item \textbf{Filtern der Daten anhand ihrer Standardabweichung}: \\
+    Dieser Ansatz sieht vor, einen geeigneten Minimalwert für die Standardabweichung der Höhenwerte zu ermitteln. Die Idee hierbei ist, dass sehr flache Gebiete, wie Wasserflächen, herausgefiltert werden, da die Varianzz ihrer Höhenwerte nicht hoch genug ist. Somit würden, in der Theorie, Bilder mit hohem Wasseranteil weiterhin betrachtet werden, solange der Rest des Bildes genügend interessante Informationen beinhaltet. In der Praxis erwies sich dieser Ansatz allerdings als ungeeignet. Das liegt daran, dass durch die in Unterabschnitt \ref{subsec:Augmentierung} beschriebene Augmentierung durch zufällige Bildausschnitte eben jene Bildbereiche ausgewählt werden konnten, die weiterhin kaum Informationsgehalt besitzten. Ein Grenzwert, welcher dieses Problem verhindert schließt zwangsläufig auch viele tatsächlich relevante Datenpunkte mit vergleichsweise geringer Standardabweichung aus.
+    \item \textbf{Filtern der Daten anhand ihres Meeresspiegelanteils}: \\
+    Der zweite Ansatz ist eine untere Grenze für den Landmasseanteil, beziehungsweise eine obere Grenze für den Meeresspiegelanteil. Dies filtert zwar auch \ac{DEM}s mit hohem Informationsgehalt heraus, sorgt aber in der Praxis für bessere Bildausschnitte. Somit stellte sich dieser Ansatz in der Praxis als geeignet heraus, da störende DEMs komplett herausgefiltert wurden konnten, ohne dass der Datensatz zu sehr reduziert werden musste.
 \end{enumerate}
-Aus dem genannten Grund wurde der zweite Ansatz gewählt. Experimentell hat sich eine Grenze von mindestens 50\% Landmasseanteil als geeigneter Kompromiss aus Informationserhöhung und Datenerhalt erwiesen. Nach dieser Aussortierung umfasst das Datenset 11514 Datenpunkte.
+Aus dem genannten Grund wurde der zweite Ansatz gewählt. Experimentell hat sich eine untere Grenze von mindestens 50\% Landmasseanteil als geeigneter Kompromiss aus Informationserhöhung und Datenerhalt erwiesen. Nach dieser Aussortierung umfasst der Datensatz noch 11514 nutzbare Datenpunkte.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Laufzeitverarbeitung}
@@ -133,28 +132,30 @@ Dieser Abschnitt enthält einige Schritte, welche auch bei der Vorverarbeitung h
 \subsection{Augmentierung}
 \label{subsec:Augmentierung}
 
-Datenaugmentierung bedeutet die künstliche Erweiterung eines Datensatzes. Dies kann je nach größe des ursprünglichen Datensatzes die Leistungsfähigkeit eines Modells maßgeblich verbessern. Hierfür existieren viele Methoden - von einfachen operationen wie Spiegelungen bishin zu komplexen synthetisierten Daten. Ein generatives Modell hat als Ziel die Abbildung der Datenverteilung, somit ist es wichtig, dass diese Methoden die Verteilung nicht verfälschen. Deshalb werden in dieser Arbeit lediglich Methoden genutzt, die zum einen nur reale Daten nutzen und zum anderen die Struktur der Daten nicht verändern. Diese werden folgend dargelegt und in derselben Reihenfolge durchlaufen:
+Datenaugmentierung bedeutet Erweiterung eines Datensatzes um weitere künstlich erzeugte Datenpunkte. Dies kann je nach größe des ursprünglichen Datensatzes die Leistungs- und Generalisierungsfähigkeit eines Modells maßgeblich verbessern. Hierfür existieren viele Methoden - von einfachen operationen wie Spiegelungen bishin zu komplexen synthetisierten Daten. \\
+Ein generatives Modell hat als Ziel die Abbildung der Datenverteilung, somit ist es wichtig, dass hierfür genutzte Agmentierungs-Methoden die Verteilung nicht verfälschen. Deshalb werden in dieser Arbeit ausschließlich Techniken genutzt, die zum einen nur reale Daten nutzen und zum anderen die Struktur dieser Daten nicht verändern. Folgend werden die gewählten Ansätze dargelegt:
 \begin{enumerate}
     \item \textbf{Zufälliger Bildausschnitt}: \\
-    Die DEMs des SRTM-GL1 decken einen Bereich von $1^{\circ}\times1^{\circ}$ ab. Bei der Zielauflösung von $256\times256$ entspricht eine Rasterzelle am Äquator also ungefähr $440^2\text{m}^2$. Würde man die Längen des Bildbereichs jedoch halbieren wäre die Auflösung verfierfacht. Dies würde einer Abdeckung von immernoch $0.5^{\circ}\times0.5^{\circ}$ entsprechen, was genug Fläche für große Strukturen bietet. Dies stellt die Begründung für die zuvor Angesprochene Skalierung der DEMs auf $512\times512$ dar. \\ 
-    Eine Verkleinerung des Bildausschnitts hat somit bereits einige Vorteile. Hinzu kommt nun noch, dass diese Bildbereiche zufällig aus dem Ursprungs-DEM herausgeschnitten werden können. Dies erhöht die Anzahl der theoretisch unterschiedlichen Datenpunkte enorm. Da in der Praxis eine Verschiebung um einen Rasterpunkt aller Wahrscheinlichkeit keinen nennenswerten Effekt haben wird ist es nicht einfach möglich die genaue Anzahl an gewonnenen Bedeutungsvollen Daten zu bestimmen. Sie ist aber durch die Anzahl aller disjunkten Teilbereiche der größe $256\times256$ im Bildbereich $512\times512$ nach unten begrenzt. Somit ist die Vergrößerung des Datensatz im schlechtesten Fall vierfach.
+    Die \ac{DEM}s des SRTM-GL1 decken einen Bereich von $1^{\circ}\times1^{\circ}$ ab. Bei der Zielauflösung von $256\times256$ entspricht eine Rasterzelle am Äquator also ungefähr $440^2\text{m}^2$. Würde man die Längen des Bildbereichs jedoch halbieren wäre die Auflösung verfierfacht. Dies würde einer Abdeckung von immernoch $0.5^{\circ}\times0.5^{\circ}$ entsprechen, was genug Fläche für große Strukturen bietet. Dies stellt die Begründung für die zuvor bereits Erwähnte Skalierung der \ac{DEM}s auf $512\times512$ dar. \\ 
+    Eine Verkleinerung des Bildausschnitts hat somit bereits Vorteile. Hinzu kommt allerdings noch, dass diese Bildbereiche zufällig aus dem Ursprungs-DEM herausgeschnitten werden können. Dies erhöht die Anzahl der theoretisch unterschiedlichen Datenpunkte enorm. \\
+    In der Praxis hat eine Verschiebung eines Bildfensters um einen einzigen Rasterpunkt aller Wahrscheinlichkeit nach keinen nennenswerten Effekt. Daher ist es nicht einfach möglich die genaue Anzahl an hierdurch gewonnenen Bedeutungsvollen neuen Daten zu bestimmen. Sie ist aber durch die Anzahl aller disjunkten Teilbereiche der größe $256\times256$ im Bildbereich $512\times512$ nach unten begrenzt. Die Vergrößerung des Datensatz ist somit im schlechtesten Fall vierfach.
     \item \textbf{Zufällige Rotation um ein Vielfaches von $90^{\circ}$}: \\
-    Eine Rotation eines Bildes um Vielfache von $90^{\circ}$ erfordert keine Änderung der Rastergröße. Bei Terraindaten ist außerdem nicht davon auszugehen, dass die Ausrichtung ihre Strukturverändert, wie es beispielsweise bei Schrift der Fall wäre. Somit ist dies eine einfache Methode die Anzahl der Datenpunkte zu vervierfachen.
+    Eine Rotation eines Bildes um Vielfache von $90^{\circ}$ erfordert keine Änderung der Rastergröße. Bei Terraindaten ist außerdem nicht davon auszugehen, dass die Ausrichtung des Bildes ihre Bedeutung verändert, wie es beispielsweise bei Schrift der Fall wäre. Somit ist dies eine einfache und sichere Methode die Anzahl der Datenpunkte zu vervierfachen.
     \item \textbf{Zufällige horizontale oder vertikale Spiegelung}: \\
-    Eine Spiegelung ist ebenfalls eine sehr einfache Operation, die Terraindaten in keiner Weise in ihrer Struktur verändert. Hier wird die Anzahl der Daten verdreifacht, da eine gleichzeitige horizontale und vertikale Spiegelung einer Rotation um $180^{\circ}$ entspricht und somit bereits abgedeckt wurde. 
+    Eine Spiegelung ist ebenfalls eine sehr simple Operation, welcge die Terraindaten in keiner Weise in ihrer Struktur verändert. Hierbei wird die Anzahl der Daten verdreifacht, da eine gleichzeitige horizontale und vertikale Spiegelung einer Rotation um $180^{\circ}$ entspricht und somit bereits zuvor abgedeckt wurde. 
 \end{enumerate}
 Die endgültige Größe des genutzten Datensatzes entspricht somit mindestens der unteren Grenze von $11514\times4\times4\times3 = 552.672$ Datenpunkten, wobei in der Praxis von einer deutlich höheren Anzahl auszugehen ist.
 
 
 \subsection{Anpassung des Wertebereichs}
 
-Um es einem Modell zu erleichtern Akkurat Samples innerhalb des Wertebereichs der Datenverteilung zu erzugen, ist es von Vorteil, diesen Wertebereich so eng wie möglich zu halten. Andernfalls verringert sich die relative größe der relevanten Bereiche und es wird somit unwahrscheinlicher, diese genau zu treffen. Entsprechend sollen auch hier die Daten angepasst werden. 
-Die Analyse der Höhenwerte aller DEMs hat ergeben, dass die weitaus meisten Höhenwerte zwischen 0 und 8092 liegen. Dieser Bereich ist mit einer Abdeckung von TODO\% mehr als aussagekräftig genug und reduziert den ursprünglichen Wertebereich gleichzeitig um 27071 beziehungsweise um ca. 77\%. 
-Diese sehr umfassende Grenze wurde gewählt, um die Datenverteilung so wenig wie möglich abzuändern. 
+Um es einem Modell zu erleichtern akkurat Samples innerhalb des Wertebereichs der Datenverteilung zu erzugen, ist es von Vorteil, diesen Wertebereich so eng wie möglich zu halten. Andernfalls verringert sich die relative größe der relevanten Bereiche und es wird somit unwahrscheinlicher, diese genau zu treffen. Entsprechend sollen auch hier die Daten angepasst werden. 
+Die Analyse der Höhenwerte aller DEMs hat ergeben, dass die weitaus meisten Höhenwerte zwischen 0 und 8092 liegen. Dieser Bereich ist mit einer Abdeckung von 99,7\% oder drei Sigma mehr als aussagekräftig genug und reduziert den ursprünglichen Wertebereich gleichzeitig um 27071 beziehungsweise um ca. 77\%. 
+Diese sehr umfassende Grenze wurde gewählt, um die Datenverteilung so wenig wie möglich abzuändern.
 
 \subsection{Normalisierung}
 
-LDMs operieren grundlegend auf Ebene von Standardnormalverteilungen dementsprechend ist es erforderlich, den Wertebereich der Daten auf den Bereich $\left [ -1, 1\right ]$ abzubilden. Die Abbildung kann hierbei auf mehrere Arten vollzogen werden, die einfachste Art ist hierbei eine lineare Abbildung aber auch komplexere Methoden sind vorstellbar. 
+\ac{LDM}s Verarbeiten Daten grundlegend auf Ebene von Standardnormalverteilungen. Dementsprechend ist es erforderlich, den Wertebereich der Daten auf den Bereich $\left [ -1, 1\right ]$ abzubilden. Die Abbildung kann hierbei auf mehrere Arten vollzogen werden, die einfachste Art ist hierbei eine lineare Abbildung, welche sich experimentell als ausreichend erwiesen hat, aber auch komplexere Methoden wie die Nutzung einer Sigmoid-Funktion sind vorstellbar. 
 % Im Rahmen dieser Arbeit wurden zusätzlich mit einer einfachen logistischen und einer kombination von logistischen Abbildungen experimentiert, um zu überüfen, ob der extreme Bias gegen 0 unvorteilhaft für die Generierung von selteneren Höhenwerten, wie sie beispielsweise bei Gebirgen auftreten ist. Die konkreten Definitionen sind hierbei wie folgt:
 % \begin{itemize}
 %     \item Einfach Logistisch: \\
@@ -169,11 +170,11 @@ LDMs operieren grundlegend auf Ebene von Standardnormalverteilungen dementsprech
 
 \subsection{Geographische Zuordnung}
 
-Bis zu diesem Zeitpunkt wurden lediglich die DEMs, beziehungsweise die Datenverteilung betrachtet. Allerdings müssen die Kontrollsignale diesen jeweiligen Datenpunkten zugeordnet werden. Aufgrund der Augmentierung dich zufällige Bildausschnitte ist es nicht möglich diese Zuordnung statisch im Voraus vorzunehmen. Sie muss dementsprechend zur Laufzeit anhand des gewählten Ausschnitts erfolgen. \\
-Zu diesem Zweck können wir anhand der geographischen Koordinaten des jeweiligen DEMs die korrespondierende Position in den Rastern der Terrain- und Klimasets ermitteln. Dies ist möglich da für beide die Abdeckung bekannt ist und beide genordet ausgerichtet sind. Diese Umstände erlauben es uns die jeweiligen Rasterkoordinaten $(x,y)$ wiefolgt zu ermitteln:
+Bis zu diesem Zeitpunkt wurden lediglich die Verarbeitung der \ac{DEM}s, beziehungsweise der Datenverteilung betrachtet. Allerdings müssen die Kontrollsignale für die Nutzung beim Training den zugehörigen Datenpunkten zugeordnet werden können. Aufgrund der Augmentierung dich zufällige Bildausschnitte ist es nicht möglich diese Zuteilung statisch bei der Vorverarbeitung vorzunehmen. Dementsprechend muss dies zur Laufzeit anhand des gewählten Terrainausschnitts erfolgen. \\
+Zu diesem Zweck können wir anhand der geographischen Koordinaten des jeweiligen \ac{DEM}s die korrespondierende Position in den Rastern der Topographischen- und Klima-Daten ermitteln. Dies ist möglich, da für beide die jeweilige geographische Abdeckung sowie die Ausrichtung bekannt ist. Bei beiden fallen diese global und genordet aus. Diese Informationen erlauben es uns die jeweiligen Rasterkoordinaten $(x,y)$ der betreffenden Ausschnitte wie folgt zu ermitteln:
 \begin{equation}
     x = \frac{(\text{Breitengrad} - x_0)}{\text{Pixelbreite}}, 
     y = \frac{(\text{Längengrad} - y_0)}{\text{Pixellänge}}
 \end{equation}
 Wobei $(x_0, y_0)$ die Abbildung des Rastersursprungs (also die \enquote{obere linke Ecke}) auf geographische Koordinaten. Da beide Raster eine globale Abdeckung haben bedeutet dies also konkret, dass $x_0 = -180$ und $y_0 = 90$. Die Pixelbreiten und Längen bezeichnen entsprechend die Längen beziehungsweise Breiten einer Rasterzelle im Bogenmaß. \\
-Auf diese Weise kann also eine Genaue Zuordnung des, für das aktuelle DEM relevante Rasterfensters erfolgen. Anschließend müssen bei der Augmentierung lediglich die exakt gleichen Operationen auf das Rasterfenster angewandt werden, wie zuvor auf das DEM.  
+Auf diese Weise kann also eine genaue Zuordnung der Kontrollsignale zu dem aktuell relevanten Rasterfensters des \ac{DEM}s erfolgen. Anschließend müssen bei den folgenden Augmentierung lediglich die exakt gleichen Operationen auf die Rasterfenster der Kontrollsignale angewandt werden, wie zuvor auf das \ac{DEM}.  
