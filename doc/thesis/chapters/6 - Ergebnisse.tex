@@ -349,6 +349,8 @@ Durch die \ac{DEM}-basierte Skizzenkontrolle im Vergleich zu Signaturen ist es m
     \label{fig:sketch_perlin}
 \end{figure}
 
+% quantifizierung
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection {Unendliche Generierung}
 
@@ -368,7 +370,7 @@ Zunächst allerdings folgt die Untersuchung der unterschiedlichen definierten Al
     \subfloat{%
         \includegraphics[width=0.24\textwidth]{images/results/infinite/2x2_cos.png}
     }
-    \caption{Unendliche generierung unter Nutzung unterschiedlicher Alphafunktionen für die Masken in einem $2\times2$ . Von links nach rechts: Konstant, linear, exponential, Sinus}
+    \caption{Unendliche Generierung unter Nutzung unterschiedlicher Alphafunktionen für die Masken in einem $2\times2$ Gitter. Von links nach rechts: Konstant, linear, exponential, Sinus}
     \label{fig:masks}
 \end{figure} \\
 Tatsächlich sind jegliche Übergänge bei der Sinusmaske nur im direkten Vergleich zu den anderen Ansätzen in der groben Struktur von Gebirgskämmen zu erahnen. Vergleicht man das generierte Terrain jedoch nur mit der zugrundeliegenden Skizze sind diese nicht zu Erkennen, siehe Abbildung \ref{fig:cos_detail}. Dieser Ansatz ist somit eindrucksvoll in der Lage schlüssige und überzeugende Übergänge zwischen bereits Generiertem und aktuellen Samples zu erschließen.
@@ -380,7 +382,7 @@ Tatsächlich sind jegliche Übergänge bei der Sinusmaske nur im direkten Vergle
     \subfloat{%
         \includegraphics[width=0.40\textwidth]{images/results/infinite/2x2_cos.png}
     }
-    \caption{Unendliche generierung unter Nutzung der Sinusfunktion im Detail}
+    \caption{Unendliche Generierung unter Nutzung der Sinusfunktion im Detail}
     \label{fig:cos_detail}
 \end{figure} \\
 Eine Beobachtung die bei genauerer Betrachtung jedoch auffällt, ist, dass die erste generierte Zelle sich in ihrer Struktur deutlich von den restlichen unterscheidet. Dies ist klar in der oberen linken Ecken des ersten Samples in der Abbildung \ref{fig:1st_regen} zu erkennen. Diese Zelle weist deutlich tiefere und zerfranstere Merkmale in der Bergstruktur im vergleich zum Restlichen Terrain auf, obwohl die Kontrollsignale gleich geblieben sind. Die vermutete Begründung hierfür ist, dass die bereits vorgegebenen Ränder der Zelle die Freiheitsgrade und somit die Varianz der Samples deutlich einschränken. Da die erste Zelle an noch keinerlei Bedingungen bezüglich ihrer Ränder gebunden ist, könnte dies zu den beobachteten Unterschieden führen. \\ 
@@ -412,7 +414,7 @@ Damit dies untersucht werden kann werden nun weitentfernte Zellen des Rauschens 
     \subfloat{%
         \includegraphics[width=0.70\textwidth]{images/results/infinite/disconnected_r.png}
     }
-    \caption{Unendliche generierung mit nicht flüssigen Zellübergängen in der Skizze}
+    \caption{Unendliche Generierung mit nicht-flüssigen Zellübergängen in der Skizze}
     \label{fig:disconnected}
 \end{figure}
 

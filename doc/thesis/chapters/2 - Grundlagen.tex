@@ -67,19 +67,19 @@ Diese Definition kann ebenfalls um den Erwartungswert einer Funktion $f(x)$ ange
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Likelihood}
 
-Die Likelihood $p(y|x)$ ist in der Bayesischen Statistik, vereinfacht ausgedrückt, eine Aussage über die Wahrscheinlichkeit, dass die Beobachtung $x$ der Wahrscheinlichkeitsverteilung definiert durch $p$ entnommen wurde\footnote{
+Die Likelihood $p(x|\theta)$ ist in der Bayesischen Statistik eine Aussage über die Wahrscheinlichkeit, dass die Beobachtung $x$ der Wahrscheinlichkeitsverteilung definiert durch $p$ unter der Parametrisierung $\theta$ entnommen wurde\footnote{
     Deisenroth: Mathematics for Machine Learning, S. 185
     \cite{Deisenroth2020}
 }. \\
 Im bereich des Machine Learning ist es oft das Ziel, die Likelihood einer parametrisierten \ac{WDF} zu maximieren\footnote{
     Vgl. Goodfellow, Bengio, Courville: Deep Learning, S. 133
     \cite{Goodfellow-et-al-2016}
-}. 
+}. Da in diesem Fall durch die Optimierung von $\theta$ die Bedingung impliziert ist, wird diese in dieser Arbeit nicht weiter explizit angegeben.
 \begin{equation}
-    \arg\max_\theta p_\theta(y|x)
+    \arg\max_\theta p_\theta(x)
 \end{equation}
 Dies entspricht sinngemäß der Parametrisierung der \ac{WDF}, unter welcher, die beobachteten Daten maximal wahrscheinlich sind. \\
-Diese Optimierung entspricht $\arg\max_\theta \log p_\theta(y|x)$ welche auch als die Maximierung der \textit{Log-Likelihood} bezeichnet wird. Diese Formulierung wird der einfachen Likelihood in der Praxis oft vorgezogen, da sie bei der Differenzierung Vorteile aufweist.
+Diese Optimierung entspricht $\arg\max_\theta \log p_\theta(x)$ welche auch als die Maximierung der \textit{Log-Likelihood} bezeichnet wird. Diese Formulierung wird der einfachen Likelihood in der Praxis oft vorgezogen, da sie bei der Differenzierung Vorteile aufweist.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Score}
@@ -90,7 +90,7 @@ Der \textit{Score} $s$ ist der Gradient, also der Vektor aller partiellen Ableit
 }: 
 \begin{equation}
     s_\theta(x) = \frac{\partial \log p_\theta(x)}{\partial \theta} 
-    = \nabla_x p_\theta(x)
+    = \nabla p_\theta(x)
 \end{equation}
 Der Score ist somit zu einem lokalen Maximum der \ac{WDF} gerichtet, gibt also an, wie sich eine Parametrisierung verändern muss, um in Anbetracht der zugrundeliegenden Beobachtungen maximal wahrscheinlich zu sein.
 
@@ -444,7 +444,7 @@ Die vorherige Definition von \ac{DM}s im Allgemeinen bietet bereits ein Verstän
 } - untermauert die Notwendigkeit des Verrauschens noch deutlicher. \\
 Die grundlegende Umformulierung ist nun, dass anstelle des Erkennens der Struktur in einem Rauschbild, das Rauschen in einer verrauschten Struktur erkannt und iterativ entfernt wird. Auf den ersten Blick mag dies bereits äquivalent wirken, und tatsächlich sind zwei Herangehensweisen grundsätzlich äquivalent, allerdings erlaubt dieser Perspektivwechsel neue Erkenntnisse. \\
 Zuerst wird auf diese Weise der Zusammenhang zu sogenannten \ac{SMM}s  offensichtlich. \\
-Diese Klasse von generativen Modellen erlernt die Datenverteilung nicht direkt, sondern ihren Score - also den Gradienten der Log-Likelihood. Auf diese Weise werden Eingabedaten auf einen Vektor abgebildet, welcher angibt wie die einzelnen Kompentent der Eingabedaten verändert werden müssten, damit sie unter der Modellverteilung wahrscheinlicher werden. Hierüber wird indirekt ebenfalls die Datenverteilung erlernt. Der Samplingprozess unter einem solchen \ac{SMM} ist das iterative Anpassen eines ursprünglichen Verrauschten Vektors, zu einem Sample, welches eine hohe Wahrscheinlichkeit unter der erlernten Modellverteilung aufweist. \\
+Diese Klasse von generativen Modellen erlernt die Datenverteilung nicht direkt, sondern ihren Score respektiv zur Eingabe - also den Gradienten der Log-Likelihood. Auf diese Weise werden Eingabedaten auf einen Vektor abgebildet, welcher angibt wie die einzelnen Kompentent der Eingabedaten verändert werden müssten, damit sie unter der Modellverteilung wahrscheinlicher werden. Hierüber wird indirekt ebenfalls die Datenverteilung erlernt. Der Samplingprozess unter einem solchen \ac{SMM} ist das iterative Anpassen eines ursprünglichen Verrauschten Vektors, zu einem Sample, welches eine hohe Wahrscheinlichkeit unter der erlernten Modellverteilung aufweist. \\
 Dieser Prozess entspricht nun exakt dem Rückwärtsprozess eines \ac{DM}. Nun kann die Frage aufkommen, wie nun aber der Score in einem \ac{DM} erlernt wird, wenn lediglich die Normalverteilungen des Vor- und Rückwärtsprozess angeglichen werden. Hier ist nun der genannte Perspektivwechsel von Vorteil. Zu erlernen welches Rauschen in Daten vorhanden ist, ist äquivalent zum Erlernen des Scores. Um dies zu begreifen, muss sich vor Auge geführt werden, dass das Verrauschen eines einzelnen Datenpunktes bedeutet, dass er von seinem ursprünglichen Wert verschoben wird. Rauschen zu entfernen bedeutet somit zu erlernen in welche Richtung dieser Wert wieder zurückgeschoben werden muss. Mit anderen Worten also: Den Gradienten zu erlernen, welcher zum maximal wahrscheinlichen Ausgangswert weist - was wiederum genau die Definition von \ac{SMM}s ist. Von Vorteil bei dieser Art von Modellen ist, dass sie gleichzeitig die tatsächliche Datenverteilung erlernen, wenn auch indirekt, und trotzdem nicht an die Invarianten einer \ac{WDF} gebunden sind, da sie eben nur den Score erlernen. \\
 Weiter kann so, unter der Annahme, dass die Kovarianzmatrix der Normalverteilungen konstant $\beta_t$ ist (Diese Annahme wird im folgenden Unterabschnitt kritisch hinterfragt), ein neues, deutlich simpleres Optimierungsziel formuliert werden\footnote{
     Ho, Jain, Abbeel: Denoising Diffusion Probabilistic Models, S. 5
@@ -646,16 +646,7 @@ Hierbei werden sogenannte $O$ Oktaven einer Rauschfunktion $f$ summiert. Jede  O
     \label{fig:fractal_perlin}
 \end{figure}
 
-\subsection{KI-Basierte Terraingenerierung}
-
-Nebst Rauschfunktionen und Simulationen existieren in der Terraingenerierung ebenfalls ansätze, welche Methoden der generativen KI anwenden, um die Beschaffenheit von Landschaften zu erlernen.
-
-% \subsubsection{Generierung mit GAN}
-
-% Vlt ischt das hier doch net so wichtig
-
-
-\subsubsection{Terraingenerierung mit Diffusionsmodellen}
+\subsection{Terraingenerierung mit Diffusionsmodellen}
 
 Diffusionsmodelle sind eine verhältnismäßig sehr junge Methode der Bildsynthese. Erst vor wenigen Jahren haben sie die generative Qualität von \ac{GAN}s übertreffen können. Dementsprechend ist im Bereich der Terraingenerierung bisher nur wenig mit ihnen experimentiert worden. \\
 Die erste Veröffentlichung hierzu erfolgte von Lochner et al.\footnote{

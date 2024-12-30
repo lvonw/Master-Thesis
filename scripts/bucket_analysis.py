@@ -7,15 +7,18 @@ import os
 
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_PATH_MASTER        = os.path.join(PROJECT_PATH, "data")
+DATA_PATH_MASTER        = os.path.join(PROJECT_PATH, "data", "datasets")
 DATA_PATH_DEM           = os.path.join(DATA_PATH_MASTER, "DEMs")
 
-DATA_PATH_DEM_LIST      = os.path.join(DATA_PATH_DEM, "SRTM_GL1_50_over_list.txt")
-DATA_PATH_SOURCE_DEMs   = os.path.join(DATA_PATH_DEM, "SRTM_GL1_64x64")
+
+DATA_PATH_DEM_LIST      = os.path.join(DATA_PATH_DEM, "SRTM_GL1_list.txt")
+
+DATA_PATH_SOURCE_DEMs   = os.path.join(DATA_PATH_DEM, "SRTM_GL1_256x256")
+#DATA_PATH_SOURCE_DEMs   = os.path.join(PROJECT_PATH, "data", "SRTM Master", "SRTM_GL1_srtm")
 
 # refer to dem_analytics for these values
-MIN = -1503
-MAX = 8092
+MIN = -12269 # -1503
+MAX = 22894 # 8092
 
 MIN_RANGE = 0
 MAX_RANGE = 7879
@@ -36,7 +39,7 @@ def plot_histogram_from_dems(dem_names, min_value, max_value):
             print(f"Failed to open {dem_name}")
             continue
 
-        dataset     = gdal.Open(dem_file, gdal.GA_ReadOnly)
+        # dataset     = gdal.Open(dem_file, gdal.GA_ReadOnly)
 
         band = dataset.GetRasterBand(1)
         array = band.ReadAsArray().flatten()
@@ -44,14 +47,21 @@ def plot_histogram_from_dems(dem_names, min_value, max_value):
         for value in array:
             pixel_buckets[int(value-min_value)] += 1
 
+        # break
+
         # pixel_range = int(np.max(array) - np.min(array))
         # range_buckets[pixel_range] += 1
     
+    x = np.arange(7000, 8092)
+
+    
+    pixel_buckets = pixel_buckets[(-MIN) + 7000: -MIN + 8092:]
+
     if SHOW_HIST:
-        plt.plot(pixel_buckets)
-        plt.title("Histogram of Pixel Values")
-        plt.xlabel("Pixel Value")
-        plt.ylabel("Frequency")    
+        plt.plot(x, pixel_buckets / pixel_buckets.sum())
+        plt.xlabel("Höhenwert")
+        plt.ylabel("Anteil")    
+        plt.xlim(left=7000) 
         plt.show()
 
     cum_buckets = np.cumsum(pixel_buckets)
@@ -61,10 +71,10 @@ def plot_histogram_from_dems(dem_names, min_value, max_value):
     # cum_ranges = np.cumsum(range_buckets)
     # total_range = cum_ranges[-1]
 
-    plt.plot(cum_buckets)
-    plt.title("Histogram of Pixel Values")
-    plt.xlabel("Pixel Value")
-    plt.ylabel("Frequency")    
+    plt.plot(x, cum_buckets / pixel_buckets.sum())
+    plt.xlabel("Höhenwert")
+    plt.ylabel("Kumul. Anteil") 
+    plt.xlim(left=7000) 
     plt.show()
 
 
@@ -100,7 +110,43 @@ def open_DEM_list():
     return dem_list 
 
 
-if __name__ == "__main__":
-    dems = open_DEM_list()
+DATA_PATH_MASTER        = os.path.join(PROJECT_PATH, "data", "datasets")
+# DATA_PATH = os.path.join(DATA_PATH_MASTER, 
+#                          "Climate", 
+#                          "peel-et-al_2007",
+#                          "koeppen_wgs84_0point1deg.txt.asc")
 
-    plot_histogram_from_dems(dems, MIN, MAX)
+DATA_PATH = os.path.join(DATA_PATH_MASTER, 
+                         "GTC", 
+                         "Iwahashi_etal_2018",
+                         "3600x1800_GlobalTerrainClassification_Iwahashi_etal_2018.tif")
+
+def plot_buckets():
+    pixel_buckets = np.zeros(16)
+
+    file = os.path.join(DATA_PATH)
+    dataset = gdal.Open(file, gdal.GA_ReadOnly)
+
+    band = dataset.GetRasterBand(1)
+    array = band.ReadAsArray().flatten()
+    
+    for value in tqdm(array, desc="Analyzing Dataset"):
+        if value < 1:
+            pixel_buckets[0] += 1
+            continue
+        pixel_buckets[value] += 1
+
+    pixel_buckets = pixel_buckets[1::] 
+
+    pixel_buckets = pixel_buckets / pixel_buckets.sum()
+    for value in pixel_buckets:
+        print (f"{value*100:.2f}")
+
+    return 
+
+if __name__ == "__main__":
+    # dems = open_DEM_list()
+    # plot_histogram_from_dems(dems, MIN, MAX)
+
+    plot_buckets()
+    # dataset     = gdal.Open(dem_file, gdal.GA_ReadOnly)
