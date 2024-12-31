@@ -2,7 +2,7 @@
 \label{ch:Datenaufbereitung}
 
 Um die in Kapitel \ref{ch:Methodik} konzipierten Prozesse umsetzen zu können, muss das zugrundeliegende \ac{LDM} trainiert werden. Die hierfür zu nutzenden Daten müssen sorgfältig ausgewählt werden, sodass das Modell alle relevanten Terrainstrukturen erlernen kann, die für die Erfüllung der in Abschnitt \ref{sec:Zielsetzung} gestetzten Ziele erforderlich sind. \\
-In diesem Kapitel werden die für das Training genutzten Datensätze behandelt. Zu diesem Zweck werden sie zunächst vorgestellt und ihre jeweilige Auswahl begründet. Daran anschließend werden ihre Inhalte analyisert und anhand der hieraus resultierenden Erkenntnisse eine folgende Aufbereitung dargelegt. \\
+In diesem Kapitel werden die für das Training genutzten Datensätze behandelt. Zu diesem Zweck werden sie zunächst vorgestellt und ihre jeweilige Auswahl begründet. Daran anschließend werden ihre Inhalte gesichtete und anhand der hieraus resultierenden Erkenntnisse eine folgende Aufbereitung dargelegt. \\
 Die jeweiligen Schritte hierfür werden im Folgenden in zwei Abschnitte geteilt - eine Vor- und eine Laufzeitverarbeitung. Dies ist damit begründet, dass so Flexibilität für Anpassungen in der Umsetzung dieser Prozesse erlaubt ist, ohne dabei für jede Änderung einen neu erstellten Datensatz zu erfordern. Dies würde unnötig viel Speicherplatz in Anspruch nehmen. Auf konzeptioneller Ebene sind beide Bereiche allerdings eng miteinander verbunden.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -38,10 +38,17 @@ Der hierfür ausgewählte Datensatz sind die von der NASA Shuttle Radar Topograp
 }. Eine Auswahl der darin enthaltenen \ac{DEM}s ist in Abbildung \ref{fig:SRTM_Data} vorgestellt. \\
 Dieser Datensatz besteht aus 14280 \ac{DEM}s mit jeweils einer Flächenabdeckung von $1^{\circ}\times1^{\circ}$, und einer Bildauflösung von $3601\times3601$ Höhenwerten. Die einzelnen Pixelwerte entsprechen dem jeweiligen Höhenwert in Metern relativ zum Meeresspiegel und reichen von $-12269$ bis $22894$ wobei $0$ dem Meeresspiegel entspricht, wodurch bereits einige Ausreißer zu vermuten sind. Die globale Abdeckung reicht insgesamt von $60^{\circ}\text{N}$ bis $56^{\circ}\text{S}$ wobei hier die Breitengrade jeweils vollständig abgebildet sind, also von $180^{\circ}\text{W}$ bis $180^{\circ}\text{O}$ reichen. Das erfasste Areal umschließt somit eine Fläche von $119.560.000\text{km}^2$ beziehungsweise etwa $80\%$ der Erdlandmasse. DEMs welche vollständig aus Wasseroberfläche bestehen wurden im vorhinein aussortiert. \\
 Dieser Datensatz eignet sich aufgrund der Abdeckung, des Formats und der Größe der einzelnen \ac{DEM}s somit hervorragend für die weitere Nutzung im Rahmen dieser Arbeit. Darüberhinaus erleichtert die vergleichsweise hohe Äuflösung die Verarbeitung und bietet Optionen für eine nachträgliche Verkleinerung des betrachteten Areals.
-% bogensekunde zu bildauflösung
 
 \subsection{Terrain-Klassifizierung}
 
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.85\textwidth]{images/Data/datasets/gtc.png}
+    }
+    \caption{Klassifikationskarte der Terrainstruktur von Iwahashi et al. \cite{iwahashi2018global}}
+    \label{fig:GTC_Data}
+\end{figure} 
 Eine der spezifizierten Komponenten des Kontrollsignals ist die Strukturkomponente. Sie stellt eine Klassifikation der topographischen Struktur eines Landschaftsabschnitts dar. Um diese den jeweiligen \ac{DEM}s zuordnen zu können ist es ebenfalls hierbei wichtig, dass die Abdeckung möglichst global Ausfällt. \\
 Nach Untersuchung zahlreicher Optionen ist die Wahl letztendlich auf die von Iwahashi et al.\footnote{
     Iwahashi et al.: Global Terrain Classification
@@ -72,6 +79,14 @@ Dieses Datenset ist hochaktuell, global, hochauflösend und bietet vergleichswei
 
 \subsection{Globale Klimazonen}
 
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.85\textwidth]{images/Data/datasets/climate.png}
+    }
+    \caption{Klassifikationskarte der globalen Klimazonen Peel, Finlayson, McMahon \cite{hess-11-1633-2007}}
+    \label{fig:Climate_Data}
+\end{figure}
 Für das Klima-Kontrollsignal, also die Detailkomponente, wurde die von Peel, Finlayson und McMahon\footnote{
     Peel, Finlayson, McMahon: Updated world climate classification 
     \cite{hess-11-1633-2007}
@@ -96,36 +111,33 @@ Für das Klima-Kontrollsignal, also die Detailkomponente, wurde die von Peel, Fi
     \caption{Einfache Zusammenfassung der Klimaklassen}
     \label{tab:Climate_Classes}
 \end{table} \\
-Ausgewählt wurde dieses Datenset aufgrund ihrer globalen Abdeckung und feingliedrigen Klassifikationen, welche eine präzise Definition des erwarteten Erscheingsbilds der Samples ermöglichen soll.
+Ausgewählt wurde dieser Datensatz aufgrund ihrer globalen Abdeckung und feingliedrigen Klassifikationen, welche eine präzise Definition des erwarteten Erscheingsbilds der Samples ermöglichen soll.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Sichtung}
 
-Wertebereich so klein wie möglich ist.  blablabla irgendwelche diagramme oder so kein plan ... mit etwa 18,5\% aller Höhenwerte
-
+Bei der Betrachtung der Daten des SRTM-GL1 fällt eine Beobachtung direkt ins Auge. Etwa 18,5\% aller Höhenwerte sind exakt null, beziehungsweise auf dem Meeresspiegel. Dies liegt an den vielen Küstengebieten und kleinen Inselt die in dem Datensatz enthalten sind, welche größtenteils aus Wasserflächen bestehen. Desweiteren zeigen die, in Abbildung \ref{fig:dem_cum_hist_1} aufgelisteten kumulativen Anteile der Werte, dass nur ein vergleichsweise geringer Abschnitt des Wertebereichs tatsächlich genutzt wird und der Rest lediglich durch sehr seltene Ausreißer welche höchstwahrscheinlich durch Aufnahmefehler entstehen, besiedelt ist. 
 \begin{figure}[htbp]
     \centering
     \subfloat{%
-        \includegraphics[width=0.85\textwidth]{images/Data/graphs/pixel values cum perc.png}
+        \includegraphics[width=0.70\textwidth]{images/Data/graphs/pixel values cum perc.png}
     }
     \caption{Kumulative Höhenwert-Verteilung}
     \label{fig:dem_cum_hist_1}
-\end{figure}
-
-
+\end{figure} \\
+Limitiert man den Wertebereich auf alle Werte über eins hingegen nimmt die in Abbildung \ref{fig:dem_cum_hist_2} gezeigte Kurve eine klar erkennbare logarithmische Form an, wie sie bei der Verteilung von Höhenwerten zu erwarten ist. Tatsächlich ist hierbei auch zu erkennen, dass ab einem Wert von etwa 8100 der prozentuale Anteil des folgenden Bereiches verschwindend gering ist.
 \begin{figure}[htbp]
     \centering
     \subfloat{%
-        \includegraphics[width=0.85\textwidth]{images/Data/graphs/pixel values cum perc 1 9000.png}
+        \includegraphics[width=0.70\textwidth]{images/Data/graphs/pixel values cum perc 1 9000.png}
     }
     \caption{Kumulative Höhenwert-Verteilung im Bereich zwischen 1 und 8100}
     \label{fig:dem_cum_hist_2}
-\end{figure}
-
-
+\end{figure} \\
+Bei Betrachtung der prozentualen Verteilung der Klimaklassen, dargestellt in Tabelle \ref{tab:Climate_Classes_perc}, zeichnet sich ein ähnliches Bild - der weitaus meiste Bereich ist durch die Ozeane und andere Wasserflächen abgebildet und wird somit nicht Klassifiziert. Da allerdings Bereiche welche zu 100\% durch Wasserflächen abgedeckt werden nicht in den \ac{DEM}s enthalten ist fällt der Großteil hiervon weg. Der nächsthöchste Anteil ist von polarem Klima, wobei allerdings zweierlei zu beachten ist. Zum einen wird ein großer Teil dieses Bereiches durch die Abdeckung der \ac{DEM}s nicht abgebildet, zum anderen werden diese Werte durch die sphärische Projektion des Rasters verzerrt dargestellt und sind somit überproportional enthalten.
 \begin{table}[ht]
     \centering
-    \begin{tabular}{l r r r}
+    \begin{tabular}{l r r | r}
         \hline\hline
         \thead{Kategorie} & \thead{Rasterzellwerte} & \thead{Prozent} & \thead{Prozent (ohne Null)}\\
         \hline
@@ -139,11 +151,11 @@ Wertebereich so klein wie möglich ist.  blablabla irgendwelche diagramme oder s
     \end{tabular}
     \caption{Prozentualer Anteil der jeweiligen Klimaklassen.}
     \label{tab:Climate_Classes_perc}
-\end{table} 
-
+\end{table}  \\
+Diese Erkenntnisse sind auch auf die Verteilung innerhalb der Terrain-Klassifizierung in Tabelle \ref{tab:GTC_perc} zu erkennen. Hier ist ebenfalls der Großteil des nicht klassifizierten Bereiches durch Wasserflächen abgedeckt. Die Verteilung der Terraintypen ist dabei auch den Erwartungen entsprechend mit den meisten Bereichen in eher flachen Landmassen. Allerdings ist hierbei die Verzerrung weniger stark zu bemerken, da die verschiedenen Gebiete homogener über die Längengrade verteilt sind als noch bei den Klimaklassen. 
 \begin{table}[ht]
     \centering
-    \begin{tabular}{l r r r}
+    \begin{tabular}{l r r | r}
         \hline\hline
         \thead{Kategorie} & \thead{Rasterzellwerte} & \thead{Prozent} & \thead{Prozent (ohne Null)} \\
         \hline

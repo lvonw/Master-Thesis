@@ -331,7 +331,7 @@ Diese Berechnung kann auch mehrfach mit unterschiedlichen $W^Q$, $W^K$ und $W^V$
 \label{subsec:Grundlagen_DMs}
 
 Wie in vorherigen Abschnitten bereits erläutert, sind Log-Likelihood basierte Modelle an strenge mathematische Bedingungen gebunden. Dies schränkt prinzipiell die mögliche Komplexität der Funktionsdefinition ein. Wohingegen Modelle welche andere Kriterien optimieren, wie \ac{GAN}s, zwar höhere Komplexität in ihren Funktionen erlauben, allerdings praktische Fallstricke wie das Mode-Collapse Problem aufweisen. Somit stellt sich die Frage, ob es eine Klasse von Modellen gibt, welche die Log-Likelihood als Optimierungsziel haben und gleichzeitig beliebig komplexe Funktionen erlauben. \\
-Eine mögliche Antwort hierauf stellen \ac{DM}s\footnote{
+Eine mögliche Antwort hierauf stellen Diffusionsmodelle (DMs)\acused{DM}\footnote{
     Dickstein et al.: Diffusion Models
     \cite{pmlr-v37-sohl-dickstein15}
 } dar. Die Kernidee der Generierung dieser Variante von Modellen ist dabei, das, über viele Zeitschritte hinweg, iterative Herauskristallisieren von Informationen aus einem ursprünglichen Rauschbild. Intuitiv kann diese Funktionsweise damit begründet werden, dass jeder einzelne Schritt hierbei eine Verhältnismäßig einfache Aufgabe ist, da das Ergebnis jedes Schrittes nur eine kleine Änderung des verrauschten Ausgangszustands darstellt. Alle Schritte zusammen jedoch ergeben ein sehr tiefes und mächtiges Modell. Vergleichbar ist dies mit einem Künstler welcher, beginnend mit einer Grundierung, Schicht für Schicht weitere Strukturen und Details auf eine Leinwand aufträgt, wobei jeder Pinselstrich für sich genommen nur wenig Einfluss hat. \\

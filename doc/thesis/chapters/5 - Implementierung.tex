@@ -2,12 +2,12 @@
 \label{ch:Implementierung}
 
 Dieses Kapitel widmet sich den relevanten Details der Implementierung der in Abschnitt \ref{ch:Methodik} konzipierten Generierungsprozesse sowie den dafür nötigen generativen Modellen. Die Implementierung wurde auf Basis von PyTorch vorgenommen, alle in dieser Arbeit genutzten Modellarchitekturen wurden, unter der Orientierung der von den Autoren des jeweils betreffenden Ansatzes öffentlich gemachten Erstumsetzungen, selbständig implementiert. Die betreffenden Vorbilder werden hier bei der Erläuterung der Umsetzung referenziert. \\
-Die hier dargestellten Quellcode-Ausschnitte der Implementierung sind zur besseren Lesbarkeit und zur untersützung des Verständnis stark gekürzt und stellenweise vereinfacht. Gegebenenfalls wurden Symbole und Funktionen umbenannt, um an der in dieser Arbeit verwendeten Terminologie anzuknüpfen. Semantisch bleibt der Inhalt durch jede dieser Anpassungen allerdings unverändert.
+Die hier dargestellten Quellcode-Ausschnitte der Implementierung sind zur besseren Lesbarkeit und zur Untersützung des Verständnisses stark gekürzt und stellenweise vereinfacht. Gegebenenfalls wurden Symbole und Funktionen umbenannt, um an der in dieser Arbeit verwendeten Terminologie anzuknüpfen. Semantisch bleibt der Inhalt durch jede dieser Anpassungen allerdings unverändert.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section {Grundlegende Programmstruktur}
+% \section {Grundlegende Programmstruktur}
 
-asdas
+% asdas
 
 % \section {Konfiguration}
 
@@ -63,7 +63,16 @@ Wie spezifiziert handelt es sich bei der Implementierung des \ac{VAE} um ein VAE
 Für die \ac{LPIPS} Qualitätsmetrik wurde die ursprüngliche Implementierung von Zhang et al. übernommen\footnote{
     Zhang et al.: The Unreasonable Effectiveness of Deep Features as a Perceptual Metric
     \cite{zhang2018unreasonableeffectivenessdeepfeatures}
-}, die Architektur muss dabei exakt dieselbe sein, da ein vortrainiertes Netz verwendet werden muss. Eine Detailanpassung der Umsetzung dabei ist allerdings, dass nun auch einkanälige Bilder verarbeitet werden können, wofür der eine Kanal verdreifacht wird, um auf die erforderlichen drei Kanäle zu kommen.
+}, die Architektur muss dabei exakt dieselbe sein, da ein vortrainiertes Netz verwendet werden muss. Eine Detailanpassung der Umsetzung dabei ist allerdings, dass nun auch einkanälige Bilder verarbeitet werden können, wofür der eine Kanal verdreifacht wird, um auf die erforderlichen drei Kanäle zu kommen. \\
+Diese grundlegenden Komponenten des VAE-GAN werden in Abbildung \ref{fig:vae_arch} noch einmal strukturell dargelegt. 
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.65\textwidth]{images/implementation/VAE.pdf}
+    }
+    \caption{Komponenten des VAE-GAN}
+    \label{fig:vae_arch}
+\end{figure}
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def encode(self, x):
@@ -121,15 +130,11 @@ Zusätlich zu diesen verwendeten Techniken werden auch die von Podell et al.\foo
     \cite{kingma2017adammethodstochasticoptimization}
 }. 
 
-\subsection{Architektur}
-
-asd
-asd
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Latentes Diffusionsmodel}
 
-Das \ac{LDM} stellt das Herzstück dieser Arbeit dar und entsprechend viel Acht muss bei der Implementierung hiervon gegeben werden.\\ 
+Das \ac{LDM} stellt das Herzstück dieser Arbeit dar und entsprechend viel Acht muss bei der Implementierung hiervon gegeben werden. \\ 
 Die Trainingsschrittfunktion des \ac{LDM}s, siehe Abbildung \ref{fig:ldm_training}, stellt im Grunde den für \ac{DDPM} üblichen Trainingsalgorithmus dar. Jedoch sind hierbei klar die bereits angesprochenen Verbesserungen zu erkennen. Zuerst fällt die Überführung der Daten in den latenten Raum auf, in welchem ebenfalls die Rauschvorhersage getroffen wird. Darauf folgend ist klar der Prozess der \ac{CFG} zu erkennen bei welcher mit einer definierten Wahrscheinlichkeit die Kontrollsignale annulliert werden. Abschließend wird das verbesserte Trainingsziel $L_\text{hybrid}$ eins zu eins umgesetzt.
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
@@ -210,6 +215,15 @@ def forward(self, x, ctrl_signal, t):
     \captionof{figure}{Diffusionsmodell-Wrapper Inferenzfunktion}
     \label{fig:DM_forward}
 \end{figure} \\
+Dieses Zusammenspiel der einzelnen Komponenten ist zur Veranschaulichung noch einmal in Abbildung \ref{fig:LDM_arch} dargestellt
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.50\textwidth]{images/implementation/LDM.pdf}
+    }
+    \caption{Komponenten des \ac{LDM}}
+    \label{fig:LDM_arch}
+\end{figure}
 Die erste Architektur ist dabei das U-Net, von welchem die Samplingfunktion in Abbildung \ref{fig:UNET_forward} dargestellt ist. Die Implementierung ist hierbei genau der Üblichen entsprechend. Zuerst wird der Kompressionsarm durchlaufen wobei Kopien der jeweils relevanten Schritte erstellt werden, welche im Expansionsarm an die zugehörigen Aktivierungen konkatteniert werden.  
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
@@ -256,20 +270,23 @@ def dit_forward(self, x, ctrl_signal, t):
     \label{fig:DiT_forward}
 \end{figure}
 
-\subsection{Architektur}
-
-asd
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Terraingenerierung}
 
 Vieles der für die Implentierung der definierten Generierungsprozesse notwendigen Logik ist bereits durch die Samplefunktion des \ac{LDM}s umgesetzt. Jedoch erfordern die einzelnen Bereiche noch weitere Schritte um die nötigen Parameter zu erzeugen, die Samples zu vollenden und die Generierung sinnvoll zu organisieren. Hierzu werden die einzelnen Stationen im Folgenden betrachtet.
 
+
 \subsection {Ungesteuert}
 
-Die ungesteuerte Generierung ist ein sehr simpler Anwendungsfall wie sich an dem Auszug in Abbildung \ref{fig:gen_unguided} erkennen lässt. Es handelt sich lediglich um den wiederholten normalen Aufruf der Samplingfunktion des \ac{LDM}s welche bereits behandelt wurde. Es werden an dieser Stelle keinerlei weiteren Vorkehrungen für diesen Generationsprozess vorgenommen.   
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.9\textwidth]{images/implementation/uncontrolled.pdf}
+    }
+    \caption{Schematische Darstellung des Syntheseprozesses im \ac{LDM} bei der ungesteuerten Generierung}
+    \label{fig:unguided}
+\end{figure}
+Die ungesteuerte Generierung ist ein sehr simpler Anwendungsfall wie sich an dem Auszug in Abbildung \ref{fig:gen_unguided} erkennen lässt. Es handelt sich lediglich um den wiederholten normalen Aufruf der Samplingfunktion des \ac{LDM}s welche bereits behandelt wurde und im Ablauf noch einmal gesondert in Abbildung \ref{fig:unguided} abgebildet ist. Es werden an dieser Stelle keinerlei weiteren Vorkehrungen für diesen Generationsprozess vorgenommen.   
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def __generate_unguided(model, labels, n, iterations):
@@ -287,7 +304,16 @@ def __generate_unguided(model, labels, n, iterations):
 
 \subsection {Skizzenbasiert}
 
-Dieser Prozess erfordert mehr eigene Logik als der ungesteuerte, das Meiste der Funktionalität wird allerdings auch in diesem Fall von der Umsetzung des Samplings im \ac{LDM} durchgeführt. Neu hierbei ist nun die Definition der Skizze. Diese kann entweder über einen Pfad definiert werden in welchem Fall sie geladen und anschließend in den Wertebereich $[-1,1]$ abgebildet wird, oder aber über Perlinrauschen. Dabei wird über einen Generator, welcher den normalen Perlin-Algorthmus umsetzt, das Rauschbild erzeugt. Die Angabe der Koordinate \texttt{(0, 0)} bezieht sich hierbei auf die Position des Rauschbildes im gesamten Rauschfeld. Dies spielt an dieser Stelle noch keine Rolle dementsprechend wurde die Koordinate hier konstant festgelegt. Von dieser Anpassun abgesehen ist die Implementierung parallel zur ungesteuerten Generierung.
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.95\textwidth]{images/implementation/sketch.pdf}
+    }
+    \caption{Schematische Darstellung des Syntheseprozesses im \ac{LDM} bei der skizzenbasierten Generierung}
+    \label{fig:sketch}
+\end{figure}
+Dieser Prozess erfordert mehr eigene Logik als der ungesteuerte, das Meiste der Funktionalität wird allerdings auch in diesem Fall von der Umsetzung des Samplings im \ac{LDM} durchgeführt, sie ist in für diesen Prozess in Abbildung \ref{fig:sketch} festgehalten. \\
+Neu hierbei ist nun die Definition der Skizze. Diese kann entweder über einen Pfad definiert werden in welchem Fall sie geladen und anschließend in den Wertebereich $[-1,1]$ abgebildet wird, oder aber über Perlinrauschen. Dabei wird über einen Generator, welcher den normalen Perlin-Algorthmus umsetzt, das Rauschbild erzeugt. Die Angabe der Koordinate \texttt{(0, 0)} bezieht sich hierbei auf die Position des Rauschbildes im gesamten Rauschfeld. Dies spielt an dieser Stelle noch keine Rolle dementsprechend wurde die Koordinate hier konstant festgelegt. Von dieser Anpassun abgesehen ist die Implementierung parallel zur ungesteuerten Generierung.
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
 def __generate_sketch(model, labels, n, iterations,
@@ -313,6 +339,14 @@ def __generate_sketch(model, labels, n, iterations,
 
 \subsection {Unendlich}
 
+\begin{figure}[htbp]
+    \centering
+    \subfloat{%
+        \includegraphics[width=0.95\textwidth]{images/implementation/infinite.pdf}
+    }
+    \caption{Schematische Darstellung des Syntheseprozesses im \ac{LDM} bei der unendlichen Generierung}
+    \label{fig:infinite}
+\end{figure}
 Die unendliche Generierung erfordert die meiste eigene Logik für die Umsetzung des Gitternetzes, sowie der Masken. Die Generierung basiert hier auf den einzelnen Zellen des Gitters, auch Chunk oder Patch genannt. Diese Generierung wird im Ganzen durch die in Abbildung \ref{fig:gen_infinite} gezeigte Funktion verarbeitet. Hierbei wird zunächst das Gitter sowie ein Alphavektor initialisiert. Dabei sind die Längen der zu maskierenden Bereiche der benachbarten Zellen welche durch eine Konstante angegeben sind zu beachten. Die einzelnen Alphavektoren werden durch die im weiteren Verlauf Alphafunktionen genannten Funktionen definiert. Konkret sind in dieser Arbeit die vier folgenden Alphafunktionen umgesetzt: 
 \begin{itemize}
     \item \textit{Konstant}: $\alpha(x) = 1$
@@ -343,6 +377,7 @@ def __generate_infinite(model, labels, grid_x, grid_y,
     \label{fig:gen_infinite}
 \end{figure} \\
 Die einzelnen Chunks werden anhand der Funktion in Abbildung \ref{fig:gen_chunk} synthetisiert. Diese besteht zuerst aus der Erstellung des Maskenbildes und der Maske anhand der bereits generierten benachbarten Zellen und dem Alphavektor. Die hieraus entstehende Maske hat die gleichen Dimensionen wie die Bilder und besteht an ihren Rändern aus den jeweils ausgerichteten Alphavektoren. Das Maskenbild ist lediglich eine Zusammenfügung der Ränder der benachbarten Zellen, wobei der Zwischenraum, also der unmaskierte Bereich mit einer Skizze aufgefüllt werden kann. Dies soll die Abbildung des Maskenbildes auf die latente Repräsentation unterstützen, da es den sonst sehr unnatürlichen leeren Raum durch plausiblere Daten auffüllt. \\
+Der Prozess der Synthese für jeden Chunk wird hierfür in Abbildung \ref{fig:infinite} veranschaulicht.
 Nach der Synthese des Samples wird dieses ein letztes Mal mit dem Maskenbild interpoliert. Allerdings, geschieht dies nun im Bildbereich anstelle des latenten Raumes. Dies soll, durch die Rekunstruktion an den Rändern, eventuell entstandene Artefakte entfernen um die Bündigkeit zu wahren. Abschließend wird der Chunk in das Gitter eingefügt, damit der in der nächsten Iteration auf ihm aufgebaut werden kann.
 \begin{figure}[htbp]
 \begin{lstlisting}[language=python]
