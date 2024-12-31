@@ -275,18 +275,30 @@ Diese Variante von \ac{VAE}s ist in der Lage deutlich ähnlicher erscheinende Re
 \subsection{U-Net}
 \label{subsec:Unet}
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/foundations/unet.png} 
+    \caption{Architektur eines U-Nets \cite{ronneberger2015unetconvolutionalnetworksbiomedical}}
+    \label{fig:unet}
+\end{figure}
 Eine in der Image-To-Image Domäne weitverbreitete Modellarchitektur ist das  sogenannte U-Net\footnote{
     Ronneberger, Fischer, Brox: Convolutional Networks for Image Segmentation
     \cite{ronneberger2015unetconvolutionalnetworksbiomedical}
-}. Ursprünglich wurde Sie für Bildsegmentierung, also dem Kennzeichnen zusammenhängender oder relevanter Bildelemente, entwickelt. Mitlerweile findet sie jedoch in vielen weiteren Bereichen, welche Bilddaten zu Bilddaten verarbeiten, Verwendung. \\
+}, dargestellt in Abbildung \ref{fig:unet}. Ursprünglich wurde Sie für Bildsegmentierung, also dem Kennzeichnen zusammenhängender oder relevanter Bildelemente, entwickelt. Mitlerweile findet sie jedoch in vielen weiteren Bereichen, welche Bilddaten zu Bilddaten verarbeiten, Verwendung. \\
 Ihr Aufbau wird in ihrer Vorstellung wie folgt dargelegt\footnote{
     Vgl. Ronneberger, Fischer, Brox: Convolutional Networks for Image Segmentation, S. 4
     \cite{ronneberger2015unetconvolutionalnetworksbiomedical}
-}. Sie besteht grundlegend aus einem Kompressions- und einem Expansionsarm. Hierbei hat der Kompressionsarm hat die übliche Struktur eines Convolutional Networks. Er besteht aus wiederholter Anwendung von 3x3 Konvolutionen und folgendem Downsampling, welches normalerweise die Dimensionen halbiert und die Anzahl der Featurekanäle verdoppelt. \\
-Der Expansionsarm kehrt entsprechend die Kompression um und besteht somit aus Upsampling-Blöcken, welche die Anzahl der Featurekanäle nun halbieren und die Auflösung verdoppeln. Diesem Upsampling folgen wiederum wiederholte 3x3 Konvolutionen. Hierbei werden in der ursprünglichen Umsetzung die komprimierten Features des Kompressionsarms mit den expandierten konkatteniert. In bestimmten Anwendungsfällen kann dies jedoch ausgelassen werden, insbesondere wenn die beiden Arme separat genutzt werden sollen. 
+}. Sie besteht grundlegend aus einem Kompressions- und einem Expansionsarm. Hierbei hat der Kompressionsarm hat die übliche Struktur eines Convolutional Networks. Er besteht aus wiederholter Anwendung von $3\times3$ Konvolutionen und folgendem Downsampling, welches normalerweise die Dimensionen halbiert und die Anzahl der Featurekanäle verdoppelt. \\
+Der Expansionsarm kehrt entsprechend die Kompression um und besteht somit aus Upsampling-Blöcken, welche die Anzahl der Featurekanäle nun halbieren und die Auflösung verdoppeln. Diesem Upsampling folgen wiederum wiederholte $3\times3$ Konvolutionen. Hierbei werden in der ursprünglichen Umsetzung die komprimierten Features des Kompressionsarms mit den expandierten konkatteniert. In bestimmten Anwendungsfällen kann dies jedoch ausgelassen werden, insbesondere wenn die beiden Arme separat genutzt werden sollen. 
 
 \subsection{Transformer}
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.4\textwidth]{images/foundations/transformer.png} 
+    \caption{Architektur eines Transformers \cite{vaswani2023attentionneed}}
+    \label{fig:transformer}
+\end{figure}
 Der Transformer\footnote{
     Vaswani et al.: Attention is All You Need
     \cite{vaswani2023attentionneed}
@@ -294,7 +306,7 @@ Der Transformer\footnote{
     Dosovitskiy et al.: An Image is Worth 16x16 Words 
     \cite{dosovitskiy2021imageworth16x16words}
 }. \\ 
-Der Transformer folgt dem Encoder-Decoder Schema. Dabei dient, vereinfacht ausgedrückt, der Encoder zur Verarbeitung der Eingabe zu einem Kontext. Der Decoder hingegen generiert anhand dieses Kontextes und der bisher generierten Sequenz autoregressiv die Ausgabe. Das bedeutet, dass die Ausgabe, Komponente um Komponente, auf Basis der bisherigen Ergbnissequenz, gesampelt wird. \\ 
+Der Transformer, abgebildet in Abbildung \ref{fig:transformer}, folgt dem Encoder-Decoder Schema. Dabei dient, vereinfacht ausgedrückt, der Encoder zur Verarbeitung der Eingabe zu einem Kontext. Der Decoder hingegen generiert anhand dieses Kontextes und der bisher generierten Sequenz autoregressiv die Ausgabe. Das bedeutet, dass die Ausgabe, Komponente um Komponente, auf Basis der bisherigen Ergbnissequenz, gesampelt wird. \\ 
 Die Daten, die hierbei verarbeitet werden sind grundsätzlich sequenziel, ihre Position innerhalb der Sequenz ist also für ihre Interpretation des Inhaltes relevant. \\
 Die grobe Funktionsweise ist dabei wie Folgt. Die Eingabedaten müssen zunächst für den Encoder angepasst werden. Dies kann gegebenfalls das Embedden des Eingabevektors beinhalten, in jedem Fall aber die Integration eines Positional Encodings. Dieses weist jeder Komponente des Eingabvektors einen eindeutigen Wert anhand der Position dieser Komponente in der zu verarbeitenden Sequenz zu. Dieses Positional Encoding beruht dabei üblicherweise auf einer Kosinusfunktion, kann aber auch erlernt werden. \\
 Dieser um die Positionsinformationen angereicherte Vektor kann nun vom Encoder, zu einem sogenannten Contextual- oder Hidden-Embedding, verarbeitet werden. Dies ist ein Vektor, welcher grundsätzlich dem Eingangsvektor entspricht. Jede Komponente dieses Vektors ist dabei, stark vereinfacht ausgedrückt, eine kontextualisierte Repräsentation der ursprünglichen Komponente. Das heißt, sie beinhaltet Informationen über ihre Bedeutung innerhalb der jeweiligen Sequenz, sowie gegebenenfalls im breiteren Kontext der Domäne des Modells. \\
@@ -542,6 +554,12 @@ Aufgrund des Umstands, dass diese Ersetzung in jedem Zeitschritt stattfindet ist
 \subsubsection{Diffusion Transformer}
 \label{subsubsec:DiT}
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/foundations/DiT.png} 
+    \caption{Architektur eines \ac{DiT}s \cite{peebles2023scalable}}
+    \label{fig:dit}
+\end{figure}
 \ac{DiT}\footnote{
     Peebles, Xie: Scalable Diffusion Models with Transformers
     \cite{peebles2023scalable}
@@ -549,12 +567,18 @@ Aufgrund des Umstands, dass diese Ersetzung in jedem Zeitschritt stattfindet ist
     Dosovitskiy et al.: An Image is Worth 16x16 Words 
     \cite{dosovitskiy2021imageworth16x16words}
 }.\\
-Ihre grundlegende Funktionsweise ist dabei stark verwandt zu der von normalen Transformern. Die Eingabedaten werden zunächst in kleinere Patches, vergleichbar mit den Zeitschritten einer Sequenz, unterteilt. Diese Patches werden anschließend mit einem Positional Encoding versehen, welches wie beispielsweise bei Bildern mehrdimensional sein kann. Diese angereicherten Patches werden anschließend in vielen Iterationen mittels sogenannter \ac{DiT} Blöcke, welche aus abwechselnden Self-Attention und \ac{AdaLN}-Blöcken beziehungsweise Cross-Attention-Blöcken bestehen, verarbeitet. Abschließend werden die einzelnen Patches wieder zu ihrer ursprünglichen Anordnung zusammengefügt. \\
+Ihre grundlegende Funktionsweise ist dabei stark verwandt zu der von normalen Transformern. Die Eingabedaten werden zunächst in kleinere Patches, vergleichbar mit den Zeitschritten einer Sequenz, unterteilt. Diese Patches werden anschließend mit einem Positional Encoding versehen, welches wie beispielsweise bei Bildern mehrdimensional sein kann. Diese angereicherten Patches werden anschließend in vielen Iterationen mittels sogenannter \ac{DiT} Blöcke, welche aus abwechselnden Self-Attention und \ac{AdaLN}-Blöcken beziehungsweise Cross-Attention-Blöcken bestehen, verarbeitet. Abschließend werden die einzelnen Patches wieder zu ihrer ursprünglichen Anordnung zusammengefügt. Die vorgestellte Architektur ist in Abbildung \ref{fig:dit} veranschaulicht.\\
 Diese Methode hat sich in einigen Kontexten als Leistungsfähiger im Vergleich zu U-Nets erwiesen. Allerdings erfordern sie ebenfalls mehr Rechenkapazität um vergleichbare oder bessere Ergebnisse zu erzeugen. Aufgrund dieser Leistungsfähigkeit werden \ac{DiT}s in einigen der aktuell leistungsfähigsten Modellen wie beispielsweise Stable Diffusion 3 verwendet.
 
 % LDM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Latente Diffusion}
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/foundations/ldm.png} 
+    \caption{Architektur eines \ac{LDM}s \cite{rombach2022high}}
+    \label{fig:ldm}
+\end{figure}
 Die bisher vorgestellte Variante von \ac{DM}s operiert ausschließlich in der Datendomäne. Dies ist insbesondere bei hohen Dimensionalitäten, sowohl beim Training als auch bei der Inferenz, enorm Rechenintensiv. \ac{LDM}s \footnote{
     Vgl. Rombach et al.: Latent Diffusion Models
     \cite{rombach2022high}
@@ -563,7 +587,7 @@ Grundlegend bestehen \ac{LDM}s aus zwei Komponenten: Einem vortrainierten \ac{VA
 Die Rolle des \ac{VAE}s hierbei ist die Eingangsdaten in ihrer dimensionalität zu Reduzieren, sodass das \ac{DM} auf signifikant weniger Dimensionen operiert. Da der nötige Rechenaufwand des \ac{DM}s in aller Regel, insbesondere durch die sequenzielle Verarbeitung während der Inferenz, deutlich höher ist als die Ver- und Entschlüsselung durch einen VAE, reduziert dies den insgesamt nötigen Aufwand enorm\footnote{
     Vgl. Peebles, Xie: Diffusion Transformers, S. 8
     \cite{peebles2023scalable}
-}. \\
+}, siehe Abbildung \ref{fig:ldm}. \\
 Die grundlegenden Algorithmen für Training und Inferenz bleiben hierbei weitestgehend unverändert. Beim Training müssen die Trainingsdaten nur zunächst durch den Encoder des \ac{VAE} auf ihre latente Repräsentation abgebildet werden und können anschließend wie vorher auch genutzt werden. Bei der Inferenz hingegen muss lediglich das Resultat des Reverse-Prozesses abschließend vom \ac{VAE} entschlüsselt werden. Das Rauschen wird also nur im latenten Raum hinzugefügt, beziehungsweise entfernt.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -590,7 +614,7 @@ Die Terraingenerierung ist ein zentrales Gebiet der Computergraphik. Sie umfasst
     \subfloat{%
         \includegraphics[width=0.20\textwidth]{images/foundations/DEM/source4.png}
     }
-    \caption{Digital Elevation Models CITATION}
+    \caption{Digital Elevation Models \cite{nasa2013srtm}}
     \label{fig:DEMs}
 \end{figure}
 \ac{DEM}s sind eine Datenstruktur für die Repräsentation von Höhenwerten einer Oberfläche. In ihnen werden beispielsweise Terrains über ihre Oberfläche definiert. Durch die Abbildung einer solchen dreidimensionalen Struktur auf zwei Dimensionen haben \ac{DEM}s zwar den Nachteil, dass keine überhängenden Strukturen abgebildet werden können, da diese allerdings bei Landschaften nur sehr selten vorkommen, ist dies, insbesondere größeren Gebieten, oft zu vernachlässigen.\\
