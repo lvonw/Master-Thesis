@@ -1,16 +1,16 @@
 \chapter{Ergebnisse und Diskussion}
 
 In diesem Kapitel werden die Ergebnisse der in Kapitel \ref{ch:Methodik} konzipierten und in Kapitel \ref{ch:Implementierung} umgesetzten Methoden und Modelle präsentiert und systematisch auf die Erfüllung der in Abschnitt \ref{sec:Zielsetzung} definierten Kernziele geprüft. \\
-Dazu wird zuerst die Rekonstruktionsqualität des \ac{VAE}s demonstriert, welcher Grundlage für die Generierung des \ac{LDM}s ist. Daraufhin wird die Fähigkeit des \ac{LDM}s überzeugende Samples zu erzeugen anhand der definierten Generierungsprozesse kritisch geprüft. Den einzelnen Untersuchungen folgt eine zusammenfassende Betrachtung der Zielerfüllung durch die erzielten Resultate. Hieran abgeleitet werden gesondert auch die Limitationen explizit aufgeführt und eingordnet. Abschliessend folgt ein Vergleich, der diese Arbeit in das Forschungsfeld der Terraingenierung mit \ac{DM}s einordnet. \\
-Einleitend noch der Hinweis, dass, um den Kontrast der \ac{DEM} Darstellungen zu erhöhen, was der besseren Erkennbarkeit dient, im Folgenden, sofern nicht anders gekennzeichnet, relative Einfärbungen genutzt werden. Das bedeutet, dass die lokalen Minima, beziehungsweise Maxima maßgebend für absolutes schwarz und weiß sind, anstelle der globalen Grenzen von $[-1, 1]$.  
+Dazu wird zuerst die Rekonstruktionsqualität des \ac{VAE}s demonstriert, welcher Grundlage für die Generierung des \ac{LDM}s ist. Daraufhin wird die Fähigkeit des \ac{LDM}s, überzeugende Samples zu erzeugen, anhand der definierten Generierungsprozesse kritisch geprüft. Den einzelnen Untersuchungen folgt eine zusammenfassende Betrachtung der Zielerfüllung durch die erzielten Resultate. Hiervon abgeleitet werden gesondert auch die Limitationen explizit aufgeführt und eingordnet. Abschliessend folgt ein Vergleich, der diese Arbeit in das Forschungsfeld der Terraingenierung mit \ac{DM}s einordnet. \\
+Einleitend noch der Hinweis, dass im Folgenden, sofern nicht anders gekennzeichnet, relative Einfärbungen genutzt werden, um den Kontrast der \ac{DEM} Darstellungen zu erhöhen, was der besseren Erkennbarkeit dient. Das bedeutet, dass die lokalen Minima beziehungsweise Maxima maßgebend für absolutes schwarz und weiß sind, anstelle der globalen Grenzen von $[-1, 1]$.  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % VAE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Variational Autoencoder}
 
-Der \ac{VAE} hat als vortrainierte Komponente eines \ac{LDM}s zweierlei Aufgaben. Zum einen haben die erzeugten latenten Repräsentationen für ein \ac{DM} sinnvoll zu verarbeiten zu sein. Zum anderen muss die Rekonstruktion der Daten maximal verlustfrei sein. \\
-Die erste dieser Anforderungen kann nicht alleinestehend bewertet werden da dies das Training des \ac{DM}s erfordert. Somit wird dieser Bereich hier nicht weiter betrachtet und mit den Ergebnissen des \ac{LDM}s als Ganzes als gegeben hingenommen. Enstprechend wird im Folgenden die Rekonstruktionsqualität im Vordergrund stehen. \\
+Der \ac{VAE} hat als vortrainierte Komponente eines \ac{LDM}s zwei Aufgaben. Zum einen müssen die erzeugten latenten Repräsentationen für ein \ac{DM} sinnvoll zu verarbeiten sein. Zum anderen muss die Rekonstruktion der Daten maximal verlustfrei sein. \\
+Die erste dieser Anforderungen kann nicht alleinstehend bewertet werden, da dies das Training des \ac{DM}s erfordert. Somit wird dieser Bereich hier nicht weiter betrachtet und mit den Ergebnissen des \ac{LDM}s als Ganzes als gegeben hingenommen. Entsprechend wird im Folgenden die Rekonstruktionsqualität im Vordergrund stehen. \\
 Der finale \ac{VAE} wurde für 167000 Trainingsschritte bei einer Batchgröße von 64 für etwa 10 Stunden auf einer NVIDIA H100 GPU trainiert. Die folgenden Parameter der Architektur wurden hierbei nach Tests auf kleineren Testbildern mit einer Auflösung von $64\times64$ und unter dem Vorbild der Implementierung des KL-reg. ausgewählt:
 \begin{table}[ht]
     \centering
@@ -38,7 +38,7 @@ Der finale \ac{VAE} wurde für 167000 Trainingsschritte bei einer Batchgröße v
     \caption{Aufbau des finalen VAEs}
     \label{tab:vae_167k_aufbau}
 \end{table} \\
-Wie sich anhand der in Abbildung \ref{fig:vae_recons} präsentierten Ergebnisse erkennen lässt, ist der finale \ac{VAE} in der Lage Eingabedaten in Form von \ac{DEM}s überzeugend zu Rekonstruieren. Große Strukturen werden durchweg akkurat und mit großer Genaugikeit widergegeben. Durch die genutzten Techniken welche die visuelle Ähnlichkeit verbessern, wie die Nutzung eines Diskriminators und \ac{LPIPS} werden auch kleine Details abgebildet. Die Qualität der Rekonstruktionen ist hierbei ungeachtet der Art des Terrains oder Wertebereiches des Quellbildes durchgängig so hoch, dass auf den ersten Blick keinerlei Unterschiede zu erkennen sind. 
+Wie sich anhand der in Abbildung \ref{fig:vae_recons} präsentierten Ergebnisse erkennen lässt, ist der finale \ac{VAE} in der Lage, Eingabedaten in Form von \ac{DEM}s überzeugend zu rekonstruieren. Große Strukturen werden durchweg akkurat und mit großer Genaugikeit wiedergegeben. Durch die genutzten Techniken, welche die visuelle Ähnlichkeit verbessern, wie die Nutzung eines Diskriminators und \ac{LPIPS}, werden auch kleine Details abgebildet. Die Qualität der Rekonstruktionen ist hierbei ungeachtet der Art des Terrains oder Wertebereichs des Quellbildes durchgängig so hoch, dass auf den ersten Blick keinerlei Unterschiede zu erkennen sind. 
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -72,7 +72,7 @@ Wie sich anhand der in Abbildung \ref{fig:vae_recons} präsentierten Ergebnisse 
     \caption{Verschiedene Quellbild- und Rekonstruktions-Paare. Links Quellbild, rechts Rekonstruktion}
     \label{fig:vae_recons}
 \end{figure} \\
-Bei einer genaueren Betrachterung der kleineren Details lassen sich jedoch vor allem bei \ac{DEM}s mit hoher Varianz in den Werten kleiner Kompressionsartefakte beobachten. Besonders äußert sich dies in der bildlichen Schärfe der kleinen fraktalen Strukturen einer solchen Landschaft. Auch lassen sich auf der Detailebene dieser Terrains kleine punktuelle Artefakte erkennen, welche wahrscheinlich auf die Nutzung des PatchGAN Diskriminators zurückzuführen sind. Abbildung \ref{fig:vae_artefacts} zeigt eine Detailaufnahme eines solchen Bereiches.
+Bei einer genaueren Betrachtung der kleineren Details lassen sich jedoch vor allem bei \ac{DEM}s mit hoher Varianz in den Werten kleiner Kompressionsartefakte beobachten. Besonders äußert sich dies in der bildlichen Schärfe der kleinen fraktalen Strukturen einer solchen Landschaft. Auch lassen sich auf der Detailebene dieser Terrains kleine punktuelle Artefakte erkennen, welche wahrscheinlich auf die Nutzung des PatchGAN Diskriminators zurückzuführen sind. Abbildung \ref{fig:vae_artefacts} zeigt eine Detailaufnahme eines solchen Bereiches.
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -87,17 +87,17 @@ Bei einer genaueren Betrachterung der kleineren Details lassen sich jedoch vor a
     \subfloat{%
         \includegraphics[width=0.24\textwidth]{images/results/vae/vae_artefact2a.png}
     }
-    \caption{Ausgewählte Rekonstruktion, bei welcher die Kompressionsartefakte besonders ausgeprägt sind. Der gelb umrandete Bereich wird jeweils rechts vergrößert abgebildet. Linkes die Quelldaten, rechts  die Rekonstruktionen}
+    \caption{Ausgewählte Rekonstruktion, bei welcher die Kompressionsartefakte besonders ausgeprägt sind. Der gelb umrandete Bereich wird jeweils rechts vergrößert abgebildet. Links die Quelldaten, rechts  die Rekonstruktionen}
     \label{fig:vae_artefacts}
 \end{figure} \\
-Trotz dieser leichten qualitativen Mängel in den Details einiger Samples lässt sich zusammenfassend feststellen, dass das implementierte VAE-GAN für eine akkurate Rekonstruktion der Terraindaten überaus gut geeignet ist. Es bietet somit eine gelungene Grundlage für die weitere Verwendung im \ac{LDM} bei den Untersuchungen in den folgenden Abschnitten.
+Trotz dieser leichten qualitativen Mängel in den Details einiger Samples lässt sich zusammenfassend feststellen, dass das implementierte VAE-GAN für eine akkurate Rekonstruktion der Terraindaten gut geeignet ist. Es bietet somit eine gelungene Grundlage für die weitere Verwendung im \ac{LDM} bei den Untersuchungen in den folgenden Abschnitten.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Terrain Generierung
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section {Terraingenerierung}
 
-In diesem Abschnitt werden die Ergebnisse des LDMs beleuchtet. Begonnen wird dabei mit dem Vergleich der zwei grundlegenden Optionen für die Architektur des \ac{DM}s. Anschließend werden alle definierten Generierungsprozesse durchlaufen und einzelnd auf ihre Erfüllung der gestellten Anforderungen kritisch geprüft. Hieraus ergibt sich eine Gesamtbetrachtung der Leistungsfähigkeit des \ac{LDM}s unter den definierten Gesichtspunkten. 
+In diesem Abschnitt werden die Ergebnisse des LDMs beleuchtet. Begonnen wird dabei mit dem Vergleich der zwei grundlegenden Optionen für die Architektur des \ac{DM}s. Anschließend werden alle definierten Generierungsprozesse durchlaufen und einzeln auf ihre Erfüllung der gestellten Anforderungen kritisch geprüft. Hieraus ergibt sich eine Gesamtbetrachtung der Leistungsfähigkeit des \ac{LDM}s unter den definierten Gesichtspunkten. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection {U-Net vs. DiT}
@@ -106,7 +106,7 @@ Beide zu überprüfende \ac{DM} Architekturen wurden auf derselben Maschine unte
 Die Architekturparameter sind unter dem Vorbild der Implementierung des \ac{DM}s aus der von Rombach et al.\footnote{
     Rombach et al.: Latent Diffusion Models
     \cite{rombach2022high}
-} vorgeschlagenen \ac{LDM} Architektur gewählt. (Die Nutzung einer Kosinusbasierten Noise Schedule hat bei kleineren Experimenten keine ersichtlichen Verbesserungen beim Fehler oder der Visuellen Qualität gegenüber der Linearen aufgewiesen. Daher wurde die Entscheidung hierfür willkürlich auf die Lineare gelegt.)
+} vorgeschlagenen \ac{LDM} Architektur gewählt. (Die Nutzung einer kosinusbasierten Noise Schedule hat bei kleineren Experimenten keine ersichtlichen Verbesserungen beim Fehler oder der visuellen Qualität gegenüber der linearen aufgewiesen. Daher wurde die Entscheidung hierfür willkürlich auf die Lineare gelegt.)
 \begin{table}[ht]
     \centering
     \begin{tabular}{p{0.45\textwidth} p{0.35\textwidth}}
@@ -166,7 +166,7 @@ Die Parameter des \ac{DiT} sind den Parametervorgaben des leistungsfähigsten Mo
     \caption{Aufbau des DMs unter Nutzung einer DiT Architektur}
     \label{tab:dit_aufbau}
 \end{table} \\
-Das \ac{DM} mit \ac{DiT} konnte während der Trainingsdauer für 210 Epochen trainiert werden und erreichte einen über die letzten 200 Schritte gemittelten $L_\text{hybrid}$ von ca. 0,08. Das U-Net hingegen erreichte in der gleichen Zeit 705 Epochen bei einem über die letzten 200 Schritte gemittelten finalen $L_\text{hybrid}$ von etwa 0,05 was einer Verbesserung von etwa 40\% gegenüber des \ac{DiT} Ansatzes entspricht. Hierbei ist allerdings anzumerken, dass durch die Nutzung des MSE für $L_\text{simple}$ diese Reduktion nicht einer linearen sondern quadratischen Verbesserung entspricht. Entsprechend lassen sich bei den Ergebnissen, welche in Abbildung \ref{fig:dit_unet_results} präsentiert sind, erhebliche qualitative Unterschiede feststellen. Die einzelnen Patches des sind \ac{DiT} ganz eindeutig zu erkennen, wohingegen die Ergebnisse des U-Net durchgängig kohärent sind und keinerlei solcher Artefakte aufweisen.
+Das \ac{DM} mit \ac{DiT} konnte während der Trainingsdauer für 210 Epochen trainiert werden und erreichte einen über die letzten 200 Schritte gemittelten $L_\text{hybrid}$ von ca. 0,08. Das U-Net hingegen erreichte in der gleichen Zeit 705 Epochen bei einem über die letzten 200 Schritte gemittelten finalen $L_\text{hybrid}$ von etwa 0,05 was einer Verbesserung von etwa 40\% gegenüber des \ac{DiT} Ansatzes entspricht. Hierbei ist allerdings anzumerken, dass durch die Nutzung des MSE für $L_\text{simple}$ diese Reduktion nicht einer linearen sondern quadratischen Verbesserung entspricht. Entsprechend lassen sich bei den Ergebnissen, welche in Abbildung \ref{fig:dit_unet_results} präsentiert sind, erhebliche qualitative Unterschiede feststellen. Die einzelnen Patches des sind \ac{DiT} eindeutig zu erkennen, wohingegen die Ergebnisse des U-Net durchgängig kohärent sind und keinerlei solcher Artefakte aufweisen.
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -200,8 +200,8 @@ Aufgrund dieser eindeutigen qualitativen Mängel des \ac{DiT}- im direkten Vergl
 \subsection {Ungesteuerte Generierung}
 \label{subsec:unconditional_results}
 
-Die Generierung ohne Skizzen soll überprüfen zu welchem Grad das\ac{LDM} die Struktur der Datenverteilung eigenständig, lediglich unter Zuhilfenahme der zugehörigen Kontrollsignale erlernt hat. Diese wurden im Vergleich zu vorherigen Ansätzen stark vereinfacht um die Skizzenkontrolle von der Konditionierung des Modells zu lösen. Die abgebildeten Ergebnisse haben zur Vergleichbarkeit jeweils exakt die gleichen Pseudozufalls-Seeds. \\
-Der erste Testlauf hierzu ist die Generierung von Samples ohne jegliches Kontrollsignal. Hierbei ist nicht mit guten Ergebnissen zu Rechnen, da die Varianz ohne jegliche Eingrenzungen zu hoch ist. Trotzdem bieten die Ergebnisse, welche in Abbildung \ref{fig:unc_terrain_noclass} zu sehen sind, eine Grundlage, um die jeweiligen Veränderungen durch die Einführung der Konditionen in den folgenden Durchläufen einordnen zu können.
+Die Generierung ohne Skizzen soll überprüfen, zu welchem Grad das\ac{LDM} die Struktur der Datenverteilung eigenständig, lediglich unter Zuhilfenahme der zugehörigen Kontrollsignale, erlernt hat. Diese wurden im Vergleich zu vorherigen Ansätzen stark vereinfacht, um die Skizzenkontrolle von der Konditionierung des Modells zu lösen. Die abgebildeten Ergebnisse haben zur Vergleichbarkeit jeweils exakt die gleichen Pseudozufalls-Seeds. \\
+Der erste Testlauf hierzu ist die Generierung von Samples ohne jegliches Kontrollsignal. Hierbei ist nicht mit guten Ergebnissen zu rechnen, da die Varianz ohne jegliche Eingrenzungen zu hoch ist. Trotzdem bieten die Ergebnisse, welche in Abbildung \ref{fig:unc_terrain_noclass} zu sehen sind, eine Grundlage, um die jeweiligen Veränderungen durch die Einführung der Konditionen in den folgenden Durchläufen einordnen zu können.
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -219,7 +219,7 @@ Der erste Testlauf hierzu ist die Generierung von Samples ohne jegliches Kontrol
     \caption{Samples ohne jegliche Eingrenzung durch Kontrollsignale}
     \label{fig:unc_terrain_noclass}
 \end{figure} \\
-Durch die Nutzung des selben Seeds für die Ergebnisse sind alle von diesen Ergebnissen abweichende Bereiche allein auf die jeweiligen Kontrollsignale zurückzuführen. Die hierbei erste Betrachtung sind die unterschiedlichen Terrainklassen, ohne Abweichung beim Klima. Die Ergebnisse in Abbildung \ref{fig:unc_terrain} zeigen hierbei, dass zu einem gewissen Maße die jeweils zu erwartenden Strukturen zu Erkennen sind. Steile Berge zeigt eindeutig bergige Eigenschaften. Ebenfalls ist die Variation in den Höhenwerten Sichtbar höher, als bei den anderen Ergebnissen. Allesamt zeigen ebenfalls mehr kohärente globale Struktur als zuvor. Allerdings ist die Qualität der Ergebnisse trotzdem enttäuschend gering. Globale Strukturen lassen sich mit Ausnahme der steilen Berge kaum erkennen. Auch sind die strukturellen Unterschiede zwischen Hügel, Plateau und Flachland nur sehr gering. 
+Durch die Nutzung desselben Seeds für die Ergebnisse sind alle von diesen Ergebnissen abweichenden Bereiche allein auf die jeweiligen Kontrollsignale zurückzuführen. Die hierbei erste Betrachtung sind die unterschiedlichen Terrainklassen, ohne Abweichung beim Klima. Die Ergebnisse in Abbildung \ref{fig:unc_terrain} zeigen hierbei, dass zu einem gewissen Maße die jeweils zu erwartenden Strukturen zu erkennen sind. Steile Berge zeigt eindeutig bergige Eigenschaften. Ebenfalls ist die Variation in den Höhenwerten sichtbar höher als bei den anderen Ergebnissen. Allesamt zeigen ebenfalls mehr kohärente globale Struktur als zuvor. Allerdings ist die Qualität der Ergebnisse trotzdem enttäuschend gering. Globale Strukturen lassen sich mit Ausnahme der steilen Berge kaum erkennen. Auch sind die strukturellen Unterschiede zwischen Hügel, Plateau und Flachland nur sehr gering. 
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -255,7 +255,7 @@ Ein ähnliches Bild zeichnet sich bei der gesonderten Betrachtung der Klima-Einf
     \caption{Samples von Steilen Bergen mit variierender Klimaklasse. Von links nach rechts: Tropisch, Trocken, Moderat, Kalt.}
     \label{fig:unc_climate}
 \end{figure} \\
-Die vermutete Begründung für diese Mängel ist eine fehlende Aussagekraft der Kontrollsignale, beziehungsweise eine zu hohe Varianz der möglichen Ergebnisse. Dies erklärt weshalb zwar erkennbare Unterschiede durch die Konditionen resultieren, diese aber trotzdem keine überzeugenden Ergebnisse zur Folge haben. Die Erkenntniss die hieraus unvermeidlich ist, ist dass das grundlegende Konzept der gewählten Klassen in zukünftigen Iterationen überdacht werden muss.  
+Die vermutete Begründung für diese Mängel ist eine fehlende Aussagekraft der Kontrollsignale, beziehungsweise eine zu hohe Varianz der möglichen Ergebnisse. Dies erklärt, weshalb zwar erkennbare Unterschiede durch die Konditionen resultieren, diese aber trotzdem keine überzeugenden Ergebnisse zur Folge haben. Dies führt zu der Erkenntnis, dass das grundlegende Konzept der gewählten Klassen in zukünftigen Iterationen überdacht werden muss.
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -278,7 +278,7 @@ Die vermutete Begründung für diese Mängel ist eine fehlende Aussagekraft der 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection {Skizzenbasierte Generierung}
 
-Nach den mangelhaften Ergebnissen der ungesteuerten Generierung ist nun zu überprüfen in wiefern das Modell durch Skizzen kontrollierbar ist. In vorherigen Ansätzen wurde die definition der globale Struktur der Landschaften durch die Kontrollsignale vorgenommen, während sie hier durch den Rückwärtsprozess direkt behandelt wird. Entsprechend ist zu erwarten, dass die Ergebnisse hier eine deutlich höhere Qualität aufweisen als zuvor, sofern der gewählte Ansatz zur Skizzenkontrolle grundsätzlich geeignet ist. \\
+Nach den mangelhaften Ergebnissen der ungesteuerten Generierung ist nun zu überprüfen, in wiefern das Modell durch Skizzen kontrollierbar ist. In vorherigen Ansätzen wurde die Definition der globale Struktur der Landschaften durch die Kontrollsignale vorgenommen, während sie hier durch den Rückwärtsprozess direkt behandelt wird. Entsprechend ist zu erwarten, dass die Ergebnisse hier eine deutlich höhere Qualität aufweisen als zuvor, sofern der gewählte Ansatz zur Skizzenkontrolle grundsätzlich geeignet ist. \\
 Abbildung \ref{fig:sketch_strengths} zeigt die verwendete Skizze sowie ihre Nutzung bei der Generierung zu drei unterschiedlichen Startzeitschritten. Hierbei ist zunächst eindeutig eine enorme Verbesserung der Samplequalität festzustellen. Gebirgshänge und andere große Strukturen sind klar zu erkennen und fügen sich glaubwürdig in den Rest des erzeugten \ac{DEM}s ein. Ebenfalls ist klar ersichtlich, wie sich die Kontrolle der Skizze in den jeweiligen Zeitschritten auswirkt. Von einer sehr starken Übereinstimmung, bei welcher trotzdem Landschaftseigenschaften zu erkennen sind, bishin zu einer nur zu erahnenden Ähnlichkeit.  
 \begin{figure}[htbp]
     \centering
@@ -297,7 +297,7 @@ Abbildung \ref{fig:sketch_strengths} zeigt die verwendete Skizze sowie ihre Nutz
     \caption{Skizzenbasierte Samples mit drei unterschiedlichen Startzeitschritten. Von links nach rechts: Skizze, 900, 800, 700}
     \label{fig:sketch_strengths}
 \end{figure} \\
-Folgend wurde auch hier die Betrachtung der jeweiligen Auswirkungen der Kontrollsignale durchgeführt. Beginnend mit den Terrainklassen, siehe Abbildung \ref{fig:sketch_terrains}. Ausgangen wird hierbei von Startzeitschritt $t=800$. Die Ergebnisse sind hierbei wenig aussagekräftig im Bezug auf die Klasse. Die Skizze hat, wie es zu erwarten ist, einen deutlich höheren Einfluss auf die jeweiligen Höhenwerte als die Terrainkategorie. Es lässt sich trotzdem im Ansatz eine Auswirkung anhand der extremen Eigenschaften erkennen. Während bei den steilen Bergen der Gebirgskamm noch klar definiert ist, breitet sich dieser zunehmend aus und verfranst.  
+Folgend wurde auch hier die Betrachtung der jeweiligen Auswirkungen der Kontrollsignale durchgeführt,  beginnend mit den Terrainklassen, siehe Abbildung \ref{fig:sketch_terrains}. Ausgangen wird hierbei von Startzeitschritt $t=800$. Die Ergebnisse sind hierbei wenig aussagekräftig in Bezug auf die Klasse. Die Skizze hat, wie es zu erwarten ist, einen deutlich höheren Einfluss auf die jeweiligen Höhenwerte als die Terrainkategorie. Es lässt sich trotzdem im Ansatz eine Auswirkung anhand der extremen Eigenschaften erkennen. Während bei den steilen Bergen der Gebirgskamm noch klar definiert ist, breitet sich dieser zunehmend aus und verfranst.  
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -333,7 +333,7 @@ Bei den Klimaklassen ist die Einflussnahme schon deutlich klarer, vermutlich, da
     \caption{Skizzenbasierte Samples mit variierender Klimaklasse. Von links nach Rechts: Tropisch, Trocken, Moderat, Kalt.}
     \label{fig:sketch_climates}
 \end{figure} \\
-Durch die \ac{DEM}-basierte Skizzenkontrolle im Vergleich zu Signaturen ist es möglich die Generierung auf auch auf domänenfremden Skizzen wie Rauschen zu basieren. Dies erzeugt bei bereits schwacher Orientierung, wie bei einem Startzeitschritt von $t=750$, überzeugende Landschaften, siehe Abbildung \ref{fig:sketch_perlin}. Dies öffnet die Möglichkeit die schwach erlernten globalen Strukturen durch eine solche grobe Strukturgebung zu approximieren. Hierdurch ist an dieser Stelle keine explizite Erstellung einer Skizze erforderlich und trotzdem werden großflächige Eigenschaften glaubwürdig generiert. Somit können die in Unterabschnitt \ref{subsec:unconditional_results} berichteten Problem etwas konterkariert werden. Natürlich sei an dieser Stelle trotzdem erwähnt, dass aussagekräftigere Kontrollsignale die Qualität und Steuerbarkeit nur erhöhen würden.
+Durch die \ac{DEM}-basierte Skizzenkontrolle im Vergleich zu Signaturen ist es möglich, die Generierung auch auf domänenfremden Skizzen wie Rauschen zu basieren. Dies erzeugt bei bereits schwacher Orientierung, wie bei einem Startzeitschritt von $t=750$, überzeugende Landschaften, siehe Abbildung \ref{fig:sketch_perlin}. Dies öffnet die Möglichkeit, die schwach erlernten globalen Strukturen durch eine solche grobe Strukturgebung zu approximieren. Hierdurch ist an dieser Stelle keine explizite Erstellung einer Skizze erforderlich und trotzdem werden großflächige Eigenschaften glaubwürdig generiert. Somit können die in Unterabschnitt \ref{subsec:unconditional_results} berichteten Problem etwas konterkariert werden. Natürlich sei an dieser Stelle trotzdem erwähnt, dass aussagekräftigere Kontrollsignale die Qualität und Steuerbarkeit nur erhöhen würden.
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -354,8 +354,8 @@ Durch die \ac{DEM}-basierte Skizzenkontrolle im Vergleich zu Signaturen ist es m
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection {Unendliche Generierung}
 
-Der finale zu untersuchende Bereich ist die unendliche Genierung. Um in diesen Ergebnissen großflächige Strukturen zu erzeugen werden auf Basis der in den vorherigen Unterabschnitt gewonnenen Erkenntnissen Perlin-Rauschbilder als Skizzen verwendet. Zunächst werden diese kleineren Rauschbilder aus benachbarten Zellen des Rauschfeldes entnommen, womit sie ein kohärentes ganzheitliches Bild ergeben. Im weiteren Verlauf wird diese Flüssigkeit noch aufgebrochen um die Fähigkeit dieser Methode mit solchen Fällen umzugehen geprüft wird. \\
-Zunächst allerdings folgt die Untersuchung der unterschiedlichen definierten Alphafunktionen der Masken. Wie sich an den, in Abbildung \ref{fig:masks} dargelegten Ergebnissen, erkennen lässt weist lediglich die Sinusfunktion keine sichtbaren Artefakte auf. Bei allen anderen sind die Übergänge einzelner Zellen klar zu erkennen. 
+Der finale zu untersuchende Bereich ist die unendliche Genierung. Um in diesen Ergebnissen großflächige Strukturen zu erzeugen, werden auf Basis der in den vorherigen Unterabschnitt gewonnenen Erkenntnissen Perlin-Rauschbilder als Skizzen verwendet. Zunächst werden diese kleineren Rauschbilder aus benachbarten Zellen des Rauschfeldes entnommen, womit sie ein kohärentes ganzheitliches Bild ergeben. Im weiteren Verlauf wird diese Bündigkeit noch aufgebrochen, um die Fähigkeit dieser Methode, mit solchen Fällen umzugehen, zu prüfen. \\
+Zunächst allerdings folgt die Untersuchung der unterschiedlichen definierten Alphafunktionen der Masken. Wie sich an den in Abbildung \ref{fig:masks} dargelegten Ergebnissen erkennen lässt, weist lediglich die Sinusfunktion keine sichtbaren Artefakte auf. Bei allen anderen sind die Übergänge einzelner Zellen klar zu erkennen. 
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -373,7 +373,7 @@ Zunächst allerdings folgt die Untersuchung der unterschiedlichen definierten Al
     \caption{Unendliche Generierung unter Nutzung unterschiedlicher Alphafunktionen für die Masken in einem $2\times2$ Gitter. Von links nach rechts: Konstant, linear, exponential, Sinus}
     \label{fig:masks}
 \end{figure} \\
-Tatsächlich sind jegliche Übergänge bei der Sinusmaske nur im direkten Vergleich zu den anderen Ansätzen in der groben Struktur von Gebirgskämmen zu erahnen. Vergleicht man das generierte Terrain jedoch nur mit der zugrundeliegenden Skizze sind diese nicht zu Erkennen, siehe Abbildung \ref{fig:cos_detail}. Dieser Ansatz ist somit eindrucksvoll in der Lage schlüssige und überzeugende Übergänge zwischen bereits Generiertem und aktuellen Samples zu erschließen.
+Tatsächlich sind jegliche Übergänge bei der Sinusmaske nur im direkten Vergleich zu den anderen Ansätzen in der groben Struktur von Gebirgskämmen zu erahnen. Vergleicht man das generierte Terrain jedoch nur mit der zugrundeliegenden Skizze, sind diese nicht mehr zu erkennen, siehe Abbildung \ref{fig:cos_detail}. Dieser Ansatz ist somit eindrucksvoll in der Lage, schlüssige und überzeugende Übergänge zwischen bereits generierten und aktuellen Samples herzustellen.
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -385,8 +385,8 @@ Tatsächlich sind jegliche Übergänge bei der Sinusmaske nur im direkten Vergle
     \caption{Unendliche Generierung unter Nutzung der Sinusfunktion im Detail}
     \label{fig:cos_detail}
 \end{figure} \\
-Eine Beobachtung die bei genauerer Betrachtung jedoch auffällt, ist, dass die erste generierte Zelle sich in ihrer Struktur deutlich von den restlichen unterscheidet. Dies ist klar in der oberen linken Ecken des ersten Samples in der Abbildung \ref{fig:1st_regen} zu erkennen. Diese Zelle weist deutlich tiefere und zerfranstere Merkmale in der Bergstruktur im vergleich zum Restlichen Terrain auf, obwohl die Kontrollsignale gleich geblieben sind. Die vermutete Begründung hierfür ist, dass die bereits vorgegebenen Ränder der Zelle die Freiheitsgrade und somit die Varianz der Samples deutlich einschränken. Da die erste Zelle an noch keinerlei Bedingungen bezüglich ihrer Ränder gebunden ist, könnte dies zu den beobachteten Unterschieden führen. \\ 
-Um dies zu überprüfen wird die erste Zelle nach abgeschlossener Generierung des gesammten Gitters einmalig neu gesampelt. Somit würde sie bei diesem durchlauf ebenfalls in der Varianz eingegrenzt. Wie sich am zweiten Sample in Abbildung \ref{fig:1st_regen} erkennen lässt, hat dies den fraglichen Bereich stark verändert, sodass er sich nun deutlich mehr in den Rest der Landschaft eingliedert. 
+Bei genauerer Betrachtung fällt jedoch auf, dass die erste generierte Zelle sich in ihrer Struktur deutlich von den restlichen unterscheidet. Dies ist klar in der oberen linken Ecken des ersten Samples in der Abbildung \ref{fig:1st_regen} zu erkennen. Diese Zelle weist deutlich tiefere und zerfranstere Merkmale in der Bergstruktur im Vergleich zum Restlichen Terrain auf, obwohl die Kontrollsignale gleich geblieben sind. Die vermutete Begründung hierfür ist, dass die bereits vorgegebenen Ränder der Zelle die Freiheitsgrade und somit die Varianz der Samples deutlich einschränken. Da die erste Zelle an noch keinerlei Bedingungen bezüglich ihrer Ränder gebunden ist, könnte dies zu den beobachteten Unterschieden führen. \\ 
+Um dies zu überprüfen wird die erste Zelle nach abgeschlossener Generierung des gesammten Gitters einmalig neu gesampelt. Somit würde sie bei diesem Durchlauf ebenfalls in der Varianz eingegrenzt. Wie sich am zweiten Sample in Abbildung \ref{fig:1st_regen} erkennen lässt, hat dies den fraglichen Bereich stark verändert, sodass er sich nun deutlich mehr in den Rest der Landschaft eingliedert. 
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -398,8 +398,8 @@ Um dies zu überprüfen wird die erste Zelle nach abgeschlossener Generierung de
     \caption{Unendliche Generierung im $3\times3$ Gitter mit Sonderbehandlung der ersten Zelle. Links ohne Sonderbehandlung, rechts mit Sonderbehandlung}
     \label{fig:1st_regen}
 \end{figure} \\
-Bisher hat die unendliche Generierung unter einem kohärenten Perlin-Rauschbild sehr gute Ergebnisse erzeugt. Nun stellt sich allerdings die Frage in wiefern die Kohärenz der Skizze zu hierzu beiträgt. Schließlich scheint es möglich, dass nur durch die kontinierliche Struktur der Skizze glaubwürdige Übergänge gefunden werden können. \\
-Damit dies untersucht werden kann werden nun weitentfernte Zellen des Rauschens als Skizzen für die einzelnen Landschaftszellen verwendet. Um die Kohärenz zusätzlich zu unterbrechen werden sie außerdem mit einem zufälligen Gewicht skaliert um auch die Wertebereiche unterschiedlich zu halten. Ein, in Abbildung \ref{fig:disconnected} dargestelltes, Ergebnis dieses Experiments zeigt, dass auch in diesem Fall die Selbe Samplequalität erreicht wird. Dies untermauert die Leistungsfähigkeit des \ac{LDM}s als auch der vorgestellten Methode zur unendlichen Generierung.  
+Bisher hat die unendliche Generierung unter einem kohärenten Perlin-Rauschbild sehr gute Ergebnisse erzeugt. Nun stellt sich allerdings die Frage, in wiefern die Kohärenz der Skizze hierzu beiträgt. Schließlich scheint es möglich, dass nur durch die kontinierliche Struktur der Skizze glaubwürdige Übergänge gefunden werden können. \\
+Damit dies untersucht werden kann, werden nun weitentfernte Zellen des Rauschens als Skizzen für die einzelnen Landschaftszellen verwendet. Um die Kohärenz zusätzlich zu unterbrechen, werden sie außerdem mit einem zufälligen Gewicht skaliert, um auch die Wertebereiche unterschiedlich zu halten. Ein in Abbildung \ref{fig:disconnected} dargestelltes Ergebnis dieses Experiments zeigt, dass auch in diesem Fall dieselbe Samplequalität erreicht wird. Dies untermauert die Leistungsfähigkeit des \ac{LDM}s als auch der vorgestellten Methode zur unendlichen Generierung.  
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -424,23 +424,23 @@ Damit dies untersucht werden kann werden nun weitentfernte Zellen des Rauschens 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Evaluation}
 
-In diesem Abschnitt werden die aus den Ergebnissen gewonennen Erkenntnisse noch einmal Zusammengefasst betrachtet. Sie sollen somit in Zusammenhang gesetzt werden.  
+In diesem Abschnitt werden die aus den Ergebnissen gewonnenen Erkenntnisse noch einmal zusammengefasst betrachtet. Sie sollen somit in Zusammenhang gesetzt werden.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Limitationen}
 
-Aus der Betrachtung der erzielten Ergebnisse wurden einige Kernlimitationen des vorgeschlagenen \ac{LDM}s offensichtlich. Diese werden an dieser Stelle noch einmal klar in Äußerung und möglicher Ursache zusammengefasst.
+Aus der Betrachtung der erzielten Ergebnisse wurden einige Kernlimitationen des vorgeschlagenen \ac{LDM}s offensichtlich. Diese werden an dieser Stelle noch einmal klar in Ausprägung und möglicher Ursache zusammengefasst.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Aussagekraft der Kontrollsignale}
 
-Wie bereits geschildert, ist die Qualität der generierten Terrainsamples ohne jegliche Steuerung durch Skizzen enttäuschend gering. Die vermutete Begründung ist hierfür, dass die, für die Ermöglichung der Skizzensteuerung durch \ac{DEM}s anstelle von Signaturen, simplifizierte Konditionierung des Modells verglichen mit bisherigen Ansätzen, nicht ausreichend aussagekräftig ist, um kohärente Ergebnisse zu Erzeugen. 
+Wie bereits geschildert, ist die Qualität der generierten Terrainsamples ohne jegliche Steuerung durch Skizzen enttäuschend gering. Die vermutete Begründung hierfür ist, dass die für die Ermöglichung der Skizzensteuerung durch \ac{DEM}s anstelle von Signaturen simplifizierte Konditionierung des Modells verglichen mit bisherigen Ansätzen nicht ausreichend aussagekräftig ist, um kohärente Ergebnisse zu erzeugen. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Geringer Detailgrad}
 
-Die Konzeption des \ac{LDM}s sah vor großflächige Landschaften zu generieren. Mit einer entsprechenden Sampleauflösung von $256\times256$ und einer folglichen Seitenlänge eines einzelnen Höhenwertes von ca. 220 Metern ist hier kein hoher Detailgrad zu abbildbar. Nichtsdestotrotz hat diese grobe Auflösung zur Folge, dass die Landschaften in ihrer generierten Form nicht ohne Weiteres für eine Verwendung in der Praxis genutzt werden können. \\
-Da dies keineswegs ein für das Anwendungsgebiet der Terraingenerierung exklusives Problem ist sondern für \ac{DM}s im generellen gilt, existieren hierfür bereits mehrere Lösungsansätze. Die vielleicht am besten Untersuchte Methoden dieses Problem zu Lösen sind Upscaling-Ansätze. Diese werden auch bereits in anderen Veröffentlichungen zur Terraingeneriung vorgeschlagen wie von Lochner et al.\footnote{
+Die Konzeption des \ac{LDM}s sah vor, großflächige Landschaften zu generieren. Mit einer entsprechenden Sampleauflösung von $256\times256$ und einer folglichen Seitenlänge eines einzelnen Höhenwertes von ca. 220 Metern ist hier kein hoher Detailgrad abbildbar. Nichtsdestotrotz hat diese grobe Auflösung zur Folge, dass die Landschaften in ihrer generierten Form nicht ohne Weiteres für eine Verwendung in der Praxis genutzt werden können. \\
+Da dies keineswegs ein für das Anwendungsgebiet der Terraingenerierung exklusives Problem ist, sondern für \ac{DM}s im Generellen gilt, existieren hierfür bereits mehrere Lösungsansätze. Die vielleicht am besten untersuchten Methoden, dieses Problem zu lösen, sind Upscaling-Ansätze. Diese werden auch bereits in anderen Veröffentlichungen zur Terraingeneriung vorgeschlagen wie von Lochner et al.\footnote{
     Vgl. Lochner et al.: Interactive Terrain Authoring using Diffusion Models, S. 3
     \cite{lochner2023interactive}
 } \\
@@ -449,44 +449,44 @@ Eine Integration eines solchen Upscaling-Modells wäre also für eine weitere Ve
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Zielerfüllung}
 
-Im folgenden werden die bisher gewonnenen Erkenntnisse konkret für die Bewertung der Erfüllung der Ziele, die diese Arbeit umrahmen, zusammengefasst. Dabei wird jedes einzelne Kernziel betrachtet und das Maß der jeweiligen Erfüllung anhand der vorgestellten Ergebnisse begründet.
+Im Folgenden werden die bisher gewonnenen Erkenntnisse konkret für die Bewertung der Erfüllung der Ziele, die diese Arbeit umrahmen, zusammengefasst. Dabei wird jedes einzelne Kernziel betrachtet und das Maß der jeweiligen Erfüllung anhand der vorgestellten Ergebnisse begründet.
 
 \begin{enumerate}
     \item \textbf {Framework für geographische Trainingsdaten}:
-    Das entwickelte Framework erfüllt die Erwartungen vollständig. Es ist sowohl flexibel als auch Leistungsfähig. Durch die Nutzung von Thread-Sicherem Caching bietet es zusätliche Laufzeitoptimierungen. Dieses Ziel wurde somit vollständig erfüllt.
+    Das entwickelte Framework erfüllt die Erwartungen vollständig. Es ist sowohl flexibel als auch leistungsfähig. Durch die Nutzung von Thread-sicherem Caching bietet es zusätzliche Laufzeitoptimierungen. Dieses Ziel wurde somit vollständig erfüllt.
 
     \item \textbf {Entwicklung eines leistungsfähigen Variatonal-Autoencoders:} \\
-    Der entwickelte \ac{VAE} nutzt die in der Praxis etablierten Techniken zur Verbesserung der Rekonstruktionsqualität und Eignung für \ac{LDM}s. Entsprechend weisen die Ergebnisse eine sehr hohe visuelle Qualität, vor allem bei großen Strukturen, auf. Bei kleinen Details erweisen sich zwar in einigen Fällen die für \ac{VAE}s üblichen Schwächen. Ebenfalls lassen bei solchen Daten Artefakte des PatchGANs erkennen. Insgesamt ist die Bewertung der Ergebnisse trotzdem als sehr gut gelungen einzustufen, weswegen dieses Ziel als vollumfänglich erfüllt angesehen wird. 
+    Der entwickelte \ac{VAE} nutzt die in der Praxis etablierten Techniken zur Verbesserung der Rekonstruktionsqualität und Eignung für \ac{LDM}s. Entsprechend weisen die Ergebnisse vor allem bei großen Strukturen eine sehr hohe visuelle Qualität auf. Bei kleinen Details erweisen sich zwar in einigen Fällen die für \ac{VAE}s üblichen Schwächen. Ebenfalls lassen bei solchen Daten Artefakte des PatchGANs erkennen. Insgesamt ist die Bewertung der Ergebnisse trotzdem als sehr gut gelungen einzustufen, weswegen dieses Ziel als vollumfänglich erfüllt angesehen wird. 
     
     \item \textbf {Erstellung eines mächtigen \ac{LDM}s:} \\
-    Es wurde ein \ac{LDM} vorgestellt, das auf Methoden, welche dem aktuellen Stand der Technik entsprechen, basiert. Darunter fallen unter Anderem die Nutzung eines VAE-GAN, das Erlernen der Varianz und die Nutzung von \ac{CFG}. Weitere übliche Techniken wie eine Kosinus Noise-Schedule oder \ac{DiT} wurden ausprobiert und für die weitere Verwendung als ungeeignet befunden. \\
-    Das \ac{LDM} kann vor allem auf Basis von Skizzen sehr gute Samples synthetisieren. Es enttäuscht allerdings bei der Generierung ohne eine solche Kontrolle mit qualitativ unbrauchbaren Ergebnissen. Dies liegt an der ungenügenden Fähigkeit des Modells große Strukuren eigenständig wiederzugeben. Die zugrundeliegende Skizze kann allerdings sehr simpel oder sogar Rauschbasiert sein, weswegen dieses Ziel im Ganzen als erfüllt angesehen wird, wenngleich mit der Einschränkung bei ungesteuerter Generierung.
+    Es wurde ein \ac{LDM} vorgestellt, das auf Methoden, welche dem aktuellen Stand der Technik entsprechen, basiert. Darunter fallen unter anderem die Nutzung eines VAE-GAN, das Erlernen der Varianz und die Nutzung von \ac{CFG}. Weitere übliche Techniken wie eine Kosinus Noise-Schedule oder \ac{DiT} wurden ausprobiert und für die weitere Verwendung als ungeeignet befunden. \\
+    Das \ac{LDM} kann vor allem auf Basis von Skizzen sehr gute Samples synthetisieren. Es enttäuscht allerdings bei der Generierung ohne eine solche Kontrolle mit qualitativ unbrauchbaren Ergebnissen. Dies liegt an der ungenügenden Fähigkeit des Modells, große Strukuren eigenständig wiederzugeben. Die zugrundeliegende Skizze kann allerdings sehr simpel oder sogar rauschbasiert sein, weswegen dieses Ziel im Ganzen als erfüllt angesehen wird, wenngleich mit der Einschränkung bei ungesteuerter Generierung.
 
     \item \textbf {Intuitive Steuerung der Generierung durch Skizzen:} \\
-    Die Nutzung von \ac{DEM}s als Skizzen hat sich als sehr einfache, intuitive und mächtige Art der Steuerung bewiesen. Durch sie ist es, auf einer zuvor unerreichte Weise, möglich detaillierte sowie grobe Skizzen in einem jeweils angemessenen Maß zu verarbeiten. Durch diesen Ansatz ist es für Terraingenerierung mit \ac{DM}s ebenfalls erstmals möglich Rauschbilder wie Perlin-Rauschen als Skizzen zu verwenden, da keinerlei Landschaftssignaturen sondern lediglich Höhenwerte verwendet werden. \\
+    Die Nutzung von \ac{DEM}s als Skizzen hat sich als sehr einfache, intuitive und mächtige Art der Steuerung bewiesen. Durch sie ist es auf eine zuvor unerreichte Weise möglich, detaillierte sowie grobe Skizzen in einem jeweils angemessenen Maß zu verarbeiten. Durch diesen Ansatz ist es für Terraingenerierung mit \ac{DM}s ebenfalls erstmals möglich, Rauschbilder wie Perlin-Rauschen als Skizzen zu verwenden, da keinerlei Landschaftssignaturen sondern lediglich Höhenwerte verwendet werden. \\
     Aufgrund der sehr guten Ergebnisse in allen untersuchten Bereichen wird dieses Ziel als vollständig erfüllt bewertet. 
 
     \item \textbf {Nahtlose Zellbasierte unendliche Generierung:} \\
-    Der innovative vorgestellte Ansatz zur Generierung von beliebig großen Landschaften, beruht auf der Nutzung der Inpainting-Technik von \ac{DM}s. Er erzeugt bei geeigneter Definition der Maske wie der vorgeschlagenen Sinusfunktion durchweg überzeugende Ergebnisse, welche selbst bei unbündigen benachbarten Zellen glaubwürdige und kohärente Übergänge erzeugen kann. Nähte lassen in extremen Fällen zwar in großen strukturen erahnen, bei Betrachtung auf kleiner Ebene sind diese allerdings nicht mehr zu erkennen. \\
+    Der innovative vorgestellte Ansatz zur Generierung von beliebig großen Landschaften beruht auf der Nutzung der Inpainting-Technik von \ac{DM}s. Er erzeugt bei geeigneter Definition der Maske wie der vorgeschlagenen Sinusfunktion durchweg überzeugende Ergebnisse, welche selbst bei unbündigen benachbarten Zellen glaubwürdige und kohärente Übergänge erzeugen kann. Nähte lassen sich selten zwar in großen Strukturen erahnen, bei Betrachtung auf kleiner Ebene sind diese allerdings nicht mehr zu erkennen. \\
     Aufgrund dieser Ergebnisse ist dieses Ziel als vollumfänglich erfüllt anzusehen.     
 
 \end{enumerate}
-Zusammenfassend wurden alle gesetzten Kernziele erfüllt. Die ungesteuerte Genierung bleibt zwar hinter allen Erwartungen zurück und ist somit bei der Bewertung der Leistungsfähigkeit des vorgestellten \ac{LDM}s ein wesentlicher Kritikpunkt in allen anderen Bereichen konnten jedoch sehr überzeugende Ergebnisse erzielt werden. 
+Zusammenfassend wurden alle gesetzten Kernziele erfüllt. Die ungesteuerte Genierung bleibt zwar hinter den Erwartungen zurück und ist somit bei der Bewertung der Leistungsfähigkeit des vorgestellten \ac{LDM}s ein wesentlicher Kritikpunkt, in allen anderen Bereichen konnten jedoch sehr überzeugende Ergebnisse erzielt werden. 
  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Vergleich}
 
-Ein qualitativer Vergleich zu bisherigen Ansätzen unter der Nutzung von \ac{DM}s fällt aus unterschiedlichen Gründen schwer. Zum einen ist die Zielsetzung dieser Arbeit was den Anspruch an die Generierung angeht grundsätzlich eine Andere. In dieser Arbeit geht es um die Beleuchtung der Eignung von \ac{DM}s beziehungsweise \ac{LDM}s und den Methoden welche sie möglichen. Dies soll neue Perspektiven eröffnen und neue Ansätze für breite Anwendungsfelder bieten. Hingegen ist bei den anderen Publikationen der Fokus auf die Verbesserung der Qualität durch \ac{DM}s unter Nutzung bereits etablierter Methoden der Terraingenerierung gelegt. \\
-Hinzu kommt, dass in dieser Arbeit Datensätze primär ausgewählt wurden, um die Lösung der gestellten Kernziele möglichst gut umsetzten zu können. Da Qualitätsmetriken die Ähnlichkeit von Samples zu dem zugrundeliegenden Datenverteilung zu Messen versuchen, sind ihre Ergebnisse über unterschiedliche Datensätze hinweg nicht aussagekräftig. Dies hat als Auswirkung, dass die genutzten Daten nicht direkt über Vergleiche wie Metriken wie FID zu anderen Methoden eingeordnet werden kann.\\ 
-Letztlich sind Quellcode und Gewichte der \ac{DM}s bei keiner der Veröffentlichungen zugänglich gemacht worden. Somit ist keine eigene Einschätzung oder Anpassung der Testbedingung möglich. Ein Vergleich besteht somit bestenfalls aus den Referenzangaben welche aus den Publikationen selbst entnommen werden können, was einen Fairen vergleich selbst unter der Nutzung gleicher Daten unmöglich macht. \\
+Ein qualitativer Vergleich zu bisherigen Ansätzen unter der Nutzung von \ac{DM}s fällt aus unterschiedlichen Gründen schwer. Zum einen ist die Zielsetzung dieser Arbeit, was den Anspruch an die Generierung angeht, grundsätzlich eine Andere. In dieser Arbeit geht es um die Beleuchtung der Eignung von \ac{DM}s beziehungsweise \ac{LDM}s und den Methoden, welche sie möglichen. Dies soll neue Perspektiven eröffnen und neue Ansätze für breite Anwendungsfelder bieten. Hingegen ist bei den anderen Publikationen der Fokus auf die Verbesserung der Qualität durch \ac{DM}s unter Nutzung bereits etablierter Methoden der Terraingenerierung gelegt. \\
+Hinzu kommt, dass in dieser Arbeit Datensätze primär ausgewählt wurden, um die Lösung der gestellten Kernziele möglichst gut umsetzen zu können. Da Qualitätsmetriken die Ähnlichkeit von Samples zu den zugrundeliegenden Datenverteilungen zu messen versuchen, sind ihre Ergebnisse über unterschiedliche Datensätze hinweg nicht aussagekräftig. Dies hat als Auswirkung, dass die genutzten Daten nicht direkt über Vergleiche der Metriken wie FID zu anderen Methoden eingeordnet werden können.\\ 
+Letztlich sind Quellcode und Gewichte der \ac{DM}s bei keiner der Veröffentlichungen zugänglich gemacht worden. Somit ist keine eigene Einschätzung oder Anpassung der Testbedingung möglich. Ein Vergleich besteht somit bestenfalls aus den Referenzangaben, welche aus den Publikationen selbst entnommen werden können, was einen fairen Vergleich selbst unter der Nutzung gleicher Daten unmöglich macht. \\
 Aus allen diesen genannten Gründen ist klar ersichtlich, dass ein solcher Vergleich weder möglich noch sinnvoll ist. Vielmehr sollte eine Einordnung auf konzeptioneller Ebene stattfinden - die Methodiken und ihre beschriebenen Vor- beziehungsweise Nachteile. \\
-Im Bereich der Kontrollsignale mittels Terrain- und Klimakategorien hat sich der in dieser Arbeit vorgestellte Ansatz als eindeutig schwächer erwiesen als die Nutzung von Terrainsignaturen. Allerdings ist eine Simplifizierung nötig, um die Steuerung über \ac{DEM}-Skizzen in der Form zu ermöglichen wie sie hier vorgestellt wurde. Zusätzlich ist festzuhalten, dass die Generierung in bisherigen Ansätzen unter Angabe einer solchen Strukturskizze unternommen wurden. Diese erfolgt in dieser Arbeit erst mit der Integration der \ac{DEM}-Skizzen. Die hierbei erzielten Ergebnisse sind somit nicht direkt mit den anderen Vergleichbar. \\
-Die Steuerung über Skizzen auf \ac{DEM}s bietet sich durch die Eigenschaften des Rückwärtsprozesses von \ac{DM}s an und ist gut geeignet um die Generierung zu steuern. Sie bietet eine gelungene Alternative zu der Steuerung über die Konditionierung durch Signaturen. Auch wird durch die direkte Angabe von Höhenwerten eine Steuerung der Höhen im Resultat möglich. Zusätzlich kann durch Maskieren diese Kontrolle lokal begrenzt werden. Zwei Limitationen die bisweilen existierten und von Lochner et al.\footnote{
+Im Bereich der Kontrollsignale mittels Terrain- und Klimakategorien hat sich der in dieser Arbeit vorgestellte Ansatz als eindeutig schwächer erwiesen als die Nutzung von Terrainsignaturen. Allerdings ist eine Simplifizierung nötig, um die Steuerung über \ac{DEM}-Skizzen in der Form zu ermöglichen, wie sie hier vorgestellt wurde. Zusätzlich ist festzuhalten, dass die Generierung in bisherigen Ansätzen unter Angabe einer solchen Strukturskizze unternommen wurden. Diese erfolgt in dieser Arbeit erst mit der Integration der \ac{DEM}-Skizzen. Die hierbei erzielten Ergebnisse sind somit nicht direkt mit den anderen vergleichbar. \\
+Die Steuerung über Skizzen auf \ac{DEM}s bietet sich durch die Eigenschaften des Rückwärtsprozesses von \ac{DM}s an und ist gut geeignet, um die Generierung zu steuern. Sie bietet eine gelungene Alternative zu der Steuerung über die Konditionierung durch Signaturen. Auch wird durch die direkte Angabe von Höhenwerten eine Steuerung der Höhen im Resultat möglich. Zusätzlich kann durch Maskieren diese Kontrolle lokal begrenzt werden. Zwei Limitationen die bisweilen existierten und von Lochner et al.\footnote{
     Vgl. Lochner et al.: Interactive Terrain Authoring using Diffusion Models, S. 8f.
     \cite{lochner2023interactive}
 } als Kerneinschränkung eingestuft wurden. \\
 Ebenfalls neuartig ist der vorgestellte Ansatz von beliebig großen bishin zu unendlichen Terrains. Die einzige bisher vorgestellte Methode wurde von Jain, Sharma und Rajan\footnote{
     Vgl. Jain, Sharma, Rajan: Procedural Infinite Terrain Generation with DMs, S. 6
     \cite{jain2022adaptive}
-} über Kernel Blending mit Perlin-Rauschen auf kleinen Patches vorgestellt. Da dies durch das Rauschen auf zufälliger Ebene funktionert, ist eine hohe Glaubwürdigkeit im allgemeinen Fall in Frage zu stellen. Die hier dargelegte Methode basiert auf erlernten Zusammenhängen welche bereits Generierte Bereiche in das Sampling von Neuen Patches mit einbezieht. Somit sind diese Übergänge nicht nur qualitativ auf dem selben Niveau wie die restliche Generierung, sondern auch auf beliebige Patchgrößen anwendbar, sofern das \ac{LDM} diese Größe unterstützt. Aus diesen Gründen wird der hier vorgestellte Ansatz als klar zu präferieren eingestuft.  
+} über Kernel Blending mit Perlin-Rauschen auf kleinen Patches vorgestellt. Da dies durch das Rauschen auf zufälliger Ebene funktionert, ist eine hohe Glaubwürdigkeit im allgemeinen Fall in Frage zu stellen. Die hier dargelegte Methode basiert dagegen auf erlernten Zusammenhängen, welche bereits generierte Bereiche in das Sampling von Neuen Patches mit einbezieht. Somit sind diese Übergänge nicht nur qualitativ auf demselben Niveau wie die restliche Generierung, sondern auch auf beliebige Patchgrößen anwendbar, sofern das \ac{LDM} diese Größe unterstützt. Aus diesen Gründen wird der hier vorgestellte Ansatz als klar zu präferieren eingestuft.  
 

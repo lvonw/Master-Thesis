@@ -3,18 +3,18 @@
 \label{ch:Grundlagen}
 
 In diesem Kapitel werden die Grundlagen der verwendeten Themen und Technologien --- Begriffe und Sachverhalte --- erläutert, die für das Verständnis der folgenden Arbeit notwendig sind.
-Die Grundlagen werden ohne Bezug auf das konkrete Projekt, allgemein dargestellt. Sie sind zielgerichtet auf das Verständnis des Hauptteils bezogen.
+Die Grundlagen werden ohne Bezug auf das konkrete Projekt allgemein dargestellt und dienen dem Verständnis des Hauptteils.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mathematics
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Mathematik}
 
-Der folgende Abschnitt zur Mathematik dient sowohl zur Einführung neuer Konzepte, sowie zur Definition der in dieser Arbeit relevanten Nomenklatur von eventuell bereits Bekanntem.
+Der folgende Abschnitt zur Mathematik dient sowohl der Einführung neuer Konzepte als auch der Definition der in dieser Arbeit relevanten Nomenklatur von eventuell bereits Bekanntem.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Wahrscheinlichkeitsdichtefunktionen}
-Eine \ac{WDF} ist eine reelle Funktion $p$, welche eine Wahrscheinlichkeitsverteilung beschreibt. Sie gibt an mit welcher Wahrscheinlichkeit eine Zufallsvariable X in einem bestimmten Bereich liegt. Diese Wahrscheinlichkeit wird wie folgt berechnet:
+Eine \ac{WDF} ist eine reelle Funktion $p$, welche eine Wahrscheinlichkeitsverteilung beschreibt. Sie gibt an, mit welcher Wahrscheinlichkeit eine Zufallsvariable X in einem bestimmten Bereich liegt. Diese Wahrscheinlichkeit wird wie folgt berechnet:
 \begin{equation}
     a,b \in X \land a \le b, \space p([a, b]) = \int_a^b p(x) dx
 \end{equation}
@@ -32,20 +32,20 @@ Die \ac{WDF} hat dabei folgende zwei Invarianten zu erfüllen\footnote{
         \int p(x) dx = 1
     \end{equation}
 \end{enumerate}
-In bestimmten Anwendungsfällen kann es vorkommen, dass eine Parametrisierung explizit angegeben werden soll. Dies wird im weiteren Verlauf dieser Arbeit in der Regel als $p_\theta(X)$ denotiert, wobei in diesem Fall $\theta$ die Parametrisierung ist. Einige Publikationen wählen die Notation $p(X; \theta)$ hierfür, sie wird Stellenweise auch in dieser Arbeit verwendet, um den Konventionen des jeweiligen Bereiches zu entsprechen. \\
+In bestimmten Anwendungsfällen kann es vorkommen, dass eine Parametrisierung explizit angegeben werden soll. Dies wird im weiteren Verlauf dieser Arbeit in der Regel als $p_\theta(X)$ denotiert, wobei in diesem Fall $\theta$ die Parametrisierung ist. Einige Publikationen wählen die Notation $p(X; \theta)$ hierfür, sie wird stellenweise auch in dieser Arbeit verwendet, um den Konventionen des jeweiligen Bereiches zu entsprechen. \\
 Desweiteren wird im Bereich des Machine Learning oft die Entnahme einer Stichprobe $x$ aus einer Wahrscheinlichkeitsverteilung welche durch ihre \ac{WDF} $p$ gegeben ist, was auch \textit{Sampling} gennant wird, $x \sim p$ gekennzeichnet. 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Multidimensionale gaußsche Normalverteilung}
 
-Die gaußsche Normalverteilung $\mathcal N$, oder einfach Normalverteilung ist eine der bekanntesten kontinuierlichen Wahrscheinlichkeitsverteilungen. Definiert ist sie im mehrdimensionalen Fall mit $d$ Dimensionen durch ihre \ac{WDF}:
+Die gaußsche Normalverteilung $\mathcal N$, oder einfach Normalverteilung, ist eine der bekanntesten kontinuierlichen Wahrscheinlichkeitsverteilungen. Definiert ist sie im mehrdimensionalen Fall mit $d$ Dimensionen durch ihre \ac{WDF}:
 \begin{equation}
     \mathcal N(x; \mu, \Sigma) = 
     \frac{1}{\sqrt{(2\pi)^d \det{\Sigma}}}
     e^{-\frac{1}{2}(x-\mu)^T \Sigma^{-1} (x-\mu)}
 \end{equation}
-$\mu$ ist hierbei der Erwahrtungswert und $\Sigma$ die Kovarianzmatrix. \\
+$\mu$ ist hierbei der Erwartungswert und $\Sigma$ die Kovarianzmatrix. \\
 Eine besondere Variante ist hierbei die Standardnormalverteilung $\mathcal N(x; 0, I)$ welche oft einfach durch $\mathcal N$ abgekürzt wird.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -59,7 +59,7 @@ In vielen Publikationen im Bereich der künstlichen Intelligenz, so auch in dies
 \begin{equation}
     \mathbb E_{x \sim p}[x] := \int x p(x) dx
 \end{equation}
-Diese Definition kann ebenfalls um den Erwartungswert einer Funktion $f(x)$ angewandt werden, wenn x aus der Wahrscheinlichkeitsverteilung $p$ entnommen wird. 
+Diese Definition kann ebenfalls auf den Erwartungswert einer Funktion $f(x)$ angewandt werden, wenn x aus der Wahrscheinlichkeitsverteilung $p$ entnommen wird. 
 \begin{equation}
     \mathbb E_{x \sim p}[f(x)] := \int f(x) p(x) dx
 \end{equation}
@@ -110,14 +110,14 @@ Die Kullback-Leibler-Divergenz, kurz KL-Divergenz, ist eine Metrik welche die Ä
         \log p(x) - \log q(x)
         \right ]
 \end{equation}
-Sie gibt an, wie viele zusätliche Nats\footnote{
+Sie gibt an, wie viele zusätzliche Nats\footnote{
     Nats sind Informationseinheiten in einem Zahlsystem mit Basis $e$. Vergleichbar mit Bits in einem Binärsystem. 
-} nötig sind, wenn eine für $q$ optimale Verschlüsselung, $p$ kodiert. \\
+} nötig sind, wenn eine für $q$ optimale Verschlüsselung $p$ kodiert. \\
 Sie bietet einige nützliche Eigenschaften, insbesondere, dass sie nie negativ und nur dann gleich null ist, wenn $p = q$ gilt. Dies und die Tatsache, dass die Minimierung der KL-Divergenz äquivalent zur Maximierung der Log-Likelihood ist\footnote{
     Amari: Information Geometry and Its Applications, S. 48
     \cite{10.5555/3019383}
 }, machen sie zu einer oft angewandten Metrik im Machine Learning. \\
-Der Vollständigkeithalber sei erwähnt, dass die KL-Divergenz allerdings per Definition kein Distanzmaß ist, da sie im Allgemeinen keine kommutative Operation ist.  
+Der Vollständigkeit halber sei erwähnt, dass die KL-Divergenz allerdings per Definition kein Distanzmaß ist, da sie im Allgemeinen keine kommutative Operation ist.  
 \begin{equation}
     D_\text{KL}(p||q) \ne D_\text{KL}(q||p) 
 \end{equation}
@@ -129,19 +129,18 @@ Der Vollständigkeithalber sei erwähnt, dass die KL-Divergenz allerdings per De
 
 \section{Generative Künstliche Intelligenz}
 
-Modelle der generativen \ac{KI} versuchen im Allgemeinen die Wahrscheinlichkeitsverteilung der Quelldaten, konventionell auch als Datenverteilung bezeichnet, zu modellieren. Sie unterscheiden sich somit von diskreminierenden Ansätzen, welche lediglich Eigenschaften dieser Verteilung erlernen. \\
-Es kann schwierig fallen intuitiv die Beziehung zwischen Datenverteilung und Modell nachzuvollziehen. Um diesen Sachverhalt zu verdeutlichen, folgt ein einfaches Beispiel:
+Modelle der generativen \ac{KI} versuchen im Allgemeinen die Wahrscheinlichkeitsverteilung der Quelldaten, konventionell auch als Datenverteilung bezeichnet, zu modellieren. Sie unterscheiden sich somit von diskriminierenden Ansätzen, welche lediglich Eigenschaften dieser Verteilung erlernen. \\
+Es kann schwer fallen, intuitiv die Beziehung zwischen Datenverteilung und Modell nachzuvollziehen. Um diesen Sachverhalt zu verdeutlichen, folgt ein einfaches Beispiel:
 
-Ein Münzwurf soll modelliert werden. Das Ergebnis von Münzwürfen ist mit der Wahrscheinlichkeitsverteilung $p(X)$ beschrieben wobei $x \in \left \{ \text{Kopf}, \text{Zahl} \right \}$. Um zu verdeutlichen, dass es sich bei $p(X)$ um die Datenverteilung handelt wird sie auch als $p_\text{data}(X)$ bezeichnet. \\
-Das Modell, welches den Münzwurf modellieren soll wird $p_\theta(X)$ bezeichnet, wobei $\theta$ die Parameter dieses Modells darstellt. Das Ziel ist, dass Münzwürfe des Modells, nicht von tatsächlichen Münzwürfen unterschieden werden können. Einfacher ausgedrückt, müssen die Wahrscheinlichkeiten für Kopf und Zahl jeweils gleich sein: $p_\theta(X) \overset{!}{=} p_\text{data}(X)$. \\ 
-Um dies zielgerichtet erfüllen zu können benötigen wir eine Metrik, welche angibt, wie gut das Modell die Datenverteilung approximiert. Hierfür kann beispielsweise die Distanz zwischen beiden Verteilungen genommen werden. Eine Möglichkeit diese zu Berechnen ist die KL-Divergenz $D_\text{KL}(p_\text{Data}(X)||p_\theta(X))$. Um eine solche Berechnung durchzuführen muss $p_\text{Data}(X)$ allerdings bekannt sein. Grundsätzlich ist dies allerdings für Datenverteilungen nicht möglich. \\
-Die Minimierung der KL-Divergenz ist allerdings mathematisch äquivalent zur minimierung Kreuzentropie\footnote{
+Ein Münzwurf soll modelliert werden. Das Ergebnis von Münzwürfen ist mit der Wahrscheinlichkeitsverteilung $p(X)$ beschrieben, wobei $x \in \left \{ \text{Kopf}, \text{Zahl} \right \}$. Um zu kennzeichnen, dass es sich bei $p(X)$ um die Datenverteilung handelt, wird sie auch als $p_\text{data}(X)$ bezeichnet. \\
+Das Modell, welches den Münzwurf modellieren soll, wird als $p_\theta(X)$ bezeichnet, wobei $\theta$ die Parameter dieses Modells darstellt. Das Ziel ist, dass Münzwürfe des Modells nicht von tatsächlichen Münzwürfen unterschieden werden können. Einfacher ausgedrückt müssen die Wahrscheinlichkeiten für Kopf und Zahl jeweils gleich sein: $p_\theta(X) \overset{!}{=} p_\text{data}(X)$. \\ 
+Um dies zielgerichtet erfüllen zu können, benötigen wir eine Metrik, welche angibt, wie gut das Modell die Datenverteilung approximiert. Hierfür kann beispielsweise die Distanz zwischen beiden Verteilungen genommen werden. Eine Möglichkeit, diese zu berechnen, ist die KL-Divergenz $D_\text{KL}(p_\text{Data}(X)||p_\theta(X))$. Um eine solche Berechnung durchzuführen, muss $p_\text{Data}(X)$ bekannt sein. Grundsätzlich ist dies allerdings für Datenverteilungen nicht möglich. \\
+Die Minimierung der KL-Divergenz entspricht der Maximierung der Log-Likelihood\footnote{
     Goodfellow, Bengio, Courville: Deep Learning, S. 75
     \cite{Goodfellow-et-al-2016}
-}. 
-Dies entspricht wiederum der maximierung der Log-Likelihood und ist somit als Trainingskriterium bei Modellen bekannt und über eine Schätzfunktion, wie beispielsweise eine Monte-Carlo-Simulation, annäherbar.
-Damit $p_\theta(X)$ $p_\text{data}(X)$ so erlernen kann, werden zunächst Beispiele benötigt. Dazu wird mehrfach eine Münze geworfen. Die Menge all dieser Ergebnisse sind die Trainingsdaten. Ein einzelner Münzwurf $x_n$ der Menge entspricht einem Sample, welches der Datenverteilung entnommen wurde $x_n \sim p_\text{data}(X)$. Nun kann über die Maximierung der Log-Likelihood für \ac{KI} übliches Training vollzogen werden. \\
-Wurde das Training abgschlossen stellt $p_\theta(X)$ nun eine Approximation für $p_\text{data}(X)$ dar. Um neue Münzwürfe zu erhalten, können wir sie nun also aus $p_\theta(X)$ entnehmen $x \sim p_\theta(X)$. Hierbei spricht man ebenfalls von Generierung, Synthetisierung oder Sampling.
+} und ist somit als Trainingskriterium bei Modellen bekannt und über eine Schätzfunktion, wie beispielsweise eine Monte-Carlo-Simulation, annäherbar.
+Damit $p_\theta(X)$ $p_\text{data}(X)$ so erlernen kann, werden zunächst Beispiele benötigt. Dazu wird mehrfach eine Münze geworfen. Die Menge all dieser Ergebnisse bildet die Trainingsdaten. Ein einzelner Münzwurf $x_n$ der Menge entspricht einem Sample, welches der Datenverteilung entnommen wurde $x_n \sim p_\text{data}(X)$. Nun kann über die Maximierung der Log-Likelihood für \ac{KI} übliches Training vollzogen werden. \\
+Wurde das Training abgschlossen, stellt $p_\theta(X)$ nun eine Approximation für $p_\text{data}(X)$ dar. Um neue Münzwürfe zu erhalten, können wir sie nun also aus $p_\theta(X)$ entnehmen $x \sim p_\theta(X)$. Hierbei spricht man ebenfalls von Generierung, Synthetisierung oder Sampling.
 
 Dieses Beispiel kann auf andere Anwendungsfälle übertragen werden. In der Bildysnthese etwa entspricht die Datenverteilung üblicherweise einer Verteilung von Farbwerten auf $n \times m$ Pixeln, im Gegensatz zu einem Münzwurf auf Kopf oder Zahl.
 
@@ -149,18 +148,18 @@ Dieses Beispiel kann auf andere Anwendungsfälle übertragen werden. In der Bild
 \subsection{Autoencoder}
 
 \ac{AE} sind streng genommen keine generativen Modelle, da sie lediglich rekonstruieren und keine neuen Daten erzeugen. Sie stellen allerdings die Grundlage für die Variational Autoencoder dar, welche generativ sind und im folgenden Unterabschnitt behandelt werden. \\ 
-AEs haben als primäres Ziel eine Eingabe in der dimensionalität zu reduzieren und anschließend wieder zu einer möglichst guten annäherung der ursprünglichen Eingabe zu rekonstruieren. Man kann sie sich veranschaulichent als eine erlernte Variante von Kompressionsalgorithmen wie ZIP vorstellen. 
+\ac{AE}s haben das primäre Ziel, eine Eingabe in der Dimensionalität zu reduzieren und anschließend wieder zu einer möglichst guten Annäherung der ursprünglichen Eingabe zu rekonstruieren. Zur Veranschaulichung kann man sie sich als eine erlernte Variante von Kompressionsalgorithmen wie ZIP vorstellen. 
 Zu diesem Zweck bestehen \ac{AE}s aus zwei Komponenten\footnote{
-    Die Encoder und Decoder Komponenten werden hier als $q$ und $p$ bezeichnet um die Verbindung zu Variational Autoencodern zu verdeutlichen. In vielen Publikationen werden sie allerdings $E$ und $D$ denotiert.    
+    Die Encoder- und Decoder-Komponenten werden hier als $q$ und $p$ bezeichnet, um die Verbindung zu Variational Autoencodern zu verdeutlichen. In vielen Publikationen werden sie allerdings $E$ und $D$ denotiert.    
 }:
 \begin{itemize}
     \item \textbf{Encoder $q_\phi(x)$}: \\
-    Erhält als Eingabe Samples der Datenverteilung und komprimiert sie zu einem Code, oder verstecktem Zustand $h$.
+    Erhält als Eingabe Samples der Datenverteilung und komprimiert sie zu einem Code oder verstecktem Zustand $h$.
     \item \textbf{Decoder $p_\theta(h)$}: \\
     Erhält als Eingabe den versteckten Zustand und rekonstruiert das ursprüngliche Sample der Datenverteilung möglichst verlustfrei.
 \end{itemize}
 
-Das Training eines solchen \ac{AE} ist sehr simpel. Man minimiere lediglich den Fehler-, beziehungsweise die Distanzfunktion $d(x, y)$ zwischen Quelldaten und Rekonstruktionen. Hieraus ergibt sich somit folgendes Optimierungsziel:
+Das Training eines solchen \ac{AE} ist sehr simpel. Man minimiere lediglich den Fehler beziehungsweise die Distanzfunktion $d(x, y)$ zwischen Quelldaten und Rekonstruktionen. Hieraus ergibt sich somit folgendes Optimierungsziel:
 
 \begin{equation}
     \min L_{\phi, \theta}(x) = \mathbb E _{x \sim p_{data}} 
@@ -175,13 +174,13 @@ Das Training eines solchen \ac{AE} ist sehr simpel. Man minimiere lediglich den 
 Eine spezialisierte Variante der \ac{AE} sind sogenannte \ac{VAE}\footnote{
     Kingma, Welling: Auto-Encoding Variational Bayes
     \cite{kingma2013auto}
-}. Ihre Erweiterung zu \ac{AE} besteht in der Einführung einer Bedingung an den Code. Dieser kann in im ursprünglichen \ac{AE} ein praktisch beliebiger Vektor sein, solange er bei der Entschlüsselung von Vorteil ist. Je nach Anwendungsfall kann es allerdings hilfreich sein, wenn der Code selbst auch eine semantisch Aussagekräftige Darstellung der Eingabe ist. Dies kann den Code, je nach Anwendungsfall, zu einem geringerdimensionalen Substitut für die Ursprungsdaten machen. Hierbei ist allerdings wichtig zu beachten, dass es sich in aller Regel nicht um menschenverständliche Eigenschaften handelt. \\
+}. Ihre Erweiterung zu \ac{AE} besteht in der Einführung einer Bedingung an den Code. Dieser kann in im ursprünglichen \ac{AE} ein beliebiger Vektor sein, solange er bei der Entschlüsselung von Vorteil ist. Je nach Anwendungsfall kann es allerdings hilfreich sein, wenn der Code selbst auch eine semantisch aussagekräftige Darstellung der Eingabe ist. Dies kann den Code zu einem geringerdimensionalen Substitut für die Ursprungsdaten machen. Hierbei ist allerdings wichtig zu beachten, dass es sich in aller Regel nicht um menschenverständliche Eigenschaften handelt. \\
 Zu diesem Zweck wird der latente Ergebnisraum des Encoders mit einer beliebigen Wahrscheinlichkeitsverteilung $p(z)$ kombiniert. Eingabedaten werden somit also auf einen latenten Raum $Z$ abgebildet, welcher grob $p(z)$ entspricht. \\
-Die zugrundeliegende Aussage die somit getroffen wird ist, dass jede Komponente des Codes nicht nur eine Kompression der Eingabe ist, sondern auch selbst einer Wahrscheinlichkeitsverteilung folgt. Hierbei wird angenommen, dass Merkmale der Datenverteilung, die beispielsweise einer Normalverteilung folgen, eine strukturierte und nützliche Darstellung der Eingabedaten ermöglichen. Die so entstehende Verteilung hat die folgende Form, welche die marginale Wahrscheinlichkeit von einer Beobachtung $x$ in Anbetracht der möglichen latenten Abbildungen $z$ darstellt:
+Die zugrundeliegende Aussage, die somit getroffen wird, besagt, dass jede Komponente des Codes nicht nur eine Kompression der Eingabe ist, sondern auch selbst einer Wahrscheinlichkeitsverteilung folgt. Hierbei wird angenommen, dass Merkmale der Datenverteilung, die beispielsweise einer Normalverteilung folgen, eine strukturierte und nützliche Darstellung der Eingabedaten ermöglichen. Die so entstehende Verteilung hat die folgende Form, welche die marginale Wahrscheinlichkeit von einer Beobachtung $x$ in Anbetracht der möglichen latenten Abbildungen $z$ darstellt:
 \begin{equation}
     p_\theta(x) = \int_z p_\theta(x, z) dz
 \end{equation}
-Diese Anpassung hat zur Folge, dass das Training eines \ac{VAE} ein erweitertes Optimierungsziel benötigt. Der erste Gedanke ist, wie für Generative \ac{KI} üblich, die Log-Likelihood der Verteilung $p_\theta(X)$ zu maximieren. Dies ist jedoch aufgrund des Integrals über den latenten Raum nicht effizient möglich. Dieses Problem wird gelöst, indem eine andere Quantität maximiert wird, welche garantiert kleiner als die Log-Likelihood und in polynomialer Zeit berechenbar ist. Dieses neue Optimierungsziel wird allgemein die \textit{\ac{ELBO}} genannt. Sie ist gegeben als:
+Diese Anpassung hat zur Folge, dass das Training eines \ac{VAE} ein erweitertes Optimierungsziel benötigt. Der erste Gedanke ist, wie für generative \ac{KI} üblich, die Log-Likelihood der Verteilung $p_\theta(X)$ zu maximieren. Dies ist jedoch aufgrund des Integrals über den latenten Raum nicht effizient möglich. Dieses Problem wird gelöst, indem eine andere Quantität maximiert wird, welche garantiert kleiner als die Log-Likelihood und in polynomialer Zeit berechenbar ist. Dieses neue Optimierungsziel wird allgemein die \textit{\ac{ELBO}} genannt. Sie ist gegeben als:
 \begin{equation}
     \mathcal \max L_{\phi, \theta}(x) = \mathbb E_{z \sim q_{\phi}(z|x)}
     \left [
@@ -189,31 +188,31 @@ Diese Anpassung hat zur Folge, dass das Training eines \ac{VAE} ein erweitertes 
     \right ]
     - D_\text{KL} (\log q_{\phi}(z|x) || p(z))
 \end{equation}
-$p(z)$ ist hierbei die, für die Verteilung der latenten Merkmale angenommene \ac{WDF}. In der Regel handelt es sich hierbei um eine Standardnormalverteilung $\mathcal N(0; I)$. Die Herleitung der \ac{ELBO} ausgehend von der Log-Likelihood ist sehr komplex und dem Verständnis nicht weiter zutragend. Eine Betrachtung der einzelnen Terme bietet allerdings Aufschluss über die Bedeutung:
+$p(z)$ ist hierbei die für die Verteilung der latenten Merkmale angenommene \ac{WDF}. In der Regel handelt es sich hierbei um eine Standardnormalverteilung $\mathcal N(0; I)$. Die Herleitung der \ac{ELBO} ausgehend von der Log-Likelihood ist sehr komplex und dem Verständnis nicht weiter zutragend. Eine Betrachtung der einzelnen Terme bietet allerdings Aufschluss über die Bedeutung:
 \begin{itemize}
     \item $\mathbb E_{z \sim q_{\phi}(z|x)}
         \left [
             \log p_\theta(x|z)
         \right ]$: \\
-    Hierbei handelt es sich um die Log-Likelihood der Eingabedaten unter der Bedingung der jeweiligen latenten Repräsentation. Einfacher ausgedrückt stellt dies die Übereinstimmung der Eingabe und der Rekonstruktion sicher. Somit ist dies nichts Anderes als das Optimierungsziel des ursprünglichen \ac{AE}.
+    Hierbei handelt es sich um die Log-Likelihood der Eingabedaten unter der Bedingung der jeweiligen latenten Repräsentation. Einfacher ausgedrückt stellt dies die Übereinstimmung der Eingabe und der Rekonstruktion sicher. Somit ist dies nichts anderes als das Optimierungsziel des ursprünglichen \ac{AE}.
 
     \item $-D_\text{KL} (\log q_{\phi}(z|x) || p(z))$: \\
-    Diese KL-Divergenz stellt eine Regularisierungsterm dar. Sie fordert, dass die Verteilung $q_{\phi}(z|x)$, sprich der latente Raum auf welchen Eingaben durch den Encoder abgebildet werden, der angenommenen zugrundeliegenden Verteilung $p(z)$ entspricht.
+    Diese KL-Divergenz stellt einen Regularisierungsterm dar. Sie fordert, dass die Verteilung $q_{\phi}(z|x)$, sprich der latente Raum auf welchen Eingaben durch den Encoder abgebildet werden, der angenommenen zugrundeliegenden Verteilung $p(z)$ entspricht.
 \end{itemize}
-Tatsächlich wurde also, im Vergleich zum ursprünglichen Optimierungsziels des \ac{AE}s nur der zweite Term hinzugefügt.
+Tatsächlich wurde also im Vergleich zum ursprünglichen Optimierungsziels des \ac{AE}s nur der zweite Term hinzugefügt.
 
 
 % GAN %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Generative Adversarial Networks}
 
-Maximierung der Log-Likelihood ist nicht die einzige Methode eine Datenverteilung zu erlernen. Tatsächlich schränkt sie häufig die Komplexität der zugrundeliegenden Funktionen ein, da sie von Modellen fordert, dass sie als \ac{WDF}s formuliert werden können, welche somit die damit verbundenen mathematischen Invarianten erfüllen müssen. Dies kann die Qualität der Ergebnisse beeinträchtigen. Insbesondere bei Bilddaten kommt hinzu, dass die Log-Likelihood nicht unbedingt ein gutes Maß für visuelle Qualität ist.\\
-\ac{GAN}s\footnote{
+Maximierung der Log-Likelihood ist nicht die einzige Methode, eine Datenverteilung zu erlernen. Tatsächlich schränkt sie häufig die Komplexität der zugrundeliegenden Funktionen ein, da sie von Modellen fordert, dass sie als \ac{WDF}s formuliert werden können, welche somit die damit verbundenen mathematischen Invarianten erfüllen müssen. Dies kann die Qualität der Ergebnisse beeinträchtigen. Insbesondere bei Bilddaten kommt hinzu, dass die Log-Likelihood nicht unbedingt ein gutes Maß für visuelle Qualität ist.\\
+Generative Adversarial Networks (GANs)\acused{GAN}\footnote{
     Goodfellow et al.: Generative Adversarial Nets
     \cite{goodfellow2014generativeadversarialnetworks}
-} erlernen die Datenverteilung auf eine andere Weise. In ihnen kommen zwei Komponenten zum Einsatz - der \textit{Diskriminator} und der \textit{Generator} welche jeweils zwei gegensätzliche Ziele verfolgen:
+} erlernen die Datenverteilung auf eine andere Weise. In ihnen kommen zwei Komponenten zum Einsatz, der \textit{Diskriminator} und der \textit{Generator}, welche jeweils zwei gegensätzliche Ziele verfolgen:
 \begin{itemize}
     \item \textbf{Diskriminator $D_\phi$}: \\
-    Der Diskriminator ist, wie der Name vermuten lässt, kein generatives Modell. Vielmehr hat er hat als Ziel zwischen den Ausgaben des Generators und Samples der Datenverteilung zu unterscheiden.
+    Der Diskriminator ist, wie der Name vermuten lässt, kein generatives Modell. Vielmehr hat er hat das Ziel, zwischen den Ausgaben des Generators und Samples der Datenverteilung zu unterscheiden.
     \item \textbf{Generator $G_\theta$}: \\
     Das Ziel des Generators hingegen ist das Erzeugen von Datenpunkten ausgehend von einer einfachen Ausgangsverteilung $p_z$, die vom Diskriminator nicht von echten Daten unterschieden werden können. 
 \end{itemize}
@@ -227,15 +226,15 @@ Die Idee hinter diesen gegeneinander gerichteten Komponenten ist, dass somit Dat
     + \mathbb E_{z \sim p_z}[\log (1 - D_\phi(G_\theta(z)))]
 \end{equation}
 Die Gegensätzlichkeit ist hier durch ein Minimax ausgedrückt, bei welchem $V$ respektiv zum Generator minimiert und zum Diskriminator maximiert wird. Hervorzuheben ist hierbei die Beobachtung, dass der Generator über das Täuschen des Diskriminators traininiert wird. \\
-Diese Herangehensweise ist zwar gut im Erzeugen von hochqualitativen Samples, allerdings erweist sie in der Praxis viele Probleme, die nur schwierig zu bewältigen sind. Ein prominentes dieser Probleme ist der sogenannte \textit{Mode Collapse}. Hierbei handelt es sich um einen Zustand, bei dem der Generator nur einen kleinen Bereich der Datenverteilung erlernt. Dies ist ein Umstand der auf das Trainingskriterium des Generators zurückzuführen ist. Bie diesem ist, im Gegensatz zur Maximierung der Log-Likelihood, nicht sichergestellt, dass die gesamte Datenverteilung betrachtet wird. Es kann also ausreichen nur einen kleinen bereich zu erlernen, solange dieser vom Diskriminator als real eingestuft wird.\footnote{
-    Thanh-Tung, Tran: Mode Collapse in Generative Adversarial Networks, S. TODO
+Diese Herangehensweise ist zwar gut im Erzeugen von hochqualitativen Samples, allerdings erweist sie in der Praxis viele Probleme, die nur schwierig zu bewältigen sind. Ein prominentes dieser Probleme ist der sogenannte \textit{Mode Collapse}. Hierbei handelt es sich um einen Zustand, bei dem der Generator nur einen kleinen Bereich der Datenverteilung erlernt. Dies ist ein Umstand, der auf das Trainingskriterium des Generators zurückzuführen ist. Bei diesem ist im Gegensatz zur Maximierung der Log-Likelihood nicht sichergestellt, dass die gesamte Datenverteilung betrachtet wird. Es kann also ausreichen, nur einen kleinen Bereich zu erlernen, solange dieser vom Diskriminator als real eingestuft wird.\footnote{
+    Vgl. Thanh-Tung, Tran: Mode Collapse in Generative Adversarial Networks, S. TODO
     \cite{thanhtung2020catastrophicforgettingmodecollapse}
 }
 
 \subsubsection{VAE-GAN}
 
-Insbesondere bei Bilddaten können Log-Likelihood basierte Modelle qualitative Mängel aufweisen. Dies ist darin begründet das Optimierungsziele zum Optimieren der Log-Likelihood wie beispielsweise die Kreuzentropie nicht unbedingt gute Kriterien für visuelle Ähnlichkeit von Samples zur Datenverteilung sind. So kommt es bei \ac{VAE}s unter anderem oft zu verwaschenen Rekonstruktionen. \\
-VAE-GANs haben als Ziel, die visuelle Qualität der Ergebnisse von \ac{VAE}s zu verbessern. Sie tun dies indem sie \ac{VAE}s mit \ac{GAN}s kombinieren. Konkret wird hierbei der Decoder des \ac{VAE}s als Generator eines \ac{GAN}s angesehen. Somit müssen die aus dem Decoder resultierenden Rekonstruktionen einen Diskriminator täuschen, welcher somit die visuelle Qualität sicherstellen soll. Das Trainingsziel ist hierbei ebenfalls eine Kombination beider Ansätze\footnote{
+Insbesondere bei Bilddaten können Log-Likelihood basierte Modelle qualitative Mängel aufweisen. Dies ist darin begründet, dass Optimierungsziele zum Optimieren der Log-Likelihood, wie beispielsweise die Kreuzentropie, nicht unbedingt gute Kriterien für visuelle Ähnlichkeit von Samples zur Datenverteilung sind. So kommt es bei \ac{VAE}s unter anderem oft zu verwaschenen Rekonstruktionen. \\
+VAE-GANs haben als Ziel, die visuelle Qualität der Ergebnisse von \ac{VAE}s zu verbessern. Sie tun dies, indem sie \ac{VAE}s mit \ac{GAN}s kombinieren. Konkret wird hierbei der Decoder des \ac{VAE}s als Generator eines \ac{GAN}s angesehen. Somit müssen die aus dem Decoder resultierenden Rekonstruktionen einen Diskriminator täuschen, welcher somit die visuelle Qualität sicherstellen soll. Das Trainingsziel ist hierbei ebenfalls eine Kombination beider Ansätze\footnote{
     Larsen et al.: Autoencoding using a learned similarity metric, S. 2
     \cite{larsen2016autoencoding}
 }:
@@ -264,7 +263,7 @@ In der Praxis wird allerdings oft anstelle von $L_{D_l\text{ like}}$ der ursprü
     \left [
         \log p_\theta(x|z)
     \right ]$ von \ac{VAE}s angewandt. \\
-Diese Variante von \ac{VAE}s ist in der Lage deutlich ähnlicher erscheinende Rekonstruktionen zu erzeugen, als es einfache VAEs können.
+Diese Variante von \ac{VAE}s ist in der Lage, deutlich ähnlicher erscheinende Rekonstruktionen zu erzeugen, als es einfache VAEs können.
 
 
 %\subsubsection{Visual Similarity Metrics}
@@ -281,14 +280,14 @@ Diese Variante von \ac{VAE}s ist in der Lage deutlich ähnlicher erscheinende Re
     \caption{Architektur eines U-Nets \cite{ronneberger2015unetconvolutionalnetworksbiomedical}}
     \label{fig:unet}
 \end{figure}
-Eine in der Image-To-Image Domäne weitverbreitete Modellarchitektur ist das  sogenannte U-Net\footnote{
+Eine in der Image-To-Image-Domäne weitverbreitete Modellarchitektur ist das sogenannte U-Net\footnote{
     Ronneberger, Fischer, Brox: Convolutional Networks for Image Segmentation
     \cite{ronneberger2015unetconvolutionalnetworksbiomedical}
-}, dargestellt in Abbildung \ref{fig:unet}. Ursprünglich wurde Sie für Bildsegmentierung, also dem Kennzeichnen zusammenhängender oder relevanter Bildelemente, entwickelt. Mitlerweile findet sie jedoch in vielen weiteren Bereichen, welche Bilddaten zu Bilddaten verarbeiten, Verwendung. \\
+}, dargestellt in Abbildung \ref{fig:unet}. Ursprünglich wurde sie für Bildsegmentierung, also das Kennzeichnen zusammenhängender oder relevanter Bildelemente, entwickelt. Mitlerweile findet sie jedoch in vielen weiteren Bereichen, welche Bilddaten zu Bilddaten verarbeiten, auch Image to Image genannt, Verwendung. \\
 Ihr Aufbau wird in ihrer Vorstellung wie folgt dargelegt\footnote{
     Vgl. Ronneberger, Fischer, Brox: Convolutional Networks for Image Segmentation, S. 4
     \cite{ronneberger2015unetconvolutionalnetworksbiomedical}
-}. Sie besteht grundlegend aus einem Kompressions- und einem Expansionsarm. Hierbei hat der Kompressionsarm hat die übliche Struktur eines Convolutional Networks. Er besteht aus wiederholter Anwendung von $3\times3$ Konvolutionen und folgendem Downsampling, welches normalerweise die Dimensionen halbiert und die Anzahl der Featurekanäle verdoppelt. \\
+}. Sie besteht grundlegend aus einem Kompressions- und einem Expansionsarm. Hierbei hat der Kompressionsarm die übliche Struktur eines Convolutional Networks. Er besteht aus wiederholter Anwendung von $3\times3$ Konvolutionen und folgendem Downsampling, welches normalerweise die Dimensionen halbiert und die Anzahl der Featurekanäle verdoppelt. \\
 Der Expansionsarm kehrt entsprechend die Kompression um und besteht somit aus Upsampling-Blöcken, welche die Anzahl der Featurekanäle nun halbieren und die Auflösung verdoppeln. Diesem Upsampling folgen wiederum wiederholte $3\times3$ Konvolutionen. Hierbei werden in der ursprünglichen Umsetzung die komprimierten Features des Kompressionsarms mit den expandierten konkatteniert. In bestimmten Anwendungsfällen kann dies jedoch ausgelassen werden, insbesondere wenn die beiden Arme separat genutzt werden sollen. 
 
 \subsection{Transformer}
@@ -302,24 +301,24 @@ Der Expansionsarm kehrt entsprechend die Kompression um und besteht somit aus Up
 Der Transformer\footnote{
     Vaswani et al.: Attention is All You Need
     \cite{vaswani2023attentionneed}
-} ist eine Modellarchitektur, welche ursprünglich für den Bereich der Synthese natürlicher Sprache entworfen wurde. Sie zeichnen sich insbesondere durch ihre Fähigkeit aus, sequenzielle Daten in einem einzigen Zeitschritt kontextualisiert zu verarbeiten. Mitlerweile findet sie allerdings auch in vielen weiteren Gebieten des Deep-Learning Verwendung, so auch beispielsweise in der Bildsynthese in Form von \ac{ViT} \footnote{
+} ist eine Modellarchitektur, welche ursprünglich für den Bereich der Synthese natürlicher Sprache entworfen wurde. Sie zeichnen sich insbesondere durch ihre Fähigkeit aus, sequenzielle Daten in einem einzigen Zeitschritt kontextualisiert zu verarbeiten. Mitlerweile findet sie allerdings auch in vielen weiteren Gebieten des Deep-Learning Verwendung, so auch beispielsweise in der Bildsynthese in Form von Vision Transformern (ViT)\acused{ViT} \footnote{
     Dosovitskiy et al.: An Image is Worth 16x16 Words 
     \cite{dosovitskiy2021imageworth16x16words}
 }. \\ 
 Der Transformer, abgebildet in Abbildung \ref{fig:transformer}, folgt dem Encoder-Decoder Schema. Dabei dient, vereinfacht ausgedrückt, der Encoder zur Verarbeitung der Eingabe zu einem Kontext. Der Decoder hingegen generiert anhand dieses Kontextes und der bisher generierten Sequenz autoregressiv die Ausgabe. Das bedeutet, dass die Ausgabe, Komponente um Komponente, auf Basis der bisherigen Ergbnissequenz, gesampelt wird. \\ 
-Die Daten, die hierbei verarbeitet werden sind grundsätzlich sequenziel, ihre Position innerhalb der Sequenz ist also für ihre Interpretation des Inhaltes relevant. \\
-Die grobe Funktionsweise ist dabei wie Folgt. Die Eingabedaten müssen zunächst für den Encoder angepasst werden. Dies kann gegebenfalls das Embedden des Eingabevektors beinhalten, in jedem Fall aber die Integration eines Positional Encodings. Dieses weist jeder Komponente des Eingabvektors einen eindeutigen Wert anhand der Position dieser Komponente in der zu verarbeitenden Sequenz zu. Dieses Positional Encoding beruht dabei üblicherweise auf einer Kosinusfunktion, kann aber auch erlernt werden. \\
-Dieser um die Positionsinformationen angereicherte Vektor kann nun vom Encoder, zu einem sogenannten Contextual- oder Hidden-Embedding, verarbeitet werden. Dies ist ein Vektor, welcher grundsätzlich dem Eingangsvektor entspricht. Jede Komponente dieses Vektors ist dabei, stark vereinfacht ausgedrückt, eine kontextualisierte Repräsentation der ursprünglichen Komponente. Das heißt, sie beinhaltet Informationen über ihre Bedeutung innerhalb der jeweiligen Sequenz, sowie gegebenenfalls im breiteren Kontext der Domäne des Modells. \\
+Die Daten, die hierbei verarbeitet werden, sind grundsätzlich sequenziell, ihre Position innerhalb der Sequenz ist also für ihre Interpretation des Inhaltes relevant. \\
+Die grobe Funktionsweise ist dabei wie folgt. Die Eingabedaten müssen zunächst für den Encoder angepasst werden. Dies kann gegebenfalls das Embedden des Eingabevektors beinhalten, in jedem Fall aber die Integration eines Positional Encodings. Dieses weist jeder Komponente des Eingabevektors einen eindeutigen Wert anhand der Position dieser Komponente in der zu verarbeitenden Sequenz zu. Dieses Positional Encoding beruht dabei üblicherweise auf einer Kosinusfunktion, kann aber auch erlernt werden. \\
+Dieser um die Positionsinformationen angereicherte Vektor kann nun vom Encoder zu einem sogenannten Contextual- oder Hidden-Embedding verarbeitet werden. Dies ist ein Vektor, welcher grundsätzlich dem Eingangsvektor entspricht. Jede Komponente dieses Vektors ist dabei, stark vereinfacht ausgedrückt, eine kontextualisierte Repräsentation der ursprünglichen Komponente. Das heißt, sie beinhaltet Informationen über ihre Bedeutung innerhalb der jeweiligen Sequenz sowie gegebenenfalls im breiteren Kontext der Domäne des Modells. \\
 Anhand dieses Hidden-Embeddings wird nun Komponente für Komponente die Ausgabesequenz generiert. Dabei wird in jedem Schritt das bis zu diesem Zeitpunkt generierte Ergebnis mit dem Hidden-Embedding in Kontext gesetzt, was letztendlich die Grundlage für die Auswahl der wahrscheinlich als nächstes folgenden Komponente der Sequenz ist.
 
 \subsubsection{Attention}
 
-Der Erfolg von Transformern beruht maßgeblich auf ihren Attention-Blöcken, diese Erlauben es einen, oder gegebenfalls auch zwei, Sequenzvektoren zu sich selbst, oder einander in Kontext zu setzen und diese Information in ihrer Ausgabe festzuhalten. \\
+Der Erfolg von Transformern beruht maßgeblich auf ihren Attention-Blöcken. Diese erlauben es, einen oder gegebenfalls auch zwei Sequenzvektoren zu sich selbst oder zu einander in Kontext zu setzen und diese Information in ihrer Ausgabe festzuhalten. \\
 Diese basieren dabei auf der der sogenannten \textit{Self-Attention}, welche einen sogenannten Attention-Vektor als Ergebnis hat. Jede Komponente dieses Vektors wird berechnet, indem alle Komponenten eines Eingabevektors linear abgebildet werden:
 \begin{equation}
     y_i = \sum_{j=1}^n w_{ji}x_j
 \end{equation}
-Wobei $x$ der Eingabevektor, $y$ der Attention-Vektor und $W$ die Gewichtsmatrix für die lineare Abbildung sind. Hierbei ist die Invariante, dass die Summe der Spaltenvektoren von $W$ gleich eins ist, zu erfüllen. Selfattention kann somit als Wertung der Wichtigkeit aller Komponenten von $x$ gemäß einer, beziehungsweise mehreren diskreten Warhscheinlichkeitsverteilungen verstanden werden. Mit anderen Worten wird somit bestimmt, wieviel Aufmerksamkeit einer Komponente zukommen soll. \\
+Wobei $x$ der Eingabevektor, $y$ der Attention-Vektor und $W$ die Gewichtsmatrix für die lineare Abbildung sind. Hierbei ist die Invariante, dass die Summe der Spaltenvektoren von $W$ gleich eins ist, zu erfüllen. Selfattention kann somit als Wertung der Wichtigkeit aller Komponenten von $x$ gemäß einer beziehungsweise mehreren diskreten Wahrscheinlichkeitsverteilungen verstanden werden. Mit anderen Worten wird somit bestimmt, wieviel Aufmerksamkeit einer Komponente zukommen soll. \\
 Dieses Prinzip wird in den Attention-Blöcken eines Transformers grundlegend durch die \textit{Scaled Dot Product Attention} umgesetzt. Diese ist wie folgt definiert\footnote{
     Vaswani et al.: Attention is All You Need, S. 4
     \cite{vaswani2023attentionneed}
@@ -334,19 +333,19 @@ Dieses Prinzip wird in den Attention-Blöcken eines Transformers grundlegend dur
     \text{softmax}(z) = \frac{e^z}{\sum_{j=1}^K e^{z_j}}
 \end{equation}
 $Q$, $K$ und $V$ sind hierbei Ergebnisse der Multiplikation eines Eingabevektors mit den korrespondierenden erlernten Gewichtsmatrizen $W^Q$, $W^K$ und $W^V$. $d_k$ ist die Dimension von $Q$ und $K$. \\
-Man nennt $Q$, $K$ und $V$ auch \textit{Query}, \textit{Key} und \textit{Value}, was ihre Bedeutung, durch den vergleich zu Datenbanken, veranschaulicht. Zunächst werden Query und Key werden miteinander multipliziert, der sich hieraus ergebende Wert soll angeben, wie relevant der jeweilige Key für die Query ist. Dies entspricht der Definition der Self-Attention und die umschließende Softmax-Funktion stellt die Einhaltung der Invariante sicher. Diese, vereinfacht ausgedrückt, gewichteten Relevanzwerte, werden anschließend mit dem Value verrechnet, welcher der Repräsentation der kontextuellen Bedeutung der jeweiligen Komponente des Eingangsvektors entspricht. \\
-Sollen zwei Vektoren zu einander in beziehung gesetzt werden, so wird einer der beiden für $Q$ und der andere für $K$ und $V$ verwendet. Man spricht in diesem Fall auch von \textit{Cross Attention}. \\
+Man nennt $Q$, $K$ und $V$ auch \textit{Query}, \textit{Key} und \textit{Value}, was ihre Bedeutung durch den Vergleich zu Datenbanken veranschaulicht. Zunächst werden Query und Key werden miteinander multipliziert, der sich hieraus ergebende Wert soll angeben, wie relevant der jeweilige Key für die Query ist. Dies entspricht der Definition der Self-Attention und die umschließende Softmax-Funktion stellt die Einhaltung der Invariante sicher. Diese, vereinfacht ausgedrückt, gewichteten Relevanzwerte werden anschließend mit dem Value verrechnet, welcher der Repräsentation der kontextuellen Bedeutung der jeweiligen Komponente des Eingangsvektors entspricht. \\
+Sollen zwei Vektoren zu einander in Beziehung gesetzt werden, so wird einer der beiden für $Q$ und der andere für $K$ und $V$ verwendet. Man spricht in diesem Fall auch von \textit{Cross Attention}. \\
 Diese Berechnung kann auch mehrfach mit unterschiedlichen $W^Q$, $W^K$ und $W^V$ durchgeführt werden, um vielfältige Interpretationsmöglichkeiten der Sequenz abbilden zu können. Dies wird \textit{Multi-Head Attention} genannt.
 
 % DDPM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Diffusionsmodelle}
 \label{subsec:Grundlagen_DMs}
 
-Wie in vorherigen Abschnitten bereits erläutert, sind Log-Likelihood basierte Modelle an strenge mathematische Bedingungen gebunden. Dies schränkt prinzipiell die mögliche Komplexität der Funktionsdefinition ein. Wohingegen Modelle welche andere Kriterien optimieren, wie \ac{GAN}s, zwar höhere Komplexität in ihren Funktionen erlauben, allerdings praktische Fallstricke wie das Mode-Collapse Problem aufweisen. Somit stellt sich die Frage, ob es eine Klasse von Modellen gibt, welche die Log-Likelihood als Optimierungsziel haben und gleichzeitig beliebig komplexe Funktionen erlauben. \\
+Wie in vorherigen Abschnitten bereits erläutert, sind Log-Likelihood-basierte Modelle an strenge mathematische Bedingungen gebunden. Dies schränkt prinzipiell die mögliche Komplexität der Funktionsdefinition ein. Modelle, welche andere Kriterien optimieren, wie \ac{GAN}s, erlauben zwar höhere Komplexität in ihren Funktionen, allerdings weisen sie praktische Fallstricke wie das Mode-Collapse-Problem auf. Somit stellt sich die Frage, ob es eine Klasse von Modellen gibt, welche die Log-Likelihood als Optimierungsziel hat und gleichzeitig beliebig komplexe Funktionen erlaubt. \\
 Eine mögliche Antwort hierauf stellen Diffusionsmodelle (DMs)\acused{DM}\footnote{
     Dickstein et al.: Diffusion Models
     \cite{pmlr-v37-sohl-dickstein15}
-} dar. Die Kernidee der Generierung dieser Variante von Modellen ist dabei, das, über viele Zeitschritte hinweg, iterative Herauskristallisieren von Informationen aus einem ursprünglichen Rauschbild. Intuitiv kann diese Funktionsweise damit begründet werden, dass jeder einzelne Schritt hierbei eine Verhältnismäßig einfache Aufgabe ist, da das Ergebnis jedes Schrittes nur eine kleine Änderung des verrauschten Ausgangszustands darstellt. Alle Schritte zusammen jedoch ergeben ein sehr tiefes und mächtiges Modell. Vergleichbar ist dies mit einem Künstler welcher, beginnend mit einer Grundierung, Schicht für Schicht weitere Strukturen und Details auf eine Leinwand aufträgt, wobei jeder Pinselstrich für sich genommen nur wenig Einfluss hat. \\
+} dar. Die Kernidee der Generierung dieser Variante von Modellen ist dabei das iterative Herauskristallisieren von Informationen aus einem ursprünglichen Rauschbild über viele Zeitschritte hinweg. Intuitiv kann diese Funktionsweise damit begründet werden, dass jeder einzelne Schritt hierbei eine verhältnismäßig einfache Aufgabe ist, da das Ergebnis jedes Schrittes nur eine kleine Änderung des verrauschten Ausgangszustands darstellt. Alle Schritte zusammen jedoch ergeben ein sehr tiefes und mächtiges Modell. Vergleichbar ist dies mit einem Bildhauer, welcher beginnend mit einem unförmigen Steinblock Stück für Stück jeweils ein wenig der überflüssigen Masse entfernt und so die Form des Blocks immer mehr der gewünschten Form annähert, wobei jedes einzelne Entfernen für sich genommen nur wenig Einfluss hat.\\
 Die Formulierung eines Diffusionsmodells ist in zwei Prozesse aufgeteilt, wobei $t \in [0,T]$ den jeweiligen Zeitschritt angibt. Hierbei ist eine gängige Konvention $T=1000$: 
 \begin{itemize}
     \item \textbf{Vorwärtsprozess} $q(x_{1:T}|x_0)$: \\
@@ -370,14 +369,14 @@ Die Formulierung eines Diffusionsmodells ist in zwei Prozesse aufgeteilt, wobei 
         \caption{Illustration des Vorwärtsprozesses mit zunehmendem $t$}
         \label{fig:forward_process}
     \end{figure} \\
-    Das Ziel des Vorwärtsprozesses ist das iterative Einführen von zunehmenden, in der Regel gaußschem Rauschen in die Eingabedaten $x_0$, wie in Abbildung \ref{fig:forward_process} illustriert. Die Daten zum letzten Zeitschritt $x_T$ stellen hierbei reines Rauschen dar, in welchem die Informationen von $x_0$ gänzlich zerstört wurden. Dieser Prozess ist der Grund für die Namensgebung von Diffusionsmodellen, da er dem Vorgang der Diffusion in der Physik grob ähnelt. Definiert ist er wie Folgt:
+    Das Ziel des Vorwärtsprozesses ist das iterative Einführen von zunehmendem in der Regel gaußschem Rauschen in die Eingabedaten $x_0$, wie in Abbildung \ref{fig:forward_process} illustriert. Die Daten zum letzten Zeitschritt $x_T$ stellen hierbei reines Rauschen dar, in welchem die Informationen von $x_0$ gänzlich zerstört wurden. Dieser Prozess ist der Grund für die Namensgebung von Diffusionsmodellen, da er dem Vorgang der Diffusion in der Physik grob ähnelt. Definiert ist er wie folgt:
     \begin{equation}
         q(x_{1:T}|x_0) := \prod_{t=1}^T q(x_t | x_{t-1}) 
     \end{equation}
     \begin{equation}
         q(x_t|x_{t-1}) :=  \mathcal N(x_t; \sqrt{1-\beta_t}x_{t-1}, \beta_t I)
     \end{equation}
-    $\beta_t$ ist dabei ein zeitabhängiger Wert, welcher die Stärke des gaußschen Rauschens des jeweiligen Zeitschritts bestimmt. Für die Festlegung dieses Wertes existieren mehrere Strategien, wobei eine einfache, positive lineare Funktion in Abhängigkeit von $t$ bereits ausreicht. Diese Strategien werden auch Noise- oder Beta-Schedules genannt. Ein hervorzuhebenes Detail ist, dass die \ac{WDF} $q$ vollständig definiert ist und somit keinerlei zu trainierende Parameter enthält. \\
+    $\beta_t$ ist dabei ein zeitabhängiger Wert, welcher die Stärke des gaußschen Rauschens des jeweiligen Zeitschritts bestimmt. Für die Festlegung dieses Wertes existieren mehrere Strategien, wobei eine einfache positive lineare Funktion in Abhängigkeit von $t$ bereits ausreicht. Diese Strategien werden auch Noise- oder Beta-Schedules genannt. Ein hervorzuhebendes Detail ist, dass die \ac{WDF} $q$ vollständig definiert ist und somit keinerlei zu trainierende Parameter enthält. \\
     zudem $q(x_{1:T}|x_0)$ lässt sich noch soweit vereinfachen, dass sich jedes $q(x_t|x_0)$ in nur einem einzigen Zeitschritt ermitteln lässt\footnote{
         Ho, Jain, Abbeel: Denoising Diffusion Probabilistic Models, S. 2
         \cite{ho2020denoisingdiffusionprobabilisticmodels}
@@ -409,7 +408,7 @@ Die Formulierung eines Diffusionsmodells ist in zwei Prozesse aufgeteilt, wobei 
         \caption{Illustration des Rückwärtsprozesses mit abnehmendem $t$}
         \label{fig:reverse_process}
     \end{figure} \\
-    Der Rückwärtsprozess versucht, dem Namen entsprechend, die im Vorwärtsprozess getätigten Diffusionsschritte umzukehren - also aus dem Rauschen $x_T$ die Ursprungsdaten $x_0$ iterativ zu rekonstruieren, siehe Abbildung \ref{fig:reverse_process}. Entsprechend ist auch die mathematische Formulierung:
+    Der Rückwärtsprozess versucht dem Namen entsprechend, die im Vorwärtsprozess getätigten Diffusionsschritte umzukehren - also aus dem Rauschen $x_T$ die Ursprungsdaten $x_0$ iterativ zu rekonstruieren, siehe Abbildung \ref{fig:reverse_process}. Entsprechend ist auch die mathematische Formulierung:
     \begin{equation}
         p_\theta(x_{0:T}) := p(x_T) \prod_{t=1}^T p_\theta(x_{t-1} | x_{t}) 
     \end{equation}
@@ -417,20 +416,20 @@ Die Formulierung eines Diffusionsmodells ist in zwei Prozesse aufgeteilt, wobei 
         p_\theta(x_{t-1} | x_{t})  :=  
         \mathcal N(x_{t-1}; \mu_\theta(x_{t}, t), \Sigma_\theta(x_{t}, t))
     \end{equation}
-    Die Parameter des Rauschens $\mu$ und $\Sigma$ werden hierbei in Abhähnigkeit zum Ergebnis des jeweils vorherigen Zeitschritts durch neuronale Netze $\mu_\theta$ und $\Sigma_\theta$ abgebildet. Hierbei kommen nun erlernte Parameter $\theta$ zum Einsatz, da die Rekonstruktion eine deutlich kompliziertere Funktion darstellt, als die Diffusion. Ausgenommen ist hierbei $p(x_T)$, da dies ein vollständiges Rauschbild ist und somit üblicherweise $\mathcal N$ entspricht, also keine zu trainierenden Parameter benötigt.
+    Die Parameter des Rauschens $\mu$ und $\Sigma$ werden hierbei in Abhähngigkeit zum Ergebnis des jeweils vorherigen Zeitschritts durch neuronale Netze $\mu_\theta$ und $\Sigma_\theta$ abgebildet. Hierbei kommen nun erlernte Parameter $\theta$ zum Einsatz, da die Rekonstruktion eine deutlich kompliziertere Funktion darstellt als die Diffusion. Ausgenommen ist hierbei $p(x_T)$, da dies ein vollständiges Rauschbild ist und somit üblicherweise $\mathcal N$ entspricht, also keine zu trainierenden Parameter benötigt.
 \end{itemize}
 Die Notation dieser Prozesse ähnelt den Komponenten eines \ac{VAE}. Tatsächlich können Diffusionsmodelle als solche interpretiert werden, bei welchen die latente Abbildung einer Standardnormalverteilung entspricht\footnote{
     Ho, Jain, Abbeel: Denoising Diffusion Probabilistic Models, S. 3
     \cite{ho2020denoisingdiffusionprobabilisticmodels}
 }.
-Dementsprechend vergleichbar ist ebenfalls das Optimierungsziel, welches eine untere Grenze der Log-Likelihood, auch \ac{VLB} genannt ist. Diese setzt sich aus drei grundlegenden Termen, welche allesamt in Abhängigkeit zu $t$ stehen, zusammen\footnote{
+Dementsprechend vergleichbar ist ebenfalls das Optimierungsziel, welches eine untere Grenze der Log-Likelihood, auch \ac{VLB} genannt, ist. Diese setzt sich aus drei grundlegenden Termen, welche allesamt in Abhängigkeit zu $t$ stehen, zusammen\footnote{
     Dhariwal, Nichol: Diffusion Models Beat Gans on Image Synthesis, S. 19
     \cite{dhariwal2021diffusionmodelsbeatgans}
 }:
 \begin{equation}
     \min L_\text{vlb} := L_0 + L_{1:T-1} + L_T 
 \end{equation}
-Wobei die einzelnen hergeleiteten Therme hierbei folgend definiert sind:
+Wobei die einzelnen hergeleiteten Therme hierbei folgendermaßen definiert sind:
 \begin{equation}
     L_0 := -\log p_\theta(x_0|x_1)
 \end{equation}
@@ -440,7 +439,7 @@ Wobei die einzelnen hergeleiteten Therme hierbei folgend definiert sind:
 \begin{equation}
     L_T := D_\text{KL}(q(x_T|x_0)||p(x_T))
 \end{equation}
-Diese Definition erscheint auf den ersten Blick nur schwer verständlich, bei genauerer Betrachtung jedoch lässt sich die Bedeutung jedoch einfach zusammenfassen. Alle drei bilden jeweils die Distanz der korrespondierenden Vorwärts- und Rückwärts-Verteilungen ab. Im allerersten Schritt, also $t=0$, sind die Eingabedaten noch unverrauscht. Somit müssen hier noch nicht die Normalverteilungen verglichen werden sondern lediglich die negative Log-Likelihood, also die Rekonstruktionen zu den Quelldaten. Im letzten Zeitschritt werden reine Normalverteilungen verglichen, es benötigt also keine Parametrisierung $\theta$. Für alle schritte dazwischen müssen die jeweiligen Normalverteilungen mittels KL-Divergenz verglichen werden. Die zusätzliche Konditionierung des Vorwärtsprozesses durch $x_0$ ist hierbei notwendig, damit diese Berechnung in polynomialer Zeit durchgeführt werden kann\footnote{
+Diese Definition erscheint auf den ersten Blick nur schwer verständlich, bei genauerer Betrachtung lässt sich die Bedeutung jedoch einfach zusammenfassen. Alle drei Terme bilden jeweils die Distanz der korrespondierenden Vorwärts- und Rückwärts-Verteilungen ab. Im allerersten Schritt, also $t=0$, sind die Eingabedaten noch unverrauscht. Somit müssen hier noch nicht die Normalverteilungen verglichen werden sondern lediglich die Rekonstruktionen zu den Quelldaten. Im letzten Zeitschritt werden reine Normalverteilungen verglichen, es benötigt also keine Parametrisierung $\theta$. Für alle Schritte dazwischen müssen die jeweiligen Normalverteilungen mittels KL-Divergenz verglichen werden. Die zusätzliche Konditionierung des Vorwärtsprozesses durch $x_0$ ist hierbei notwendig, damit diese Berechnung in polynomialer Zeit durchgeführt werden kann\footnote{
     Ho, Jain, Abbeel: Denoising Diffusion Probabilistic Models, S. 3
     \cite{ho2020denoisingdiffusionprobabilisticmodels}
 }. \\
@@ -454,11 +453,11 @@ Die vorherige Definition von \ac{DM}s im Allgemeinen bietet bereits ein Verstän
     Ho, Jain, Abbeel: Denoising Diffusion Probabilistic Models
     \cite{ho2020denoisingdiffusionprobabilisticmodels}
 } - untermauert die Notwendigkeit des Verrauschens noch deutlicher. \\
-Die grundlegende Umformulierung ist nun, dass anstelle des Erkennens der Struktur in einem Rauschbild, das Rauschen in einer verrauschten Struktur erkannt und iterativ entfernt wird. Auf den ersten Blick mag dies bereits äquivalent wirken, und tatsächlich sind zwei Herangehensweisen grundsätzlich äquivalent, allerdings erlaubt dieser Perspektivwechsel neue Erkenntnisse. \\
+Die grundlegende Umformulierung ist nun, dass anstelle des Erkennens der Struktur in einem Rauschbild das Rauschen in einer verrauschten Struktur erkannt und iterativ entfernt wird. Auf den ersten Blick mag dies bereits äquivalent wirken, und tatsächlich sind die zwei Herangehensweisen grundsätzlich äquivalent, allerdings erlaubt dieser Perspektivwechsel neue Erkenntnisse. \\
 Zuerst wird auf diese Weise der Zusammenhang zu sogenannten \ac{SMM}s  offensichtlich. \\
-Diese Klasse von generativen Modellen erlernt die Datenverteilung nicht direkt, sondern ihren Score respektiv zur Eingabe - also den Gradienten der Log-Likelihood. Auf diese Weise werden Eingabedaten auf einen Vektor abgebildet, welcher angibt wie die einzelnen Kompentent der Eingabedaten verändert werden müssten, damit sie unter der Modellverteilung wahrscheinlicher werden. Hierüber wird indirekt ebenfalls die Datenverteilung erlernt. Der Samplingprozess unter einem solchen \ac{SMM} ist das iterative Anpassen eines ursprünglichen Verrauschten Vektors, zu einem Sample, welches eine hohe Wahrscheinlichkeit unter der erlernten Modellverteilung aufweist. \\
-Dieser Prozess entspricht nun exakt dem Rückwärtsprozess eines \ac{DM}. Nun kann die Frage aufkommen, wie nun aber der Score in einem \ac{DM} erlernt wird, wenn lediglich die Normalverteilungen des Vor- und Rückwärtsprozess angeglichen werden. Hier ist nun der genannte Perspektivwechsel von Vorteil. Zu erlernen welches Rauschen in Daten vorhanden ist, ist äquivalent zum Erlernen des Scores. Um dies zu begreifen, muss sich vor Auge geführt werden, dass das Verrauschen eines einzelnen Datenpunktes bedeutet, dass er von seinem ursprünglichen Wert verschoben wird. Rauschen zu entfernen bedeutet somit zu erlernen in welche Richtung dieser Wert wieder zurückgeschoben werden muss. Mit anderen Worten also: Den Gradienten zu erlernen, welcher zum maximal wahrscheinlichen Ausgangswert weist - was wiederum genau die Definition von \ac{SMM}s ist. Von Vorteil bei dieser Art von Modellen ist, dass sie gleichzeitig die tatsächliche Datenverteilung erlernen, wenn auch indirekt, und trotzdem nicht an die Invarianten einer \ac{WDF} gebunden sind, da sie eben nur den Score erlernen. \\
-Weiter kann so, unter der Annahme, dass die Kovarianzmatrix der Normalverteilungen konstant $\beta_t$ ist (Diese Annahme wird im folgenden Unterabschnitt kritisch hinterfragt), ein neues, deutlich simpleres Optimierungsziel formuliert werden\footnote{
+Diese Klasse von generativen Modellen erlernt die Datenverteilung nicht direkt, sondern ihren Score respektiv zur Eingabe - also den Gradienten der Log-Likelihood. Auf diese Weise werden Eingabedaten auf einen Vektor abgebildet, welcher angibt, wie die einzelnen Komponenten der Eingabedaten verändert werden müssen, damit sie unter der Modellverteilung wahrscheinlicher werden. Hierüber wird indirekt ebenfalls die Datenverteilung erlernt. Der Samplingprozess unter einem solchen \ac{SMM} ist das iterative Anpassen eines ursprünglichen verrauschten Vektors zu einem Sample, welches eine hohe Wahrscheinlichkeit unter der erlernten Modellverteilung aufweist. \\
+Dieser Prozess entspricht exakt dem Rückwärtsprozess eines \ac{DM}. Nun kann die Frage aufkommen, wie der Score in einem \ac{DM} erlernt wird, wenn lediglich die Normalverteilungen des Vor- und Rückwärtsprozess angeglichen werden. Hier ist der genannte Perspektivwechsel von Vorteil. Zu erlernen, welches Rauschen in Daten vorhanden ist, ist äquivalent zum Erlernen des Scores. Um dies zu begreifen, kann man sich vor Augen führen, dass das Verrauschen eines einzelnen Datenpunktes bedeutet, dass er von seinem ursprünglichen Wert verschoben wird. Rauschen zu entfernen bedeutet somit, zu erlernen, in welche Richtung dieser Wert wieder zurückgeschoben werden muss. Mit anderen Worten also: Den Gradienten zu erlernen, welcher zum maximal wahrscheinlichen Ausgangswert weist - was wiederum genau die Definition von \ac{SMM}s ist. Von Vorteil bei dieser Art von Modellen ist, dass sie gleichzeitig die tatsächliche Datenverteilung erlernen, wenn auch indirekt, und trotzdem nicht an die Invarianten einer \ac{WDF} gebunden sind, da sie eben nur den Score erlernen. \\
+Unter der Annahme, dass die Kovarianzmatrix der Normalverteilungen konstant $\beta_t$ ist (diese Annahme wird im folgenden Unterabschnitt kritisch hinterfragt), kann so ein neues, deutlich simpleres Optimierungsziel formuliert werden\footnote{
     Ho, Jain, Abbeel: Denoising Diffusion Probabilistic Models, S. 5
     \cite{ho2020denoisingdiffusionprobabilisticmodels}
 }: 
@@ -473,7 +472,7 @@ Hierbei erlernt das neuronale Netz $\epsilon_\theta$ nun nicht mehr Erwahrtungsw
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Verbesserte DDPMs}
 
-In der Praxis hat sich die Annahme, dass die Kovarianzmatrizen der Normalverteilungen konstant sind, als zu vereinfachend herausgestellt. Bessere Ergebnisse können durch das Erlernen von $\Sigma$ erzielt werden. Allerdings erhöht dies in der Praxis die Varianz der Trainingsverluste. Eine erfolgreiche Lösung für dieses Dilemma wird Nichol und Dhariwal\footnote{
+In der Praxis hat sich die Annahme, dass die Kovarianzmatrizen der Normalverteilungen konstant sind, als zu vereinfachend herausgestellt. Bessere Ergebnisse können durch das Erlernen von $\Sigma$ erzielt werden. Allerdings erhöht dies in der Praxis die Varianz der Trainingsverluste. Eine erfolgreiche Lösung für dieses Dilemma wird von Nichol und Dhariwal\footnote{
     Nichol, Dhariwal: Improved Denoising Diffusion Probabilistic Models, S. 4
     \cite{nichol2021improveddenoisingdiffusionprobabilistic}
 } vorgeschlagen. Sie kombinieren die Optimierungsziele $L_\text{simple}$ und $L_\text{vlb}$:
@@ -498,39 +497,39 @@ Diese soll dafür sorgen, dass Informationen in Eingabedaten langsamer zerstört
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Konditionierung}
 
-Diffusionsmodelle wie sie soweit vorgestellt wurden sind nicht konditioniert. Es gibt somit also keine Möglichkeit über ein Kontrollsignal, wie beispielsweise Klassen, die Generierung zu steuern. \\
-Um dies zu ermöglichen muss die Verarbeitung eines solchen Signals zunächst in das Modell integriert werden. Hierfür existieren viele Ansätze, welche alle gemein haben, dass das Signal üblicherweise vor der Integration embeddet wird. Das bedeutet, dass es zunächst auf einen Vektor festgelegter größe abgebildet wird, welcher der Verarbeitung vereinfacht. Diese abbildung kann fest definiert, oder erlernt werden. Einige gängige Varianten der Integration solcher Embeddings werden folgend aufgelistet:
+Die bisher vorgestellten Diffusionsmodelle sind nicht konditioniert. Es gibt somit keine Möglichkeit, über ein Kontrollsignal, wie beispielsweise Klassen, die Generierung zu steuern. \\
+Um dies zu ermöglichen, muss die Verarbeitung eines solchen Signals zunächst in das Modell integriert werden. Hierfür existieren viele Ansätze, welche alle gemein haben, dass das Signal üblicherweise vor der Integration embeddet wird. Das bedeutet, dass es zunächst auf einen Vektor festgelegter Größe abgebildet wird, welcher die Verarbeitung vereinfacht. Diese Abbildung kann fest definiert, oder erlernt werden. Einige gängige Varianten der Integration solcher Embeddings werden folgend aufgelistet:
 \begin {itemize}
     \item \textbf{Konkatenation mit Eingangsdaten}: \\
     Die wahrscheinlich simpelste Art der Integration ist die Konkatenation des Embeddings mit den Eingabedaten.
     \item \textbf{Addition mit Zeitembedding}: \\
-    Eine ebenfalls sehr einfache alternative ist die Addition des Embeddings mit dem Zeitschritt-Embedding. Hierbei muss sichergestellt werden, dass beide Vektoren die gleiche Dimensionalität haben.
+    Eine ebenfalls sehr einfache Alternative ist die Addition des Embeddings mit dem Zeitschritt-Embedding. Hierbei muss sichergestellt werden, dass beide Vektoren die gleiche Dimensionalität haben.
     \item \textbf{Cross Attention}: \\
-    Eine deutlich komplexere Variante ist die Integration mittels Attention. Hierbei werden während der Verarbeitung der Eingabedaten Cross-Attention Blöcke verwendet, wobei das Kontrollsignal für Key und Value genutzt wird. Dieser Ansatz eignet sich vor allem für kompliziertere Signale, wie beispielsweise natürliche Sprache.
-    \item \textbf{Adaptive Group Normalization} (AdaGN) \footnote{
+    Eine deutlich komplexere Variante ist die Integration mittels Attention. Hierbei werden während der Verarbeitung der Eingabedaten Cross-Attention-Blöcke verwendet, wobei das Kontrollsignal für Key und Value genutzt wird. Dieser Ansatz eignet sich vor allem für kompliziertere Signale, wie beispielsweise natürliche Sprache.
+    \item \textbf{Adaptive Group Normalization} (AdaGN) \acused{AdaGN}\footnote{
         Vgl. Dhariwal, Nichol: Diffusion Models Beat Gans on Image Synthesis, S. 6
         \cite{NEURIPS2021_49ad23d1}
     }: \\
-    Eine weitere Methode sind sogenannte \ac{AdaGN}-Blöcke. Diese erlernen eine lineare Abbildung von Zeit- und Konditionsembedding, dabei können diese Embeddings zuvor addiert oder konkatteniert werden. Definitiert ist \ac{AdaGN} wie folgt:
+    Eine weitere Methode sind sogenannte \ac{AdaGN}-Blöcke. Diese erlernen eine lineare Abbildung von Zeit- und Konditionsembedding. Dabei können diese Embeddings zuvor addiert oder konkatteniert werden. Definitiert ist \ac{AdaGN} wie folgt:
     \begin{equation}
         \text{AdaGN}(h,y) = y_s \text{GroupNorm}(h) + y_b
     \end{equation}
-    Wobei $h$ die aktuellen Aktivierungen und $y=[y_s, y_b]$ das aufgeteilte Ergebnis einer erlernten linearen Abbildung von Zeit und Kondition ist. \\
+    Wobei $h$ die aktuellen Aktivierungen und $y=[y_s, y_b]$ das aufgeteilte Ergebnis einer erlernten linearen Abbildung von Zeit und Kondition sind. \\
     Eine etwas abgewandelte Methode ist \ac{AdaLN}, welche lediglich die Gruppen-Normierung durch eine Schicht-Normierung ersetzt.    
 \end {itemize}  
-Nach Integration in das Modell, müssen ebenfalls die Algorithmen für Training und Sampling angepasst werden. Die aktuell gängigste Art und Weise hierfür stellt die \ac{CFG}\footnote{
+Nach Integration in das Modell müssen ebenfalls die Algorithmen für Training und Sampling angepasst werden. Die aktuell gängigste Art und Weise hierfür stellt die \ac{CFG}\footnote{
     Ho, Salimans: Classifier-Free Diffusion Guidance
     \cite{ho2022classifierfreediffusionguidance}
-} dar. Durch sie ist es möglich das Diffusionsmodell zu Konditionieren, ohne dass ein Klassifikationsmodell verwendet werden muss, wie es in vorherigen Ansätzen nötig war\footnote{
+} dar. Durch sie ist es möglich, das Diffusionsmodell zu konditionieren, ohne dass ein Klassifikationsmodell verwendet werden muss, wie es in den vorherigen Ansätzen nötig war\footnote{
     Vgl. Dhariwal, Nichol: Diffusion Models Beat Gans on Image Synthesis, S. 6 ff.
     \cite{NEURIPS2021_49ad23d1}
 }. \\
-Hierbei wird zuallererst ein Null-Embedding $\diameter$ definiert, welches die Abwesenheit eines Kontrollsignals abbildet. Anschließend müssen folgende geringfügige Anpassung für Training und Sampling vollzogen werden:
+Hierbei wird zuallererst ein Null-Embedding $\diameter$ definiert, welches die Abwesenheit eines Kontrollsignals abbildet. Anschließend müssen folgende geringfügige Anpassungen für Training und Sampling vollzogen werden:
 \begin{enumerate}
     \item \textbf{Training}:\\
     Beim Training wird nun das tatsächliche Signal zu einer definierten Wahrscheinlichkeit $p$ durch $\diameter$ ersetzt. $p$ ist dabei üblicherweise gering, oft wird $p=0.1$ verwendet.
     \item \textbf{Sampling}:\\
-    Für das Sampling wird nun jeder Zeitschritt zweimal durchgeführt. Einer davon nutzt dabei die Kondition $c$, der Andere hingegen $\diameter$. Anschließend wird zwischen beiden Ergebnissen mit einem festgelegten Gewicht $\lambda$ linear interpoliert:
+    Für das Sampling wird nun jeder Zeitschritt zweimal durchgeführt. Einer davon nutzt dabei die Kondition $c$, der andere hingegen $\diameter$. Anschließend wird zwischen beiden Ergebnissen mit einem festgelegten Gewicht $\lambda$ linear interpoliert:
     \begin{equation}
         \tilde \epsilon_t(z_t, c) = (1+w)\epsilon_\theta(z_t, c)
         - w\epsilon_\theta(z_t, \diameter)
@@ -541,14 +540,14 @@ Hierbei wird zuallererst ein Null-Embedding $\diameter$ definiert, welches die A
 \subsubsection{Image To Image}
 \label{subsubsec:i2i}
 
-Durch die Markow-Kette des Rückwärtsprozesses beim Samplings in einem \ac{DM} ergibt sich die Möglichkeit diesen Prozess zu \enquote{kapern}, um die Generatierung genauer zu steuern. Konkret bedeutet dies, dass der Rückwärtsprozess nicht zwangsläufig bei $t=T$ beginnen muss. Tatsächlich kann ein beliebiges $t$ als Startpunkt gewählt werden, solange $x_t$ bekannt ist. Da der Rückwärtsprozess zu jedem Zeitschritt versucht den selben Zeitschritt im Forwärtsprozess zu approximieren, kann für $x_t$ einfach $q(x_t|x_0)$ genutzt werden. Einfacher ausgedrückt heißt dies, dass ein Eingabedatum entsprechend Zeitschritt $t$ verrauscht werden kann und anschließend umgehend in den Rückwärtsprozess gegeben werden kann, um bei $t$ zu starten. Dies hat zur Folge, dass Samples, die auf diese Weise erzeugt wurden, dem Eingegebenen Datenpunkt stärker ähneln. Die Stärke dieser Ähnlichkeit kann dabei über $t$ festgelegt werden - je kleiner $t$ desto weniger werden die Daten durch Rauschen zerstört, desto größer die Ähnlichkeit.
+Durch die Markow-Kette des Rückwärtsprozesses beim Samplings in einem \ac{DM} ergibt sich die Möglichkeit, diesen Prozess zu \enquote{kapern}, um die Generierung genauer zu steuern. Konkret bedeutet dies, dass der Rückwärtsprozess nicht zwangsläufig bei $t=T$ beginnen muss. Tatsächlich kann ein beliebiges $t$ als Startpunkt gewählt werden, solange $x_t$ bekannt ist. Da der Rückwärtsprozess zu jedem Zeitschritt versucht, denselben Zeitschritt im Forwärtsprozess zu approximieren, kann für $x_t$ einfach $q(x_t|x_0)$ genutzt werden. Einfacher ausgedrückt heißt dies, dass ein Eingabedatum entsprechend Zeitschritt $t$ verrauscht werden und anschließend umgehend in den Rückwärtsprozess gegeben werden kann, um bei $t$ zu starten. Dies hat zur Folge, dass Samples, die auf diese Weise erzeugt wurden, dem eingegebenen Datenpunkt stärker ähneln. Die Stärke dieser Ähnlichkeit kann dabei über $t$ festgelegt werden - je kleiner $t$, desto weniger werden die Daten durch Rauschen zerstört, desto größer also die Ähnlichkeit.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Inpainting}
 
-Ebenfalls ist es möglich die Generierung lokal zu begrenzen, sodass gezielt nur Bereiche in einem Eingabedatum durch die Generierung betroffen werden. Hierfür wird zuerst eine Maske definiert, welche die gleiche Dimension der Eingabedaten hat. Anschließend erfolgt der Rückwärtsprozess. Hierbei wird nun in jedem Schritt der maskierte Bereich von $p_\theta(x_{t-1} | x_{t})$ durch $q(x_{t-1}|x_0)$ ersetzt. Auf diese Weise bleiben die maskierten Bereiche der Eingabedaten unverändert wärend die Unmaskierten generiert werden. \\
-Aufgrund des Umstands, dass diese Ersetzung in jedem Zeitschritt stattfindet ist der Übergang zwischen Ursprungs- und neuen Daten fließend und kohärent, sogar wenn sich hierbei die Kontrollsignale unterscheiden.
+Ebenfalls ist es möglich, die Generierung lokal zu begrenzen, sodass gezielt nur Bereiche in einem Eingabedatum durch die Generierung betroffen werden. Hierfür wird zuerst eine Maske definiert, welche die gleiche Dimension wie die Eingabedaten hat. Anschließend erfolgt der Rückwärtsprozess. Hierbei wird nun in jedem Schritt der maskierte Bereich von $p_\theta(x_{t-1} | x_{t})$ durch $q(x_{t-1}|x_0)$ ersetzt. Auf diese Weise bleiben die maskierten Bereiche der Eingabedaten unverändert, wärend die Unmaskierten generiert werden. \\
+Aufgrund des Umstands, dass diese Ersetzung in jedem Zeitschritt stattfindet, ist der Übergang zwischen Ursprungs- und neuen Daten sogar dann fließend und kohärent, wenn sich hierbei die Kontrollsignale unterscheiden.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Diffusion Transformer}
@@ -567,8 +566,8 @@ Aufgrund des Umstands, dass diese Ersetzung in jedem Zeitschritt stattfindet ist
     Dosovitskiy et al.: An Image is Worth 16x16 Words 
     \cite{dosovitskiy2021imageworth16x16words}
 }.\\
-Ihre grundlegende Funktionsweise ist dabei stark verwandt zu der von normalen Transformern. Die Eingabedaten werden zunächst in kleinere Patches, vergleichbar mit den Zeitschritten einer Sequenz, unterteilt. Diese Patches werden anschließend mit einem Positional Encoding versehen, welches wie beispielsweise bei Bildern mehrdimensional sein kann. Diese angereicherten Patches werden anschließend in vielen Iterationen mittels sogenannter \ac{DiT} Blöcke, welche aus abwechselnden Self-Attention und \ac{AdaLN}-Blöcken beziehungsweise Cross-Attention-Blöcken bestehen, verarbeitet. Abschließend werden die einzelnen Patches wieder zu ihrer ursprünglichen Anordnung zusammengefügt. Die vorgestellte Architektur ist in Abbildung \ref{fig:dit} veranschaulicht.\\
-Diese Methode hat sich in einigen Kontexten als Leistungsfähiger im Vergleich zu U-Nets erwiesen. Allerdings erfordern sie ebenfalls mehr Rechenkapazität um vergleichbare oder bessere Ergebnisse zu erzeugen. Aufgrund dieser Leistungsfähigkeit werden \ac{DiT}s in einigen der aktuell leistungsfähigsten Modellen wie beispielsweise Stable Diffusion 3 verwendet.
+Ihre grundlegende Funktionsweise ist dabei stark verwandt mit der von normalen Transformern. Die Eingabedaten werden zunächst in kleinere Patches, vergleichbar mit den Zeitschritten einer Sequenz, unterteilt. Diese Patches werden anschließend mit einem Positional Encoding versehen, welches wie beispielsweise bei Bildern mehrdimensional sein kann. Diese angereicherten Patches werden anschließend in vielen Iterationen mittels sogenannter \ac{DiT} Blöcke, welche aus abwechselnden Self-Attention und \ac{AdaLN}-Blöcken beziehungsweise Cross-Attention-Blöcken bestehen, verarbeitet. Abschließend werden die einzelnen Patches wieder zu ihrer ursprünglichen Anordnung zusammengefügt. Die vorgestellte Architektur ist in Abbildung \ref{fig:dit} veranschaulicht.\\
+Diese Methode hat sich in einigen Kontexten als leistungsfähiger im Vergleich zu U-Nets erwiesen. Allerdings erfordern sie ebenfalls mehr Rechenkapazität, um vergleichbare oder bessere Ergebnisse zu erzeugen. Aufgrund dieser Leistungsfähigkeit werden \ac{DiT}s in einigen der aktuell leistungsfähigsten Modellen wie beispielsweise Stable Diffusion 3 verwendet.
 
 % LDM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Latente Diffusion}
@@ -579,16 +578,16 @@ Diese Methode hat sich in einigen Kontexten als Leistungsfähiger im Vergleich z
     \caption{Architektur eines \ac{LDM}s \cite{rombach2022high}}
     \label{fig:ldm}
 \end{figure}
-Die bisher vorgestellte Variante von \ac{DM}s operiert ausschließlich in der Datendomäne. Dies ist insbesondere bei hohen Dimensionalitäten, sowohl beim Training als auch bei der Inferenz, enorm Rechenintensiv. \ac{LDM}s \footnote{
+Die bisher vorgestellte Variante von \ac{DM}s operiert ausschließlich in der Datendomäne. Dies ist insbesondere bei hohen Dimensionalitäten sowohl beim Training als auch bei der Inferenz enorm rechenintensiv. \ac{LDM}s \footnote{
     Vgl. Rombach et al.: Latent Diffusion Models
     \cite{rombach2022high}
 } sind ein Ansatz um dieses Problem zu mildern. \\
 Grundlegend bestehen \ac{LDM}s aus zwei Komponenten: Einem vortrainierten \ac{VAE}, sowie einem \enquote{normalen} \ac{DM}. \\
-Die Rolle des \ac{VAE}s hierbei ist die Eingangsdaten in ihrer dimensionalität zu Reduzieren, sodass das \ac{DM} auf signifikant weniger Dimensionen operiert. Da der nötige Rechenaufwand des \ac{DM}s in aller Regel, insbesondere durch die sequenzielle Verarbeitung während der Inferenz, deutlich höher ist als die Ver- und Entschlüsselung durch einen VAE, reduziert dies den insgesamt nötigen Aufwand enorm\footnote{
+Die Rolle des \ac{VAE}s hierbei ist es, die Eingangsdaten in ihrer Dimensionalität zu reduzieren, sodass das \ac{DM} auf signifikant weniger Dimensionen operiert. Da der nötige Rechenaufwand des \ac{DM}s in aller Regel, insbesondere durch die sequenzielle Verarbeitung während der Inferenz, deutlich höher ist als die Ver- und Entschlüsselung durch einen VAE, reduziert dies den insgesamt nötigen Aufwand enorm\footnote{
     Vgl. Peebles, Xie: Diffusion Transformers, S. 8
     \cite{peebles2023scalable}
 }, siehe Abbildung \ref{fig:ldm}. \\
-Die grundlegenden Algorithmen für Training und Inferenz bleiben hierbei weitestgehend unverändert. Beim Training müssen die Trainingsdaten nur zunächst durch den Encoder des \ac{VAE} auf ihre latente Repräsentation abgebildet werden und können anschließend wie vorher auch genutzt werden. Bei der Inferenz hingegen muss lediglich das Resultat des Reverse-Prozesses abschließend vom \ac{VAE} entschlüsselt werden. Das Rauschen wird also nur im latenten Raum hinzugefügt, beziehungsweise entfernt.
+Die grundlegenden Algorithmen für Training und Inferenz bleiben hierbei weitestgehend unverändert. Beim Training müssen die Trainingsdaten nur zunächst durch den Encoder des \ac{VAE} auf ihre latente Repräsentation abgebildet werden und können anschließend wie vorher auch genutzt werden. Bei der Inferenz hingegen muss lediglich das Resultat des Reverse-Prozesses abschließend vom \ac{VAE} entschlüsselt werden. Das Rauschen wird also nur im latenten Raum hinzugefügt beziehungsweise entfernt.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PTG
@@ -596,7 +595,7 @@ Die grundlegenden Algorithmen für Training und Inferenz bleiben hierbei weitest
 
 \section{Terraingenerierung}
 
-Die Terraingenerierung ist ein zentrales Gebiet der Computergraphik. Sie umfasst eine vielzahl von Algorithmen, Methoden und Datenstrukturen, welche für das Erzeugen von virtuellen Landschaften genutzt werden. Im Folgenden, werden die, für den weiteren Verlauf dieser Arbeit relevanten, Konzepte erläutert.
+Die Terraingenerierung ist ein zentrales Gebiet der Computergraphik. Sie umfasst eine vielzahl von Algorithmen, Methoden und Datenstrukturen, welche für das Erzeugen von virtuellen Landschaften genutzt werden. Im Folgenden, werden die für den weiteren Verlauf dieser Arbeit relevanten Konzepte erläutert.
 
 \subsection{Digital Elevation Models}
 
@@ -617,14 +616,14 @@ Die Terraingenerierung ist ein zentrales Gebiet der Computergraphik. Sie umfasst
     \caption{Digital Elevation Models \cite{nasa2013srtm}}
     \label{fig:DEMs}
 \end{figure}
-\ac{DEM}s sind eine Datenstruktur für die Repräsentation von Höhenwerten einer Oberfläche. In ihnen werden beispielsweise Terrains über ihre Oberfläche definiert. Durch die Abbildung einer solchen dreidimensionalen Struktur auf zwei Dimensionen haben \ac{DEM}s zwar den Nachteil, dass keine überhängenden Strukturen abgebildet werden können, da diese allerdings bei Landschaften nur sehr selten vorkommen, ist dies, insbesondere größeren Gebieten, oft zu vernachlässigen.\\
-Eine Variante von \ac{DEM}s, welche die Höhenwerte den Koordinaten eines zweidimensionalen Rasters zuordnet, wird im Bereich der Computergraphik auch oft als \textit{Heightmap} bezeichnet. Einige Beispiele für solche \ac{DEM}s sind in Abbildung \ref{fig:DEMs} dargestellt. Diese sehr simple Datenstruktur ist einfach und effizient zu Verarbeiten, weswegen sie oft in der Terraingenerierung angewandt wird. Aufgrund dieser Repräsentation als zweidimensionales Array sind Raster-\ac{DEM}s insbesondere für die Verwendung mit Bildsynthese-Ansätzen der generativen \ac{KI} geeigenet.
+\ac{DEM}s sind eine Datenstruktur für die Repräsentation von Höhenwerten einer Oberfläche. In ihnen werden beispielsweise Terrains über ihre Oberfläche definiert. Die Abbildung einer solchen dreidimensionalen Struktur auf zwei Dimensionen hat \ac{DEM}s zwar den Nachteil, dass keine überhängenden Strukturen abgebildet werden können. Da diese allerdings bei Landschaften nur sehr selten vorkommen, ist dies insbesondere bei größeren Gebieten oft zu vernachlässigen.\\
+Eine Variante von \ac{DEM}s, welche die Höhenwerte den Koordinaten eines zweidimensionalen Rasters zuordnet, wird im Bereich der Computergraphik auch oft als \textit{Heightmap} bezeichnet. Einige Beispiele für solche \ac{DEM}s sind in Abbildung \ref{fig:DEMs} dargestellt. Diese sehr simple Datenstruktur ist einfach und effizient zu verarbeiten, weswegen sie oft in der Terraingenerierung angewandt wird. Aufgrund dieser Repräsentation als zweidimensionales Array sind Raster-\ac{DEM}s insbesondere für die Verwendung mit Bildsynthese-Ansätzen der generativen \ac{KI} geeignet.
 
 \subsection{Rauschbasierte Generierung}
 
-In einigen Anwendungsgebieten, wie beispielsweise der Terraingenerierung zur Laufzeit eines Videospiels, ist es notwendig, dass die Algorithmen für die Erstellung der Landschaft so einfach wie möglich zu berechnen sind. Komplizierte Simulationen sind somit in der Regel nicht Anwendbar. \\ 
-Eine weit verbreitete alternative ist die Nutzung von sogennanten Rauschfunktionen. Solche Funktionen bilden ihre Parameter auf Zufallswerte, beziehungsweise Pseudozufallswerte ab. Angewandt auf \ac{DEM}s sind diese Rauschfunktionen zweidimensional und bilden die $x$ und $y$ Koordinaten des Bildes auf einen zufälligen Höhenwert ab. \\ 
-Reines statistisches Rauschen, welches beispielsweise auf einer Normalverteilung basiert, ist jedoch zu unstrukturiert um überzeugende Terrains erzeugen zu können - es fehlen größere Strukturen und Übergänge. Aus eben diesem Grund verwendet man häufig für Landschaften eine besondere Klasse von Rauschen - sogenannte \textit{Gitterrauschfunktionen}. Diese weisen Zufallswerte nun nicht mehr jedem einzelnen Bildpunkt zu. Stattdessen unterteilen sie das Bild zunächst in ein Gitter und bilden anschließend lediglich die Eckpunkte dieses Gitters auf Zufallswerte ab. Nun kann zwischen diesen Werten interpoliert werden, um ein kohärenteres Rauschbild zu erzeugen.\footnote{
+In einigen Anwendungsgebieten, wie beispielsweise der Terraingenerierung zur Laufzeit eines Videospiels, ist es notwendig, dass die Algorithmen für die Erstellung der Landschaft so einfach wie möglich zu berechnen sind. Komplizierte Simulationen sind somit in der Regel nicht anwendbar. \\ 
+Eine weit verbreitete Alternative ist die Nutzung von sogennanten Rauschfunktionen. Solche Funktionen bilden ihre Parameter auf Zufallswerte beziehungsweise Pseudozufallswerte ab. Angewandt auf \ac{DEM}s sind diese Rauschfunktionen zweidimensional und bilden die $x$ und $y$ Koordinaten des Bildes auf einen zufälligen Höhenwert ab. \\ 
+Reines statistisches Rauschen, welches beispielsweise auf einer Normalverteilung basiert, ist jedoch zu unstrukturiert, um überzeugende Terrains erzeugen zu können - es fehlen größere Strukturen und Übergänge. Aus diesem Grund verwendet man häufig für Landschaften eine besondere Klasse von Rauschen, sogenannte \textit{Gitterrauschfunktionen}. Diese weisen Zufallswerte nicht mehr jedem einzelnen Bildpunkt zu. Stattdessen unterteilen sie das Bild zunächst in ein Gitter und bilden anschließend lediglich die Eckpunkte dieses Gitters auf Zufallswerte ab. Nun kann zwischen diesen Werten interpoliert werden, um ein kohärenteres Rauschbild zu erzeugen.\footnote{
     Vgl. Lagae et al.: A Survey of Procedural Noise Functions, S. 4
     \cite{https://doi.org/10.1111/j.1467-8659.2010.01827.x}
 }  
@@ -635,11 +634,11 @@ Eine Verschärfung des Gitterrauschens ist das Gittergradientenrauschen. Hierbei
     Perlin: An Image Synthesizer
     \cite{perlin1985image}
 }. \\
-Hierfür werden zunächst allen Eckpunkten des Gitters pseudozufällig ausgerichtete Gradienten mit länge eins zugewiesen. Die Bestimmung eines Pixelwertes funktioniert erfolgt anschließend nach dem folgenden Algorithmus:
+Hierfür werden zunächst allen Eckpunkten des Gitters pseudozufällig ausgerichtete Gradienten mit Länge eins zugewiesen. Die Bestimmung eines Pixelwertes erfolgt anschließend nach dem folgenden Algorithmus:
 \begin{enumerate}
     \item Ermittle die Gradienten der Eckpunkte, die zur Gitterzelle des aktuellen Punktes gehören.
     \item Berechne das Skalarprodukt zwischen jedem dieser Gradienten und dem Verbindungsvektor des jeweiligen Eckpunktes zur relativen Position des Punktes innerhalb der Gitterzelle.
-    \item Interpoliere nun systematisch zwischen je zwei Skalarprodukten, beziehungswiese Interpolationen $g_1$ und $g_2$, anhand der relevanten Koordinate der Position $x$ des Pixels, mit der folgenden Funktion:
+    \item Interpoliere nun systematisch zwischen je zwei Skalarprodukten beziehungswiese Interpolationen $g_1$ und $g_2$ anhand der relevanten Koordinate der Position $x$ des Pixels mit der folgenden Funktion:
     \begin{equation}
         f_\text{interp}(x, g_1, g_2) = (g_2 - g_1)(6x^5 - 15x^4 + 10x^3) 
         + g_1
@@ -656,8 +655,8 @@ Dieser Algorthmus eignet sich ebenfalls zur Generierung von unendlichen Rauschfe
 
 \subsubsection{Fraktales Rauschen}
 
-Eine einfache Rauschfunktion ist in ihrem Detailgrad fest an ihre Definition gebunden. Beim Perlin Rauschen beispielsweise ist dieser definiert über die Auflösung des Gitternetzes. Somit ist es hier nicht möglich feine und große Strukturen gleichzeitig abzubilden. Eine oft angewandte Lösung für dieses Dilemma ist die Kombination der gleichen Rauschfunktion mit unterschiedlichen Amplituden und Frequenzen, sogenanntem fraktalen Rauschen. \\
-Hierbei werden sogenannte $O$ Oktaven einer Rauschfunktion $f$ summiert. Jede  Oktave benutzt dabei dieselbe Rauschfunktion, unterscheidet sich jedoch in Frequenz und Amplitude zu den Anderen. Die jeweiligen Änderungen zwischen Oktaven werden über Parameter, die Persistenz $p$ und Lakunarität $l$, definiert. Kombiniert werden alle Oktaven zu einem einzigen Rauschbild, anhand der folgenden Funktion:  
+Eine einfache Rauschfunktion ist in ihrem Detailgrad fest an ihre Definition gebunden. Beim Perlin Rauschen beispielsweise ist dieser definiert über die Auflösung des Gitternetzes. Somit ist es hier nicht möglich, feine und grobe Strukturen gleichzeitig abzubilden. Eine oft angewandte Lösung für dieses Dilemma ist die Kombination der gleichen Rauschfunktion mit unterschiedlichen Amplituden und Frequenzen, sogenanntem fraktalen Rauschen. \\
+Hierbei werden sogenannte $O$ Oktaven einer Rauschfunktion $f$ summiert. Jede Oktave benutzt dabei dieselbe Rauschfunktion, unterscheidet sich jedoch in Frequenz und Amplitude von den anderen. Die jeweiligen Änderungen zwischen Oktaven werden über Parameter, die Persistenz $p$ und Lakunarität $l$, definiert. Kombiniert werden alle Oktaven zu einem einzigen Rauschbild anhand der folgenden Funktion:  
 \begin{equation}
     f_\text{fractal}(x) = \sum_{o=0}^{O-1} p^{o}f(l^ox)
 \end{equation}
@@ -676,7 +675,7 @@ Diffusionsmodelle sind eine verhältnismäßig sehr junge Methode der Bildsynthe
 Die erste Veröffentlichung hierzu erfolgte von Lochner et al.\footnote{
     Vgl. Lochner et al.: Interactive Terrain Authoring using Diffusion Models
     \cite{lochner2023interactive}
-}. Ihr vorgeschlagenes \ac{DM} operiert im Bildraum und wurde auf $8\times8\text{km}$ \ac{DEM}s trainiert. Als Konditionierung wurden hierbei Skizzen von Landschaftseigenschaften, auch Signaturen genannt, verwendet. Diese wurden für das Training algorithmisch aus den \ac{DEM}s ermittelt. Die Angabe solcher Signaturen erlaubt bei der Generierung eine Interaktive Definition von Klippen, Gebirgskämmen, Abflüssen und flachen Gebieten. Hierbei kann bei der Generierung zwischen verschiedenen Geländetypen ausgewählt werden wie Gebirgen, Canyons und Hügellandschaften. Die Autoren erwähnen ebenfalls, dass die interaktive Kontrolle der Generation inkonsistente Ergebnisse erzeugt.\\
+}. Ihr vorgeschlagenes \ac{DM} operiert im Bildraum und wurde auf $8\times8\text{km}$ \ac{DEM}s trainiert. Als Konditionierung wurden hierbei Skizzen von Landschaftseigenschaften, auch Signaturen genannt, verwendet. Diese wurden für das Training algorithmisch aus den \ac{DEM}s ermittelt. Die Angabe solcher Signaturen erlaubt bei der Generierung eine interaktive Definition von Klippen, Gebirgskämmen, Abflüssen und flachen Gebieten. Hierbei kann bei der Generierung zwischen verschiedenen Geländetypen ausgewählt werden wie Gebirgen, Canyons und Hügellandschaften. Die Autoren erwähnen ebenfalls, dass die interaktive Kontrolle der Generation inkonsistente Ergebnisse erzeugt.\\
 Hu et al.\footnote{
     Vgl. Hu et al.: Terrain Generation with Geological Sketch Guidance
     \cite{hu2024terrain}
@@ -686,7 +685,7 @@ Hu et al.\footnote{
 Jain, Sharma und Rajan\footnote{
     Vgl. Jain, Sharma, Rajan: Procedural Infinite Terrain Generation with Diffusion Models
     \cite{jain2022adaptive}
-} fokussieren sich hingegen auf eine unendliche Generierung. Dazu trainieren sie zunächst mehrere \ac{DM}s auf $512\times512\text{m}$ \ac{DEM}s welche jeweils unterschiedliche spektrale Frequenzen der \ac{DEM}s erlernen. Dies soll verschiedene sogenannte Levels of Detail (LOD) abbilden, um Echtzeitgenerierung zu ermöglichen. Dazu werden die einzelnen \ac{DEM}s jeweils mittels Fourriertransformation in einzelne Frequenzbereiche aufgeteilt. Beim Sampling werden diese Frequenzbilder nach der Generierung wieder zusammengefügt. Die sich hieraus ergebenen, einzelnen, Landschaftsausschnitte werden von den Autoren über Kernelblending mit Perlin Rauschen nahtlos zusammengefügt. 
+} fokussieren sich hingegen auf eine unendliche Generierung. Dazu trainieren sie zunächst mehrere \ac{DM}s auf $512\times512\text{m}$ \ac{DEM}s welche jeweils unterschiedliche spektrale Frequenzen der \ac{DEM}s erlernen. Dies soll verschiedene sogenannte Levels of Detail (LOD) abbilden, um Echtzeitgenerierung zu ermöglichen. Dazu werden die einzelnen \ac{DEM}s jeweils mittels Fourriertransformation in einzelne Frequenzbereiche aufgeteilt. Beim Sampling werden diese Frequenzbilder nach der Generierung wieder zusammengefügt. Die sich hieraus ergebenden einzelnen Landschaftsausschnitte werden von den Autoren über Kernelblending mit Perlin-Rauschen nahtlos zusammengefügt. 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -695,7 +694,7 @@ Jain, Sharma und Rajan\footnote{
 
 \section{Geomorphologie}
 
-Die Geomorphologie studiert die phyischen Oberflächen-Eigenschaften von Landschaften und untersucht die ihrer Entstehung zugrundeliegenden Prozesse\footnote{
+Die Geomorphologie studiert die physischen Oberflächen-Eigenschaften von Landschaften und untersucht die ihrer Entstehung zugrundeliegenden Prozesse\footnote{
     Hugget: Fundamentals of Geomorphology, S. 3
     \cite{huggett2022fundamentals}
 }. Als integrativer Wissenschaftszweig verbindet sie unter anderem Aspekte der Geologie, Klimatologie und Hydrologie, um die Beschaffenheit von Gebirgsketten, Tälern und allem dazwischen zu analysieren. Diese Prozesse umfassen eine Vielzahl natürlicher Mechanismen, darunter beispielsweise Erosion, Sedimentation und chemische Verwitterung. \\

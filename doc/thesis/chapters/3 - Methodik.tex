@@ -1,9 +1,9 @@
 \chapter{Methodik}
 \label{ch:Methodik}
 
-Dieses Kapitel ist der ausführlichen Darlegung und Erläuterung der Konzeption für die Terraingenerierung mit Diffusionsmodellen gewidmet. Die erarbeiteten Lösungsentwürfe haben die Aufgabe die in Abschnitt \ref{sec:Zielsetzung} definierten Kernziele zu adressieren und dienen als Grundlage für die weiterfolgende Implementierung. \\
-Hierzu wird zuerst das Diffusionsmodell und seine zentralen Kernkomponenten eingehend betrachtet. Die jeweilige Anwendung der in Kapitel \ref{ch:Grundlagen} vorgestellten theoretischen Grundlagen wird hierfür nachvollziehbar begründet. \\
-Darauf aufbauend werden die unterschiedlichen generativen Prozesse detailliert beschrieben. Diese nutzen gezielt die Potenziale der des definierten Modells aus, um die vielfältigen Möglichkeiten, die Diffusion für die Terraingenerierung bietet, demonstrieren zu können.
+Dieses Kapitel ist der ausführlichen Darlegung und Erläuterung der Konzeption für die Terraingenerierung mit Diffusionsmodellen gewidmet. Die erarbeiteten Lösungsentwürfe haben die Aufgabe, die in Abschnitt \ref{sec:Zielsetzung} definierten Kernziele zu adressieren, und dienen als Grundlage für die weiterfolgende Implementierung. \\
+Hierzu werden zuerst das Diffusionsmodell und seine zentralen Kernkomponenten eingehend betrachtet. Die jeweilige Anwendung der in Kapitel \ref{ch:Grundlagen} vorgestellten theoretischen Grundlagen wird hierfür nachvollziehbar begründet. \\
+Darauf aufbauend werden die unterschiedlichen generativen Prozesse detailliert beschrieben. Diese nutzen gezielt die Potenziale des definierten Modells aus, um die vielfältigen Möglichkeiten, die Diffusion für die Terraingenerierung bietet, demonstrieren zu können.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % LDM
@@ -11,8 +11,8 @@ Darauf aufbauend werden die unterschiedlichen generativen Prozesse detailliert b
 \section {Latentes Terrain-Diffusionsmodell}
 \label{sec:Planung_LDM}
 
-Das in dieser Arbeit vorgestellte Diffusionsmodell hat zum Ziel das Potenzial dieser Technologie für die Terrainsynthese aufzuweisen und vorzuführen. Es ist daher zwingend notwendig Methoden zu verwenden, welche auf dem aktuellen Stand der Technik basieren. Aus diesem Grund orientiert sich die Konzeption und Implementierung des beschriebenen Modells an der Umsetzung der zum Verfassungszeitpunkt dieser Arbeit leistungsfähigsten Modelle auf dem Gebiet der Bildsynthese. Hierbei handelt es sich in den allermeisten Fällen um LDMs. Gleichzeitig soll allerdings auch die Flexibilität gewährleistet sein, die nötig ist, um die immer weiter wachsende Bandbreite an möglichen Ansätzen integrieren zu können.\\
-Grundlegend bestehen die zu Entwickelnden Modelle somit aus einem \ac{VAE} und einem \ac{DM}. Im folgenden werden diese zentralen Bestandteile des \ac{LDM}s insbesondere deren Relevanz für die Generierung von Landschaften detailliert betrachtet.
+Das in dieser Arbeit vorgestellte Diffusionsmodell hat zum Ziel, das Potenzial dieser Technologie für die Terrainsynthese aufzuzeigen und vorzuführen. Es ist daher zwingend notwendig, Methoden zu verwenden, welche auf dem aktuellen Stand der Technik basieren. Aus diesem Grund orientieren sich die Konzeption und Implementierung des beschriebenen Modells an der Umsetzung der zum Verfassungszeitpunkt dieser Arbeit leistungsfähigsten Modelle auf dem Gebiet der Bildsynthese. Hierbei handelt es sich in den allermeisten Fällen um \ac{LDM}s. Gleichzeitig soll allerdings auch die Flexibilität gewährleistet sein, die nötig ist, um die immer weiter wachsende Bandbreite an möglichen Ansätzen integrieren zu können.\\
+Grundlegend bestehen das zu entwickelnde Modell somit aus einem \ac{VAE} und einem \ac{DM}. Im Folgenden werden diese zentralen Bestandteile des \ac{LDM}s und insbesondere deren Relevanz für die Generierung von Landschaften detailliert betrachtet.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection {Variational Autoencoder}
@@ -21,16 +21,16 @@ Um hochauflösende Terrains generieren zu können ist es unerlässlich, dass Ein
 Der genutzte \ac{VAE} muss zweierlei grundlegende Funktionen sicherstellen, um eine möglichst hohe Qualität der Samples des übergeordneten \ac{LDM}s zu gewährleisten:
 \begin{enumerate}
     \item Die vom Encoder erzeugten latenten Repräsentationen der Eingabedaten müssen ausreichend strukturiert und aussagekräftig sein, damit das \ac{DM} diesen latenten Raum modellieren kann.  
-    \item Die Qualität der vom Decoder erstellten Rekonstruktionen muss maximal Hoch sein. Es ist soweit wie möglich zu verhindern, dass Artefakte der Kompression, wie beispielsweise die für \ac{VAE}s übliche \enquote{Verwaschenheit} oder Verlust von kleinen Details zu erkennen sind. Gerade bei Terrains, welche sich durch fast fraktale anmutende Strukturen auszeichnen, ist dies enorm wichtig.
+    \item Die Qualität der vom Decoder erstellten Rekonstruktionen muss so hoch wie möglich sein. Es gilt zu verhindern, dass Artefakte der Kompression, wie beispielsweise die für \ac{VAE}s übliche \enquote{Verwaschenheit} oder Verlust von kleinen Details, zu erkennen sind. Gerade bei Terrains, welche sich durch fast fraktale anmutende Strukturen auszeichnen, ist dies enorm wichtig.
 \end{enumerate}
-Die sich hierfür anbietende Variante von \ac{VAE}s sind VAE-GANs, da diese, durch ihre erlernte visuelle Qualitätsmetrik, eine hohe Rekonstruktionsqualität erreichen können. Durch eine geeignete Wahl des Diskriminators kann hier ebenfalls ein besonderes Augenmerk auf kleine Details gelegt werden. Gleichzeitig wahrt ein VAE-GAN auch das ursprüngliche Ziel eines \ac{VAE}s, den latenten Raum möglichst Normalverteilt zu halten. \\
+Die sich hierfür anbietende Variante von \ac{VAE}s sind VAE-GANs, da diese durch ihre erlernte visuelle Qualitätsmetrik eine hohe Rekonstruktionsqualität erreichen können. Durch eine geeignete Wahl des Diskriminators kann hier ebenfalls ein besonderes Augenmerk auf kleine Details gelegt werden. Gleichzeitig wahrt ein VAE-GAN auch das ursprüngliche Ziel eines \ac{VAE}s, den latenten Raum möglichst normalverteilt zu halten. \\
 Rombach et al.\footnote{
     Vgl. Rombach et al.: Latent Diffusion Models, S. 3f. 
     \cite{rombach2022high}
-} schlagen unter anderem für die Implementierung eines VAE-GAN den Ansatz \textit{KL-reg.} vor. Dieser entspricht in den meisten Teilen der bereits bekannten Definition des VAE-GAN. Es wurde allerdings noch eine weitere visuelle Qualitätsmetrik in Form von der \ac{LPIPS} ergänzt. Diese Metrik vergleicht die Ähnlichkeit von Samples zu Quelldaten über die Aktivierungen eines vortrainierten Klassifikationsmodells.\footnote{
+} schlagen unter anderem für die Implementierung eines VAE-GAN den Ansatz \textit{KL-reg.} vor. Dieser entspricht in den meisten Teilen der bereits bekannten Definition des VAE-GAN. Es wurde allerdings noch eine weitere visuelle Qualitätsmetrik in Form von der \ac{LPIPS} ergänzt. Diese Metrik vergleicht die Ähnlichkeit von Samples zu Quelldaten über die Aktivierungen eines vortrainierten Klassifikationsmodells\footnote{
     Vgl. Zhang et al.: The Effectiveness of Deep Features as a Perceptual Metric, S. 5f. 
     \cite{zhang2018unreasonableeffectivenessdeepfeatures}
-} \\
+}. \\
 Diese Umsetzung hat sich aufgrund der nachweislich hohen Qualität der latenten Repräsentationen und Rekonstruktionen als bewährter Standart in der Praxis für die Verwendung in \ac{LDM}s etabliert. Aus diesem Grund wird diese vorgestellte Architektur in dieser Arbeit aufgegriffen und bei der Implementierung an geeigneter Stelle an die spezifischen Anforderungen der Terraingenerierung angepasst.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,27 +41,27 @@ Um die oben geschilderten Ziele des \ac{VAE}s umzusetzen wird das Trainingsobjek
 \begin{equation}
     L_\text{VAE-GAN} := \lambda_1 L_\text{prior} + L_\text{recon.} + \lambda_2  L_\text{GAN} + \lambda_3 L_\text{LPIPS}  
 \end{equation}
-$L_\text{recon.}$ meint hierbei das ursprüngliche Rekonstruktionsziel eines \ac{VAE}. Die gewichte $\lambda_1$, $\lambda_2$ und $\lambda_3$ dienen zur Balancierung der einzelnen Verlustterme gegenüber der Rekonstruktion. 
+$L_\text{recon.}$ meint hierbei das ursprüngliche Rekonstruktionsziel eines \ac{VAE}. Die Gewichte $\lambda_1$, $\lambda_2$ und $\lambda_3$ dienen zur Balancierung der einzelnen Verlustterme gegenüber der Rekonstruktion. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection {Diffusionsmodell}
 
-Das \ac{DM} hat allererster Linie die Aufgabe die, in den latenten Raum des VAE-GAN Decoders abgebildete Datenverteilung der Terraindaten zu erlernen.  Dies ist notwendig, damit bei der Generierung möglichst überzeugende Samples erzeugt werden können. Zu diesem Zweck sollen die im Bezug auf die Verbesserung der Log-Likelihood vorgestellten Verbesserungen angewandt werden. \\
-Eines der Kernziele dieser Arbeit ist die Demonstration der einfachen und intuitiven Kontrollierbarkeit von \ac{DM}s, dazu muss das \ac{DM} grundlegend die Bereiche des ImageToImage und Inpaintings unterstützen. Die genaue jeweilige Relevanz dieser Techniken wird jeweils genauer im folgenden Abschnitt \ref{sec:Terraingenerierung} zur Methodik bei der Terraingenerierung spezifiziert. \\
-Das Modell soll zusätzlich durch die Angabe von Kontrollsignalen gesteuert werden können, um die gewünschten Eigenschaften der Samples weiter zu präzisieren. Hierfür wird der etablierte Standart der \ac{CFG} angewandt. Dazu muss bei der Implementierung eine geeignete Form der Repräsentation dieser Signale ermittelt werden. \\
+Das \ac{DM} hat in erster Linie die Aufgabe, die in den latenten Raum des VAE-GAN Decoders abgebildete Datenverteilung der Terraindaten zu erlernen.  Dies ist notwendig, damit bei der Generierung möglichst überzeugende Samples erzeugt werden können. Zu diesem Zweck sollen die im Bezug auf die Verbesserung der Log-Likelihood vorgestellten Verbesserungen angewandt werden. \\
+Eines der Kernziele dieser Arbeit ist die Demonstration der einfachen und intuitiven Kontrollierbarkeit von \ac{DM}s. Dazu muss das \ac{DM} grundlegend die Bereiche des ImageToImage und Inpaintings unterstützen. Die Relevanz dieser Techniken wird jeweils genauer im folgenden Abschnitt \ref{sec:Terraingenerierung} zur Methodik bei der Terraingenerierung spezifiziert. \\
+Das Modell soll zusätzlich durch die Angabe von Kontrollsignalen gesteuert werden können, um die gewünschten Eigenschaften der Samples weiter zu präzisieren. Hierfür wird der etablierte Standard der \ac{CFG} angewandt. Dazu muss bei der Implementierung eine geeignete Form der Repräsentation dieser Signale ermittelt werden. \\
 Ebenfalls sollen Experimente mit Methoden, welche vielversprechend sind, sich jedoch nicht in allen Bereichen als gängige Praxis durchgesetzt haben, ermöglicht werden. Dies soll die jeweilige Eignung für die Terraingenerierung beleuchten und gegebenenfalls positiv oder negativ untermauern. Hierbei ist insbesondere die gegenüberstellende Betrachtung der grundlegenden Modellarchitektur hervorzuheben. Die zwei wesentlichen Techniken sind dabei:  
 \begin{itemize}
     \item \textbf{U-Net} (vgl. \ref{subsec:Unet}): \\
     U-Nets wurden seit den ersten Implementierungen von \ac{DM}s bishin zu modernsten Ansätzen durchgängig angewandt. Sie benötigen, je nach Implementierung, vergleichsweise wenig Rechenaufwand und bieten trotzdem eine sehr gute Samplequalität. 
     \item \textbf{DiT} (vgl. \ref{subsubsec:DiT}): \\
-    \ac{DiT}s versprechen hohe Skallierbarkeit und teilweise bessere Ergebnisse. Deshalb finden sie besonders in den leistungsfähigsten Modellen zunehmend mehr Verwendung. Allerdings erfordern sie für überzeugende Ergebnisse einen höheren Rechenaufwand als auf U-Nets basierende Ansätze. 
+    \ac{DiT}s versprechen hohe Skalierbarkeit und teilweise bessere Ergebnisse. Deshalb finden sie besonders in den leistungsfähigsten Modellen zunehmend erwendung. Allerdings erfordern sie für überzeugende Ergebnisse einen höheren Rechenaufwand als auf U-Nets basierende Ansätze. 
 \end{itemize}
-Zusätzlich soll ebenfalls die Nutzung einer linearen- der einer Kosinus Noise Schedule gegenübergestellt werden. 
+Zusätzlich soll ebenfalls die Nutzung einer linearen der einer Kosinus-Noise-Schedule gegenübergestellt werden. 
 
 
 \subsubsection {Optimierungsziel}
 
-Experimentel wurde erwiesen, dass das Erlernen der Varianz zusätzlich zum Rauschen höhere Log-Likelihoods aufweist. Somit soll der hier verfolgte Ansatz auch diese Erkenntnis aufgreifen und das folgende Kriterium optimieren:
+Experimentell wurde erwiesen, dass das Erlernen der Varianz zusätzlich zum Rauschen höhere Log-Likelihoods aufweist. Somit soll der hier verfolgte Ansatz auch diese Erkenntnis aufgreifen und das folgende Kriterium optimieren:
 \begin{equation}
     L_\text{hybrid} := L_\text{simple} + \lambda L_\text{vlb}
 \end{equation}
@@ -73,47 +73,47 @@ Experimentel wurde erwiesen, dass das Erlernen der Varianz zusätzlich zum Rausc
 \label{sec:Terraingenerierung}
 
 Um die Eignung von Diffusionsmodellen im Bereich der Terraingenerierung überzeugend demonstrieren zu können, muss ihre Leistungsfähigkeit gezielt in relevanten Anwendungsbereichen vorgeführt und untersucht werden. \\
-Um diese Bereiche allerdings überhaupt zielführend betrachten zu können, muss zuerst die Form der erwarteten Ergebnisse definiert werden. Hierzu gehört die Begründung des gewählten Formats sowie die Erörterung der Anforderungen an die zu Nutzenden Quelldaten. Auch soll dabei die Art der gewählten Kontrollsignale des \ac{LDM}s begründet werden, welche das gezielte Erlernen der Landschaftsstruktur unterstützen sollen. \\
-Folgend werden auf Grundlage der in Abschnitt \ref{sec:Zielsetzung} definierten Kernziele, die Prozesse zur Umsetzung dieser Ziele konzipiert. Die dabei wesentlichen Gesichtspunkte sind die Realistische Generierung von Landschaften, die intuitive Steuerung dieser Generation, sowie die Möglichkeit praktisch unendliche Landschaften zu generieren, ohne dabei Artefakte aufzuweisen. 
+Um diese Bereiche allerdings überhaupt zielführend betrachten zu können, muss zuerst die Form der erwarteten Ergebnisse definiert werden. Hierzu gehören die Begründung des gewählten Formats sowie die Erörterung der Anforderungen an die zu nutzenden Quelldaten. Auch soll dabei die Art der gewählten Kontrollsignale des \ac{LDM}s begründet werden, welche das gezielte Erlernen der Landschaftsstruktur unterstützen sollen. \\
+Folgend werden auf Grundlage der in Abschnitt \ref{sec:Zielsetzung} definierten Kernziele die Prozesse zur Umsetzung dieser Ziele konzipiert. Die dabei wesentlichen Gesichtspunkte sind die Realistische Generierung von Landschaften, die intuitive Steuerung dieser Generierung, sowie die Möglichkeit, praktisch unendliche Landschaften zu generieren, ohne dabei Artefakte aufzuweisen. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection {Ergebnisformat}
 \label{subsec:Ergebnisformat}
 
-Die Grundlage der Generierung bildet das Zielformat der \ac{DEM}s. Aufgrund ihrer engen Verwandschaft zu Bilddaten sind sie besonders gut geeignet, um mit Methoden der Bildsynthese verarbeitet und generiert zu werden. Dies ermöglicht eine direkte Anwendung etablierter Diffusionsansätze, was einen Direkten Transfer der bereits gewonnenen Erkenntnisse auf diesem Gebiet auf Terraindaten ermöglicht. Somit gliedert sich diese Arbeit zu den bereits vorgestellten Publikationen im Bereich der Terraingenerierung mit \ac{DM}s, welche allesamt ebenfalls auf \ac{DEM}s operieren.
+Die Grundlage der Generierung bildet das Zielformat der \ac{DEM}s. Aufgrund ihrer engen Verwandschaft zu Bilddaten sind sie besonders gut geeignet, um mit Methoden der Bildsynthese verarbeitet und generiert zu werden. Dies ermöglicht eine direkte Anwendung etablierter Diffusionsansätze, was einen direkten Transfer der bereits gewonnenen Erkenntnisse auf diesem Gebiet auf Terraindaten ermöglicht. Somit reiht sich diese Arbeit in die bereits vorgestellten Publikationen im Bereich der Terraingenerierung mit \ac{DM}s ein, welche allesamt ebenfalls auf \ac{DEM}s operieren.
 
 \subsubsection {Räumliche Ausdehnung}
 
-Ein Kernziel, welches das Modell zu erfüllen hat, ist die Generation realistischer Landschaften. Um dies Umzusetzen erfordern die generierten Gebiete eine gewisse Weitläufigkeit. Andernfalls würde es schwer Fallen die charakteristischen Merkmale großflächiger Landschaftsstrukturen wie Gebirgsketten oder ausgedehnte Täler vollständig zu modellieren. \\
+Ein Kernziel, welches das Modell zu erfüllen hat, ist die Generierung realistischer Landschaften. Um dies umzusetzen erfordern die generierten Gebiete eine gewisse Weitläufigkeit. Anderenfalls würde es schwerfallen, die charakteristischen Merkmale großflächiger Landschaftsstrukturen wie Gebirgsketten oder ausgedehnte Täler vollständig zu modellieren. \\
 Darüber hinaus bieten größere Gebiete den Vorteil, dass sie natürliche Übergänge zwischen unterschiedlichen Geländetypen beinhalten. Sie bieten somit inhärent eine optimale Grundlage für eine unendliche Generierung basierend auf der Verknpüpfung von Patches, welche eben solche Übergänge für eine nahtlose Erscheinung unbedingt erfordern.  
 
 \subsubsection {Geographische Abdeckung}
 \label{subsubsec:Geographische_Abdeckung}
 
-Um eine hohe Flexibilität des Modells bezüglich seiner möglichen Anwendungsfälle sicherzustellen, ist es notwendig eine möglichst globale Abdeckung der zu modellierenden Terraindatenverteilung anzustreben. Somit wären alle auf diesem Planeten vorkommenden Geländetypen abgedeckt. Dies ist auch bei der Generierung von glaubwürdigen, unendlichen Terrains von Vorteil. So werden können hier Problemen wie Eintönigkeit und unnatürlichen Verteilungen von Merkmalen wie Gebirgen oder Wüsten vorgebeugt werden, welche bei einer ungeeigneten Selektion der Daten auftreten könnten. Diese Bedingung limitiert zwar die Wahl geeigneter Datensets, erhöht allerdings die Aussagefähighkeit und Vielfältigkeit der Samples des Modells.  
+Um eine hohe Flexibilität des Modells bezüglich seiner potenziellen Anwendungsfälle sicherzustellen, ist es notwendig, eine möglichst globale Abdeckung der zu modellierenden Terraindatenverteilung anzustreben. Somit wären alle auf der Erde vorkommenden Geländetypen abgedeckt. Dies ist auch bei der Generierung von glaubwürdigen, unendlichen Terrains von Vorteil. Problemen wie Eintönigkeit und unnatürlichen Verteilungen von Merkmalen wie Gebirgen oder Wüsten, welche bei einer ungeeigneten Selektion der Daten auftreten könnten, wird so vorgebeugt. Diese Bedingung limitiert zwar die Wahl geeigneter Datensets, erhöht allerdings die Aussagefähigkeit und Vielfalt der Samples des Modells.  
 
 \subsubsection {Kontrollsignale}
 
-Die Kontrollsignale sollen die Möglichkeit bieten die Samples des \ac{LDM}s gemäß den Vorstellungen an ihre Struktur zu beeinflussen. Da die räumliche Position und Höhenwerte der jeweiligen Landschaftseigenschaften über Skizzen angegeben werden sollen, sind an dieser Stelle simplere Signale zu wählen. Bei ihrer Auswahl ist es hingegen trotzdem wichtig, dass sie aussagekräftig genug  sind, um das Erscheinungsbild zu steuern und zu prägen. \\
+Die Kontrollsignale sollen die Möglichkeit bieten, die Samples des \ac{LDM}s gemäß den Vorstellungen hinsichtlich ihrer Struktur zu beeinflussen. Da die räumliche Position und Höhenwerte der jeweiligen Landschaftseigenschaften über Skizzen angegeben werden sollen, sind an dieser Stelle simplere Signale zu wählen. Bei ihrer Auswahl ist es trotzdem wichtig, dass sie aussagekräftig genug sind, um das Erscheinungsbild zu steuern und zu prägen. \\
 Zu diesem Zweck wird das Kontrollsignal in zwei Komponenten aufgeteilt:
 \begin{enumerate}
     \item \textbf{Strukturkomponente}: \\
     Sie soll die grobe Struktur des Terrains bestimmen. Somit sollen hierbei Aussagen über Beschaffenheit der Topographie getroffen werden, beispielsweise ob das Terrain sehr rauh und bergig oder etwa flach und eben ist. 
     \item \textbf{Detailkomponente}: \\
-    Durch sie soll die feine Struktur in der Landschaft beschrieben werden. Zum Beispiel soll sie Angeben, ob es sich bei einem ebenen Terrain um eine Feld-und-Wiesen-Landschaft oder eine Wüste handelt. 
+    Durch sie soll die feine Struktur in der Landschaft beschrieben werden. Zum Beispiel soll sie angeben, ob es sich bei einem ebenen Terrain um eine Feld-und-Wiesen-Landschaft oder eine Wüste handelt. 
 \end{enumerate}
-Für die Umsetzung der Strukturkomponente bietet sich eine topographische Terrainklassifizierung direkt an. Sie erfüllt direkt die gestellte Anforderung an das Signal und ist somit eine ideale Wahl. \\
-Bei der Detailkomponente fällt die Auswahl schwieriger. Grundlegend bietet es sich hierbei an geomorphologische Prozesse in Betracht zu ziehen. Allerdings formen viele unterschiedliche Einflussfaktoren diese Struktur wie beispielsweise geologische Beschaffenheit, Sedimentation oder Erosion. Oft ist hierbei Expertenwissen notwendig, um ein Verständnis für den genauen Einfluss zu haben. Dies steht dem Ziel der intuitiven Steuerbarkeit direkt entgegen. \\
-Eine vielversprechende Option scheint jedoch eine Klassifikation über das Klima. Es umfasst viele Faktoren welche für die geomorphologische Erscheinung einer Landschaft relevant sind, allerdings ist es auch für Laien ein greifbarer Begriff. Zusätzlich könnte über eine feingliedrige Klassifikation im Zusammenhang mit einer topographischen Kategorie eine ungefähre geographische Zuordnung entstehen. Beispielsweise ist eine heiße und trockene Ebene grundsätlich eher eine Wüste als eine Feldlandschaft. Dieser Begründung entsprechend sollen diese Klassfikationen die genutzten Kontrollsignale in dieser Arbeit bestimmen.  
+Für die Umsetzung der Strukturkomponente bietet sich eine topographische Terrainklassifizierung an. Sie erfüllt direkt die gestellte Anforderung an das Signal und ist somit eine ideale Wahl. \\
+Bei der Detailkomponente fällt die Auswahl schwieriger. Grundlegend bietet es sich hierbei an, geomorphologische Prozesse in Betracht zu ziehen. Allerdings formen viele unterschiedliche Einflussfaktoren diese Struktur wie beispielsweise geologische Beschaffenheit, Sedimentation oder Erosion. Oft ist hierbei Expertenwissen notwendig, um ein Verständnis für den genauen Einfluss zu haben. Dies steht dem Ziel der intuitiven Steuerbarkeit direkt entgegen. \\
+Eine vielversprechende Option scheint jedoch eine Klassifikation über das Klima. Es umfasst viele Faktoren welche für die geomorphologische Erscheinung einer Landschaft relevant sind, gleichzeitig ist es auch für Laien ein verständlicher Begriff. Zusätzlich könnte über eine feingliedrige Klassifikation im Zusammenhang mit einer topographischen Kategorie eine ungefähre geographische Zuordnung entstehen. Beispielsweise ist eine heiße und trockene Ebene grundsätzlich eher eine Wüste als eine Feldlandschaft. Dieser Begründung entsprechend sollen diese Klassfikationen die genutzten Kontrollsignale in dieser Arbeit bestimmen.  
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection {Samplingprozesse}
 
-Zur Beleuchtung der Eignung von DMs für die Terraingenerierung werden in dieser Arbeit drei konkrete Bereiche in diesem Gebiet untersucht. Diese Fälle sollen ein möglichst breites, praxisrelevantes und flexibles Anwendungsfeld demonstieren.\\
+Zur Beleuchtung der Eignung von \ac{DM}s für die Terraingenerierung werden in dieser Arbeit drei konkrete Bereiche in diesem Gebiet untersucht. Diese Fälle sollen ein möglichst breites, praxisrelevantes und flexibles Anwendungsfeld demonstieren.\\
 Als erstes steht hierbei die Generierung ohne jegliche Form der Einflussnahme. \\
 Folgend das durch Skizzen gesteuerte Sampling, welches die Eignung für die Vorproduktion von beispielsweise Videospiel-Landschaften abbildet. Bei diesem Prozess steht eine genaue Kontrolle des Ergebnisses im Vordergrund. \\
-Abschließend wird Generierung von unendlichen Landschaften betrachtet. Hierbei wird die Fähigkeit unterschiedliche Terraintypen kohärent verbinden zu können - eine wichtige Fähigkeit welche Implikationen für die Eignung der Generierung sowohl zur Produktions- als auch Laufzeit hat. \\
+Abschließend wird die Generierung von unendlichen Landschaften betrachtet. Hierbei wird die Fähigkeit untersucht, unterschiedliche Terraintypen kohärent verbinden zu können - eine wichtige Fähigkeit, welche Implikationen für die Eignung der Generierung sowohl zur Produktions- als auch Laufzeit hat. \\
 Für diese drei Bereiche werden im Folgenden Methoden vorgestellt, welche auf dem in Abschnitt \ref{sec:Planung_LDM} konzipierten \ac{LDM} basieren. 
 
 
@@ -128,8 +128,8 @@ Für diese drei Bereiche werden im Folgenden Methoden vorgestellt, welche auf de
     \caption{Schematische Darstellung des ungesteuerten Generierungsprozesses}
     \label{fig:unguided_method}
 \end{figure}
-Mit der Betrachtung der ungesteuerten Synthese soll die Fähigkeit des Modells auch ohne äußere Strukturgebung durch Skizzen Merkmale in Landschaften generieren zu können überprüft werden. Da die Kontrollsignale auf Klassen und nicht auf Signatur-Skizzen basieren, beanspruchen diese keinen menschengesteueren Einfluss auf die Struktur der Landschaften. Somit wird die Betrachtung ihres Einflusses auf die erlernte Verteilung in diesen Prozess mit eingeschlossen. \\
-Unter Anwendung auf das spezifizierte \ac{LDM} kann diese Form der Generierung durch einen einfachen Rückwärtsprozess wie er in Unterabschnitt \ref{subsec:Grundlagen_DMs} beschrieben wurde abgebildet werden. Somit müssen an dieser Stelle keine zusätlichen, wesentlichen Vorkehrungen getroffen werden. Zur Veranschaulichung ist dieser Prozess in Abbildung \ref{fig:unguided_method} dargestellt.
+Mit der Betrachtung der ungesteuerten Synthese soll die Fähigkeit des Modells, auch ohne äußere Strukturgebung durch Skizzen Merkmale in Landschaften generieren zu können, überprüft werden. Da die Kontrollsignale auf Klassen und nicht auf Signatur-Skizzen basieren, benötigen diese keinen menschengesteuerten Einfluss auf die Struktur der Landschaften. Somit wird die Betrachtung ihres Einflusses auf die erlernte Verteilung in diesen Prozess mit eingeschlossen. \\
+Unter Anwendung auf das spezifizierte \ac{LDM} kann diese Form der Generierung durch einen einfachen Rückwärtsprozess wie er in Unterabschnitt \ref{subsec:Grundlagen_DMs} beschrieben wurde abgebildet werden. Somit müssen an dieser Stelle keine zusätzlichen, wesentlichen Vorkehrungen getroffen werden. Zur Veranschaulichung ist dieser Prozess in Abbildung \ref{fig:unguided_method} dargestellt.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection {Skizzenbasierte Steuerung}
@@ -146,15 +146,15 @@ Die skizzenbasierte Steuerung des Generierungsprozesses erfordert zunächst die 
 \begin{enumerate}
     \item Skizzen in Form von Landschaftssignaturen: \\
     Landschaftssignaturen sind in der Forschung zur Terraingenerierung gängige Praxis. So auch in den Veröffentlichung zur Generierung mit \ac{DM}s. Ihre Eignung für die Steuerung wurde somit bereits grundsätzlich demonstriert. \\
-    Allerdings lassen sich auch einige theoretische Nachteile erkennen. Zum einen erfolgt die Kontrolle über eine Abstraktionsebene, welche somit der intuitiven Steuerung schadet. Desweiteren erfordert dieser Ansatz eine Konditionierung des Modells auf Signaturskizzen was einige unerwünschte Implikationen mit sich führt. Zum einen geht eine genaue Kontrolle der jeweiligen Höhenwerte verloren, zum anderen können bereits kleine Anpassungen globale Veränderungen verursachen.\footnote{
+    Allerdings lassen sich auch einige Nachteile erkennen. Zum einen erfolgt die Kontrolle über eine Abstraktionsebene, welche somit der intuitiven Steuerung schadet. Desweiteren erfordert dieser Ansatz eine Konditionierung des Modells auf Signaturskizzen, was einige unerwünschte Implikationen mit sich bringt. Erstens geht eine genaue Kontrolle der jeweiligen Höhenwerte verloren, zweitens können bereits kleine Anpassungen globale Veränderungen verursachen.\footnote{
         Vgl. Lochner et al.: Interactive Terrain Authoring using Diffusion Models, S. 8f. 
         \cite{lochner2023interactive}
     }
     \item Skizzen in Form von \ac{DEM}s: \\
-    Auch \ac{DEM}s sind eine in der Praxis oft gewählte Form der Kontrolle. Da sie direkt das Zielformat abbilden können Änderungen auf ihnen ohne weitere Transformationen in Ergebnisse übertragen werden. Somit sind sie eine sehr einfache und intuitive Methode für die Erstellung von Landschaften. Da sie ebenfalls die Domäne des \ac{LDM}s und somit die Trainingsdaten darstellen, ist es nicht nötig, das Modell gesondert beim Training auf ihnen zu Konditionieren. Allerdings hierbei gehen im Vergleich zu Signaturen auch semantische Informationen über solche Strukturen, da nun nicht mehr zwischen verschiedenen bereits definierten Eigenschaften unterschieden wird. Dies könnte dazu führen, dass die Kontrolle über \ac{DEM}s eine höhere Varianz in den Samples aufweist.
+    Auch \ac{DEM}s sind eine in der Praxis oft gewählte Form der Kontrolle. Da sie direkt das Zielformat abbilden, können Änderungen auf ihnen ohne weitere Transformationen in Ergebnisse übertragen werden. Somit sind sie eine sehr einfache und intuitive Methode für die Erstellung von Landschaften. Da sie ebenfalls die Domäne des \ac{LDM}s und somit die Trainingsdaten darstellen, ist es nicht nötig, das Modell gesondert beim Training auf ihnen zu konditionieren. Allerdings gehen hierbei im Vergleich zu Signaturen auch semantische Informationen über solche Strukturen verloren, da nun nicht mehr zwischen verschiedenen bereits definierten Eigenschaften unterschieden wird. Dies könnte dazu führen, dass die Kontrolle über \ac{DEM}s eine höhere Varianz in den Samples aufweist.
 \end{enumerate}
 
-In Anbetracht beider Optionen erscheint die Kontrolle mittels \ac{DEM}s als aussichtsreicher und wird somit im weitern Verlauf den verfolgte Ansatz darstellen. Dies erlaubt es die Kontrolle über den in Unterabschnitt \ref{subsubsec:i2i} vorgestellte Image to Image Ansatz umzusetzen. Dieser Prozess ist in Abbildung \ref{fig:guided_method} noch einmal verdeutlicht. Dies hat ebenfalls den Vorteil, dass die Stärke der Skizzenkontrolle dynamisch festgelegt werden kann. Somit besteht die Möglichkeit sowohl grobe als auch detaillierte Skizzen jeweils adäquat verarbeiten zu können. 
+In Anbetracht beider Optionen erscheint die Kontrolle mittels \ac{DEM}s als aussichtsreicher. Dieser Ansatz wird daher im weiteren Verlauf den verfolgt. Dies erlaubt es, die Kontrolle über den in Unterabschnitt \ref{subsubsec:i2i} vorgestellten Image-to-Image-Ansatz umzusetzen. Dieser Prozess ist in Abbildung \ref{fig:guided_method} noch einmal verdeutlicht. Dies hat ebenfalls den Vorteil, dass die Stärke der Skizzenkontrolle dynamisch festgelegt werden kann. Somit besteht die Möglichkeit, sowohl grobe als auch detaillierte Skizzen jeweils adäquat verarbeiten zu können. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection {Unendliche Generierung}
@@ -167,22 +167,22 @@ In Anbetracht beider Optionen erscheint die Kontrolle mittels \ac{DEM}s als auss
     \caption{Schematische Darstellung des unendlichen Generierungsprozesses}
     \label{fig:inf_method}
 \end{figure}
-\ac{DM}s erzeugen grundsätzlich nur Samples einer fest definierten größe. Daher erfordert eine Generierung von beliebig bishin zu unendlich großen Landschaften, eine Methode kleinere generierte Areale miteinander zu verbinden. Die naheliegendste Schlussvolgerung hieraus ist eine Lösung über eine Gitterstruktur, in welcher jedes Sample eine neue Zelle darstellt. Somit stellt jede Zelle ein einzelnes Patch dar, welche mit ihren jeweilgen Nachbarn zusammengefügt werden müssen. \\
+\ac{DM}s erzeugen grundsätzlich nur Samples einer fest definierten Größe. Daher erfordert eine Generierung von beliebig großen bis hin zu unendlichen Landschaften eine Methode, kleinere generierte Areale miteinander zu verbinden. Die naheliegendste Schlussfolgerung hieraus ist eine Lösung über eine Gitterstruktur, in welcher jedes Sample eine neue Zelle darstellt. Somit stellt jede Zelle ein einzelnes Patch dar, welche mit ihren jeweilgen Nachbarn zusammengefügt werden müssen. \\
 Jain, Sharma und Rajan\footnote{
     Vgl. Jain, Sharma, Rajan: Procedural Infinite Terrain Generation with Diffusion Models
     \cite{jain2022adaptive}
-} stellen bereits einen möglichen Ansatz für diese Verbindung vor. Sie Nutzen Kernelblending mittels Perlin-Rauschen um die Ränder zweier Patches nahtlos anzuschließen. Allerdings ist die Wirksamkeit dieser Methode nur bedingt nachvollziehbar begründet und demonstriert. Tatsächlich ist es nicht überzeugend, dass dies, aufgrund der zufälligen Struktur von Rauschen, zuverlässig in der Lage ist Übergänge zwischen Patches glaubwürdig abzubilden, insbesondere bei größeren Landschaften.
+} stellen bereits einen möglichen Ansatz für diese Verbindung vor. Sie nutzen Kernelblending mittels Perlin-Rauschen, um die Ränder zweier Patches nahtlos anzuschließen. Allerdings ist die Wirksamkeit dieser Methode nur bedingt nachvollziehbar begründet und demonstriert. Tatsächlich ist es aufgrund der zufälligen Struktur von Rauschen nicht überzeugend, dass dies zuverlässig in der Lage ist, Übergänge zwischen Patches glaubwürdig abzubilden, insbesondere bei größeren Landschaften.
 \begin{figure}[htbp]
     \centering
     \subfloat{%
         \includegraphics[width=0.45\textwidth]{images/methods/inf_naive.png}
     }
-    \caption{Veranschaulichung der unendlichen Generierung. Blaue Bereiche sind die Maskierten Ränder der bereits erstellten Samples. Der grüne Bereich wird neu generiert.}
+    \caption{Veranschaulichung der unendlichen Generierung. Blaue Bereiche sind die maskierten Ränder der bereits erstellten Samples. Der grüne Bereich wird neu generiert.}
     \label{fig:inf_naive}
 \end{figure} \\
-Deutlich chancenreicher erscheint es die Eigenschaften solcher Übergänge zu erlernen und anschließend auf solche Nähte generativ anzuwenden. Somit würden, bei einer geeigneten Definition des Prozesses, die bereits generierten Bereiche die Synthese dieser verbindenden Randbereiche beeinflussen. Dies verspricht theoretisch glaubwürdigere Ergebnisse. Das Ziel ist nun also, eine Methode zu ermitteln, welche die benachbarten Randbereiche zweier Patches als Eingabe hat und als Ergebnis eine Bündige Verbindung beider Bereiche liefert welche als Verbindung genutzt werden kann, dieser Sachverhalt ist in \ref{fig:inf_naive} verdeutlicht. Hieraus folgt, dass die Randbereiche dieses Verbindungsglieds exakt den bereits erzeugten Bereichen entsprechen muss. \\
-Bei genauerer Analyse dieser Problemstellung fällt auf, dass bei geeigneter Wahl der Trainingsdaten, wie in Unterabschnitt \ref{subsubsec:Geographische_Abdeckung} spezifiziert, das definierte \ac{LDM} die Übergange von Terraintypen, bereits strukturell erlernt hat. Somit kann dasselbe Modell für die Übergänge genutzt werden es muss kein neues Trainiert werden, solange die Synthese gezielt auf die Übergänge zwischen Patches angewandt werden kann. \\
-Eine mögliche Methode dies zu erreichen ist die Nutzung der bei dem Inpainting in \ac{DM}s üblichen Masken. Unter Verwendung dieses Ansatzes müssten also die Randbereiche bereits gerierter Patches als Maskierter Bereich eines neuen Samples definiert werden und der Rückwärtsprozess beim restlichen Bereich sorgt für die glaubwürdige Verbindung, siehe Abbildung \ref{fig:inf_method}.
+Deutlich chancenreicher erscheint es, die Eigenschaften solcher Übergänge zu erlernen und anschließend auf solche Nähte generativ anzuwenden. Somit würden bei einer geeigneten Definition des Prozesses die bereits generierten Bereiche die Synthese dieser verbindenden Randbereiche beeinflussen. Dies verspricht theoretisch glaubwürdigere Ergebnisse. Das Ziel ist nun also, eine Methode zu ermitteln, welche die benachbarten Randbereiche zweier Patches als Eingabe hat und als Ergebnis eine bündige Verbindung beider Bereiche liefert, welche als Verbindung genutzt werden kann. Dieser Sachverhalt ist in \ref{fig:inf_naive} verdeutlicht. Hieraus folgt, dass die Randbereiche dieses Verbindungsglieds exakt den bereits erzeugten Bereichen entsprechen müssen. \\
+Bei genauerer Analyse dieser Problemstellung fällt auf, dass bei geeigneter Wahl der Trainingsdaten, wie in Unterabschnitt \ref{subsubsec:Geographische_Abdeckung} spezifiziert, das definierte \ac{LDM} die Übergange von Terraintypen bereits strukturell erlernt hat. Somit kann dasselbe Modell für die Übergänge genutzt werden; es muss kein neues trainiert werden, solange die Synthese gezielt auf die Übergänge zwischen Patches angewandt werden kann. \\
+Eine mögliche Methode, dies zu erreichen, ist die Nutzung der beim Inpainting in \ac{DM}s üblichen Masken. Unter Verwendung dieses Ansatzes müssten also die Randbereiche bereits generierter Patches als maskierter Bereich eines neuen Samples definiert werden und der Rückwärtsprozess beim restlichen Bereich sorgt für die glaubwürdige Verbindung, siehe Abbildung \ref{fig:inf_method}.
 \begin{figure}[htbp]
     \centering
     \subfloat{%
@@ -191,5 +191,5 @@ Eine mögliche Methode dies zu erreichen ist die Nutzung der bei dem Inpainting 
     \caption{Vereinfachte unendliche Synthese.}
     \label{fig:inf_smart}
 \end{figure} \\
-Tatsächlich erlaubt diese Methode eine Simplifizierung - die Generierung der Naht kann direkt mit der Synthese des neuen Patches verbunden werden, wie in Abbildung \ref{fig:inf_smart} veranschaulicht. Somit ist nur ein einziger Durchlauf des Rückwärtsprozesses notwendig um ein nahtlos Verbundenes neues Patches zu erzeugen. Somit wird hierbei lediglich das banchbarte Patch als Rand des neuen definiert und maskiert und anschließend das neue Patch hiervon ausgehend generiert. Dies bedeutet zwar, dass neue Patches nur kleinere neue Bereiche darstellen können als zuvor, in Anbetracht des geringeren Rechenaufwands für das erstellen eines Übergangs ist diese Methode trotzdem vorzuziehen. Somit stellt dies den in dieser Arbeit vervolgten Ansatz dar.
+Tatsächlich erlaubt diese Methode eine Simplifizierung - die Generierung der Naht kann direkt mit der Synthese des neuen Patches verbunden werden, wie in Abbildung \ref{fig:inf_smart} veranschaulicht. Somit ist nur ein einziger Durchlauf des Rückwärtsprozesses notwendig, um ein nahtlos verbundenes neues Patch zu erzeugen. Dabei wird lediglich das benachbarte Patch als Rand des neuen definiert und maskiert und anschließend das neue Patch hiervon ausgehend generiert. Dies bedeutet zwar, dass neue Patches nur kleinere neue Bereiche darstellen können als zuvor, in Anbetracht des geringeren Rechenaufwands für das Erstellen eines Übergangs ist diese Methode trotzdem vorzuziehen. Somit stellt dies den in dieser Arbeit verfolgten Ansatz dar.
 
