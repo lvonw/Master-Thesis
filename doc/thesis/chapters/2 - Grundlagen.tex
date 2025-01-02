@@ -19,7 +19,7 @@ Eine \ac{WDF} ist eine reelle Funktion $p$, welche eine Wahrscheinlichkeitsverte
     a,b \in X \land a \le b, \space p([a, b]) = \int_a^b p(x) dx
 \end{equation}
 Die \ac{WDF} hat dabei folgende zwei Invarianten zu erfüllen\footnote{
-    Deisenroth: Mathematics for Machine Learning, S. 181
+    Deisenroth, Faisal, Ong: Mathematics for Machine Learning, S. 181
     \cite{Deisenroth2020}
 }:
 \begin{enumerate}
@@ -33,13 +33,19 @@ Die \ac{WDF} hat dabei folgende zwei Invarianten zu erfüllen\footnote{
     \end{equation}
 \end{enumerate}
 In bestimmten Anwendungsfällen kann es vorkommen, dass eine Parametrisierung explizit angegeben werden soll. Dies wird im weiteren Verlauf dieser Arbeit in der Regel als $p_\theta(X)$ denotiert, wobei in diesem Fall $\theta$ die Parametrisierung ist. Einige Publikationen wählen die Notation $p(X; \theta)$ hierfür, sie wird stellenweise auch in dieser Arbeit verwendet, um den Konventionen des jeweiligen Bereiches zu entsprechen. \\
-Desweiteren wird im Bereich des Machine Learning oft die Entnahme einer Stichprobe $x$ aus einer Wahrscheinlichkeitsverteilung welche durch ihre \ac{WDF} $p$ gegeben ist, was auch \textit{Sampling} gennant wird, $x \sim p$ gekennzeichnet. 
+Desweiteren wird im Bereich des Machine Learning oft die Entnahme einer Stichprobe $x$ aus einer Wahrscheinlichkeitsverteilung welche durch ihre \ac{WDF} $p$ gegeben ist, was auch \textit{Sampling} gennant wird, $x \sim p$ gekennzeichnet\footnote{
+    Deisenroth, Faisal, Ong: Mathematics for Machine Learning, S. 187
+    \cite{Deisenroth2020}
+}. 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Multidimensionale gaußsche Normalverteilung}
 
-Die gaußsche Normalverteilung $\mathcal N$, oder einfach Normalverteilung, ist eine der bekanntesten kontinuierlichen Wahrscheinlichkeitsverteilungen. Definiert ist sie im mehrdimensionalen Fall mit $d$ Dimensionen durch ihre \ac{WDF}:
+Die gaußsche Normalverteilung $\mathcal N$, oder einfach Normalverteilung, ist eine der bekanntesten kontinuierlichen Wahrscheinlichkeitsverteilungen. Definiert ist sie im mehrdimensionalen Fall mit $d$ Dimensionen durch ihre \ac{WDF}\footnote{
+    Do: The Multivariate Gaussian Distribution, S. 1
+    \cite{do2008multivariate}
+}:
 \begin{equation}
     \mathcal N(x; \mu, \Sigma) = 
     \frac{1}{\sqrt{(2\pi)^d \det{\Sigma}}}
@@ -48,10 +54,15 @@ Die gaußsche Normalverteilung $\mathcal N$, oder einfach Normalverteilung, ist 
 $\mu$ ist hierbei der Erwartungswert und $\Sigma$ die Kovarianzmatrix. \\
 Eine besondere Variante ist hierbei die Standardnormalverteilung $\mathcal N(x; 0, I)$ welche oft einfach durch $\mathcal N$ abgekürzt wird.
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Erwartungswert}
 
-Der Erwartungswert einer Zufallsvariable $X$ unter einer \ac{WDF} $p(X)$ ist gegeben als: 
+Der Erwartungswert einer Zufallsvariable $X$ unter einer \ac{WDF} $p(X)$ ist gegeben als\footnote{
+    Vgl. Deisenroth, Faisal, Ong: Mathematics for Machine Learning, S. 187
+    \cite{Deisenroth2020}
+}: 
 \begin{equation}
     \mathbb E(X) := \int x p(x) dx
 \end{equation}
@@ -68,7 +79,7 @@ Diese Definition kann ebenfalls auf den Erwartungswert einer Funktion $f(x)$ ang
 \subsection{Likelihood}
 
 Die Likelihood $p(x|\theta)$ ist in der Bayesischen Statistik eine Aussage über die Wahrscheinlichkeit, dass die Beobachtung $x$ der Wahrscheinlichkeitsverteilung definiert durch $p$ unter der Parametrisierung $\theta$ entnommen wurde\footnote{
-    Deisenroth: Mathematics for Machine Learning, S. 185
+    Deisenroth, Faisal, Ong: Mathematics for Machine Learning, S. 185
     \cite{Deisenroth2020}
 }. \\
 Im bereich des Machine Learning ist es oft das Ziel, die Likelihood einer parametrisierten \ac{WDF} zu maximieren\footnote{
@@ -79,13 +90,16 @@ Im bereich des Machine Learning ist es oft das Ziel, die Likelihood einer parame
     \arg\max_\theta p_\theta(x)
 \end{equation}
 Dies entspricht sinngemäß der Parametrisierung der \ac{WDF}, unter welcher, die beobachteten Daten maximal wahrscheinlich sind. \\
-Diese Optimierung entspricht $\arg\max_\theta \log p_\theta(x)$ welche auch als die Maximierung der \textit{Log-Likelihood} bezeichnet wird. Diese Formulierung wird der einfachen Likelihood in der Praxis oft vorgezogen, da sie bei der Differenzierung Vorteile aufweist.
+Diese Optimierung entspricht $\arg\max_\theta \log p_\theta(x)$ welche auch als die Maximierung der \textit{Log-Likelihood} bezeichnet wird. Diese Formulierung wird der einfachen Likelihood in der Praxis oft vorgezogen, da sie bei der Differenzierung Vorteile aufweist\footnote{
+    Vgl. Deisenroth, Faisal, Ong: Mathematics for Machine Learning, S. 267
+    \cite{Deisenroth2020}
+}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Score}
 
 Der \textit{Score} $s$ ist der Gradient, also der Vektor aller partiellen Ableitungen der Log-Likelihood einer \ac{WDF} $p$\footnote{
-    Hyvärinen: Estimation of Non-Normalized Statistical Models by Score Matching, S. 2
+    Hyvärinen: Estimation of Statistical Models by Score Matching, S. 2
     \cite{JMLR:v6:hyvarinen05a}
 }: 
 \begin{equation}
@@ -129,7 +143,10 @@ Der Vollständigkeit halber sei erwähnt, dass die KL-Divergenz allerdings per D
 
 \section{Generative Künstliche Intelligenz}
 
-Modelle der generativen \ac{KI} versuchen im Allgemeinen die Wahrscheinlichkeitsverteilung der Quelldaten, konventionell auch als Datenverteilung bezeichnet, zu modellieren. Sie unterscheiden sich somit von diskriminierenden Ansätzen, welche lediglich Eigenschaften dieser Verteilung erlernen. \\
+Modelle der generativen \ac{KI} versuchen im Allgemeinen die Wahrscheinlichkeitsverteilung der Quelldaten, konventionell auch als Datenverteilung bezeichnet, zu modellieren. Sie unterscheiden sich somit von diskriminierenden Ansätzen, welche lediglich Eigenschaften dieser Verteilung erlernen\footnote{
+    Vgl. Banh, Strobel: Generative artificial intelligence, S. 3
+    \cite{banh2023generative}
+}.\\
 Es kann schwer fallen, intuitiv die Beziehung zwischen Datenverteilung und Modell nachzuvollziehen. Um diesen Sachverhalt zu verdeutlichen, folgt ein einfaches Beispiel:
 
 Ein Münzwurf soll modelliert werden. Das Ergebnis von Münzwürfen ist mit der Wahrscheinlichkeitsverteilung $p(X)$ beschrieben, wobei $x \in \left \{ \text{Kopf}, \text{Zahl} \right \}$. Um zu kennzeichnen, dass es sich bei $p(X)$ um die Datenverteilung handelt, wird sie auch als $p_\text{data}(X)$ bezeichnet. \\
@@ -138,7 +155,10 @@ Um dies zielgerichtet erfüllen zu können, benötigen wir eine Metrik, welche a
 Die Minimierung der KL-Divergenz entspricht der Maximierung der Log-Likelihood\footnote{
     Goodfellow, Bengio, Courville: Deep Learning, S. 75
     \cite{Goodfellow-et-al-2016}
-} und ist somit als Trainingskriterium bei Modellen bekannt und über eine Schätzfunktion, wie beispielsweise eine Monte-Carlo-Simulation, annäherbar.
+} und ist somit als Trainingskriterium bei Modellen bekannt und über eine Schätzfunktion, wie beispielsweise eine Monte-Carlo-Simulation\footnote{
+    Vgl. Geyer, Thompson.: Constrained Monte Carlo Maximum Likelihood, S. 2f. 
+    \cite{geyer1992constrained}
+}, annäherbar.
 Damit $p_\theta(X)$ $p_\text{data}(X)$ so erlernen kann, werden zunächst Beispiele benötigt. Dazu wird mehrfach eine Münze geworfen. Die Menge all dieser Ergebnisse bildet die Trainingsdaten. Ein einzelner Münzwurf $x_n$ der Menge entspricht einem Sample, welches der Datenverteilung entnommen wurde $x_n \sim p_\text{data}(X)$. Nun kann über die Maximierung der Log-Likelihood für \ac{KI} übliches Training vollzogen werden. \\
 Wurde das Training abgschlossen, stellt $p_\theta(X)$ nun eine Approximation für $p_\text{data}(X)$ dar. Um neue Münzwürfe zu erhalten, können wir sie nun also aus $p_\theta(X)$ entnehmen $x \sim p_\theta(X)$. Hierbei spricht man ebenfalls von Generierung, Synthetisierung oder Sampling.
 
@@ -151,6 +171,9 @@ Dieses Beispiel kann auf andere Anwendungsfälle übertragen werden. In der Bild
 \ac{AE}s haben das primäre Ziel, eine Eingabe in der Dimensionalität zu reduzieren und anschließend wieder zu einer möglichst guten Annäherung der ursprünglichen Eingabe zu rekonstruieren. Zur Veranschaulichung kann man sie sich als eine erlernte Variante von Kompressionsalgorithmen wie ZIP vorstellen. 
 Zu diesem Zweck bestehen \ac{AE}s aus zwei Komponenten\footnote{
     Die Encoder- und Decoder-Komponenten werden hier als $q$ und $p$ bezeichnet, um die Verbindung zu Variational Autoencodern zu verdeutlichen. In vielen Publikationen werden sie allerdings $E$ und $D$ denotiert.    
+} \footnote{
+    Vgl. Michelucci: An Introduction to Autoencoders, S. 2 f.
+    \cite{michelucci2022introduction}
 }:
 \begin{itemize}
     \item \textbf{Encoder $q_\phi(x)$}: \\
@@ -159,7 +182,10 @@ Zu diesem Zweck bestehen \ac{AE}s aus zwei Komponenten\footnote{
     Erhält als Eingabe den versteckten Zustand und rekonstruiert das ursprüngliche Sample der Datenverteilung möglichst verlustfrei.
 \end{itemize}
 
-Das Training eines solchen \ac{AE} ist sehr simpel. Man minimiere lediglich den Fehler beziehungsweise die Distanzfunktion $d(x, y)$ zwischen Quelldaten und Rekonstruktionen. Hieraus ergibt sich somit folgendes Optimierungsziel:
+Das Training eines solchen \ac{AE} ist sehr simpel. Man minimiere lediglich den Fehler beziehungsweise die Distanzfunktion $d(x, y)$ zwischen Quelldaten und Rekonstruktionen. Hieraus ergibt sich somit folgendes Optimierungsziel\footnote{
+    Vgl. Bank, Koenigstein, Giryes: Autoencoders, S. 1
+    \cite{bank2023autoencoders}
+}:
 
 \begin{equation}
     \min L_{\phi, \theta}(x) = \mathbb E _{x \sim p_{data}} 
@@ -176,11 +202,17 @@ Eine spezialisierte Variante der \ac{AE} sind sogenannte \ac{VAE}\footnote{
     \cite{kingma2013auto}
 }. Ihre Erweiterung zu \ac{AE} besteht in der Einführung einer Bedingung an den Code. Dieser kann in im ursprünglichen \ac{AE} ein beliebiger Vektor sein, solange er bei der Entschlüsselung von Vorteil ist. Je nach Anwendungsfall kann es allerdings hilfreich sein, wenn der Code selbst auch eine semantisch aussagekräftige Darstellung der Eingabe ist. Dies kann den Code zu einem geringerdimensionalen Substitut für die Ursprungsdaten machen. Hierbei ist allerdings wichtig zu beachten, dass es sich in aller Regel nicht um menschenverständliche Eigenschaften handelt. \\
 Zu diesem Zweck wird der latente Ergebnisraum des Encoders mit einer beliebigen Wahrscheinlichkeitsverteilung $p(z)$ kombiniert. Eingabedaten werden somit also auf einen latenten Raum $Z$ abgebildet, welcher grob $p(z)$ entspricht. \\
-Die zugrundeliegende Aussage, die somit getroffen wird, besagt, dass jede Komponente des Codes nicht nur eine Kompression der Eingabe ist, sondern auch selbst einer Wahrscheinlichkeitsverteilung folgt. Hierbei wird angenommen, dass Merkmale der Datenverteilung, die beispielsweise einer Normalverteilung folgen, eine strukturierte und nützliche Darstellung der Eingabedaten ermöglichen. Die so entstehende Verteilung hat die folgende Form, welche die marginale Wahrscheinlichkeit von einer Beobachtung $x$ in Anbetracht der möglichen latenten Abbildungen $z$ darstellt:
+Die zugrundeliegende Aussage, die somit getroffen wird, besagt, dass jede Komponente des Codes nicht nur eine Kompression der Eingabe ist, sondern auch selbst einer Wahrscheinlichkeitsverteilung folgt. Hierbei wird angenommen, dass Merkmale der Datenverteilung, die beispielsweise einer Normalverteilung folgen, eine strukturierte und nützliche Darstellung der Eingabedaten ermöglichen. Die so entstehende Verteilung hat die folgende Form, welche die marginale Wahrscheinlichkeit von einer Beobachtung $x$ in Anbetracht der möglichen latenten Abbildungen $z$ darstellt\footnote{
+    Vgl. Kingma, Welling: An Introduction to Variational Autoencoders, S. 12
+    \cite{Kingma_2019}
+}:
 \begin{equation}
     p_\theta(x) = \int_z p_\theta(x, z) dz
 \end{equation}
-Diese Anpassung hat zur Folge, dass das Training eines \ac{VAE} ein erweitertes Optimierungsziel benötigt. Der erste Gedanke ist, wie für generative \ac{KI} üblich, die Log-Likelihood der Verteilung $p_\theta(X)$ zu maximieren. Dies ist jedoch aufgrund des Integrals über den latenten Raum nicht effizient möglich. Dieses Problem wird gelöst, indem eine andere Quantität maximiert wird, welche garantiert kleiner als die Log-Likelihood und in polynomialer Zeit berechenbar ist. Dieses neue Optimierungsziel wird allgemein die \textit{\ac{ELBO}} genannt. Sie ist gegeben als:
+Diese Anpassung hat zur Folge, dass das Training eines \ac{VAE} ein erweitertes Optimierungsziel benötigt. Der erste Gedanke ist, wie für generative \ac{KI} üblich, die Log-Likelihood der Verteilung $p_\theta(X)$ zu maximieren. Dies ist jedoch aufgrund des Integrals über den latenten Raum nicht effizient möglich. Dieses Problem wird gelöst, indem eine andere Quantität maximiert wird, welche garantiert kleiner als die Log-Likelihood und in polynomialer Zeit berechenbar ist. Dieses neue Optimierungsziel wird allgemein die \textit{\ac{ELBO}} genannt. Sie ist gegeben als{
+    Goodfellow et al.: Generative Adversarial Nets, S. 696
+    \cite{goodfellow2014generativeadversarialnetworks}
+}:
 \begin{equation}
     \mathcal \max L_{\phi, \theta}(x) = \mathbb E_{z \sim q_{\phi}(z|x)}
     \left [
@@ -188,7 +220,10 @@ Diese Anpassung hat zur Folge, dass das Training eines \ac{VAE} ein erweitertes 
     \right ]
     - D_\text{KL} (\log q_{\phi}(z|x) || p(z))
 \end{equation}
-$p(z)$ ist hierbei die für die Verteilung der latenten Merkmale angenommene \ac{WDF}. In der Regel handelt es sich hierbei um eine Standardnormalverteilung $\mathcal N(0; I)$. Die Herleitung der \ac{ELBO} ausgehend von der Log-Likelihood ist sehr komplex und dem Verständnis nicht weiter zutragend. Eine Betrachtung der einzelnen Terme bietet allerdings Aufschluss über die Bedeutung:
+$p(z)$ ist hierbei die für die Verteilung der latenten Merkmale angenommene \ac{WDF}. In der Regel handelt es sich hierbei um eine Standardnormalverteilung $\mathcal N(0; I)$. Die Herleitung der \ac{ELBO} ausgehend von der Log-Likelihood ist sehr komplex und dem Verständnis nicht weiter zutragend. Eine Betrachtung der einzelnen Terme bietet allerdings Aufschluss über die Bedeutung\footnote{
+    Vgl. Kingma, Welling: An Introduction to Variational Autoencoders, S. 16 ff.
+    \cite{Kingma_2019}
+}:
 \begin{itemize}
     \item $\mathbb E_{z \sim q_{\phi}(z|x)}
         \left [
@@ -227,7 +262,7 @@ Die Idee hinter diesen gegeneinander gerichteten Komponenten ist, dass somit Dat
 \end{equation}
 Die Gegensätzlichkeit ist hier durch ein Minimax ausgedrückt, bei welchem $V$ respektiv zum Generator minimiert und zum Diskriminator maximiert wird. Hervorzuheben ist hierbei die Beobachtung, dass der Generator über das Täuschen des Diskriminators traininiert wird. \\
 Diese Herangehensweise ist zwar gut im Erzeugen von hochqualitativen Samples, allerdings erweist sie in der Praxis viele Probleme, die nur schwierig zu bewältigen sind. Ein prominentes dieser Probleme ist der sogenannte \textit{Mode Collapse}. Hierbei handelt es sich um einen Zustand, bei dem der Generator nur einen kleinen Bereich der Datenverteilung erlernt. Dies ist ein Umstand, der auf das Trainingskriterium des Generators zurückzuführen ist. Bei diesem ist im Gegensatz zur Maximierung der Log-Likelihood nicht sichergestellt, dass die gesamte Datenverteilung betrachtet wird. Es kann also ausreichen, nur einen kleinen Bereich zu erlernen, solange dieser vom Diskriminator als real eingestuft wird.\footnote{
-    Vgl. Thanh-Tung, Tran: Mode Collapse in Generative Adversarial Networks, S. TODO
+    Vgl. Thanh-Tung, Tran: Mode Collapse in Generative Adversarial Networks, S. 3
     \cite{thanhtung2020catastrophicforgettingmodecollapse}
 }
 
@@ -305,20 +340,29 @@ Der Transformer\footnote{
     Dosovitskiy et al.: An Image is Worth 16x16 Words 
     \cite{dosovitskiy2021imageworth16x16words}
 }. \\ 
-Der Transformer, abgebildet in Abbildung \ref{fig:transformer}, folgt dem Encoder-Decoder Schema. Dabei dient, vereinfacht ausgedrückt, der Encoder zur Verarbeitung der Eingabe zu einem Kontext. Der Decoder hingegen generiert anhand dieses Kontextes und der bisher generierten Sequenz autoregressiv die Ausgabe. Das bedeutet, dass die Ausgabe, Komponente um Komponente, auf Basis der bisherigen Ergbnissequenz, gesampelt wird. \\ 
+Der Transformer, abgebildet in Abbildung \ref{fig:transformer}, folgt dem Encoder-Decoder Schema. Dabei dient, vereinfacht ausgedrückt, der Encoder zur Verarbeitung der Eingabe zu einem Kontext. Der Decoder hingegen generiert anhand dieses Kontextes und der bisher generierten Sequenz autoregressiv die Ausgabe. Das bedeutet, dass die Ausgabe, Komponente um Komponente, auf Basis der bisherigen Ergbnissequenz, gesampelt wird\footnote{
+    Vgl. Turner: An Introduction to Transformers, S. 1
+    \cite{turner2024introductiontransformers}
+}. \\ 
 Die Daten, die hierbei verarbeitet werden, sind grundsätzlich sequenziell, ihre Position innerhalb der Sequenz ist also für ihre Interpretation des Inhaltes relevant. \\
-Die grobe Funktionsweise ist dabei wie folgt. Die Eingabedaten müssen zunächst für den Encoder angepasst werden. Dies kann gegebenfalls das Embedden des Eingabevektors beinhalten, in jedem Fall aber die Integration eines Positional Encodings. Dieses weist jeder Komponente des Eingabevektors einen eindeutigen Wert anhand der Position dieser Komponente in der zu verarbeitenden Sequenz zu. Dieses Positional Encoding beruht dabei üblicherweise auf einer Kosinusfunktion, kann aber auch erlernt werden. \\
+Die grobe Funktionsweise ist dabei wie folgt. Die Eingabedaten müssen zunächst für den Encoder angepasst werden. Dies kann gegebenfalls das Embedden des Eingabevektors beinhalten, in jedem Fall aber die Integration eines Positional Encodings. Dieses weist jeder Komponente des Eingabevektors einen eindeutigen Wert anhand der Position dieser Komponente in der zu verarbeitenden Sequenz zu. Dieses Positional Encoding beruht dabei üblicherweise auf einer Kosinusfunktion, kann aber auch erlernt werden\footnote{
+    Vgl. Kazmnejad: Transformer Architecture: The Positional Encoding
+    \cite{kazemnejad2019:pencoding}
+}. \\
 Dieser um die Positionsinformationen angereicherte Vektor kann nun vom Encoder zu einem sogenannten Contextual- oder Hidden-Embedding verarbeitet werden. Dies ist ein Vektor, welcher grundsätzlich dem Eingangsvektor entspricht. Jede Komponente dieses Vektors ist dabei, stark vereinfacht ausgedrückt, eine kontextualisierte Repräsentation der ursprünglichen Komponente. Das heißt, sie beinhaltet Informationen über ihre Bedeutung innerhalb der jeweiligen Sequenz sowie gegebenenfalls im breiteren Kontext der Domäne des Modells. \\
 Anhand dieses Hidden-Embeddings wird nun Komponente für Komponente die Ausgabesequenz generiert. Dabei wird in jedem Schritt das bis zu diesem Zeitpunkt generierte Ergebnis mit dem Hidden-Embedding in Kontext gesetzt, was letztendlich die Grundlage für die Auswahl der wahrscheinlich als nächstes folgenden Komponente der Sequenz ist.
 
 \subsubsection{Attention}
 
 Der Erfolg von Transformern beruht maßgeblich auf ihren Attention-Blöcken. Diese erlauben es, einen oder gegebenfalls auch zwei Sequenzvektoren zu sich selbst oder zu einander in Kontext zu setzen und diese Information in ihrer Ausgabe festzuhalten. \\
-Diese basieren dabei auf der der sogenannten \textit{Self-Attention}, welche einen sogenannten Attention-Vektor als Ergebnis hat. Jede Komponente dieses Vektors wird berechnet, indem alle Komponenten eines Eingabevektors linear abgebildet werden:
+Diese basieren dabei auf der der sogenannten \textit{Self-Attention}, welche einen sogenannten Attention-Vektor als Ergebnis hat. Jede Komponente dieses Vektors wird berechnet, indem alle Komponenten eines Eingabevektors linear abgebildet werden\footnote{
+    Vgl. Tunstall, von Werra, Wolf: NLP with Transformers, S. 61
+    \cite{tunstall2022natural}
+}:
 \begin{equation}
     y_i = \sum_{j=1}^n w_{ji}x_j
 \end{equation}
-Wobei $x$ der Eingabevektor, $y$ der Attention-Vektor und $W$ die Gewichtsmatrix für die lineare Abbildung sind. Hierbei ist die Invariante, dass die Summe der Spaltenvektoren von $W$ gleich eins ist, zu erfüllen. Selfattention kann somit als Wertung der Wichtigkeit aller Komponenten von $x$ gemäß einer beziehungsweise mehreren diskreten Wahrscheinlichkeitsverteilungen verstanden werden. Mit anderen Worten wird somit bestimmt, wieviel Aufmerksamkeit einer Komponente zukommen soll. \\
+Wobei $x$ der Eingabevektor, $y$ der Attention-Vektor und $W$ die Gewichtsmatrix für die lineare Abbildung sind. Hierbei ist die Invariante, dass die Summe der Spaltenvektoren von $W$ gleich eins ist, zu erfüllen. Self-Attention kann somit als Wertung der Wichtigkeit aller Komponenten von $x$ gemäß einer (beziehungsweise mehreren) diskreten Wahrscheinlichkeitsverteilungen verstanden werden. Mit anderen Worten wird somit bestimmt, wieviel Aufmerksamkeit einer Komponente zukommen soll. \\
 Dieses Prinzip wird in den Attention-Blöcken eines Transformers grundlegend durch die \textit{Scaled Dot Product Attention} umgesetzt. Diese ist wie folgt definiert\footnote{
     Vaswani et al.: Attention is All You Need, S. 4
     \cite{vaswani2023attentionneed}
@@ -333,9 +377,15 @@ Dieses Prinzip wird in den Attention-Blöcken eines Transformers grundlegend dur
     \text{softmax}(z) = \frac{e^z}{\sum_{j=1}^K e^{z_j}}
 \end{equation}
 $Q$, $K$ und $V$ sind hierbei Ergebnisse der Multiplikation eines Eingabevektors mit den korrespondierenden erlernten Gewichtsmatrizen $W^Q$, $W^K$ und $W^V$. $d_k$ ist die Dimension von $Q$ und $K$. \\
-Man nennt $Q$, $K$ und $V$ auch \textit{Query}, \textit{Key} und \textit{Value}, was ihre Bedeutung durch den Vergleich zu Datenbanken veranschaulicht. Zunächst werden Query und Key werden miteinander multipliziert, der sich hieraus ergebende Wert soll angeben, wie relevant der jeweilige Key für die Query ist. Dies entspricht der Definition der Self-Attention und die umschließende Softmax-Funktion stellt die Einhaltung der Invariante sicher. Diese, vereinfacht ausgedrückt, gewichteten Relevanzwerte werden anschließend mit dem Value verrechnet, welcher der Repräsentation der kontextuellen Bedeutung der jeweiligen Komponente des Eingangsvektors entspricht. \\
+Man nennt $Q$, $K$ und $V$ auch \textit{Query}, \textit{Key} und \textit{Value}, was ihre Bedeutung durch den Vergleich zu Datenbanken veranschaulicht. Zunächst werden Query und Key werden miteinander multipliziert, der sich hieraus ergebende Wert soll angeben, wie relevant der jeweilige Key für die Query ist. Dies entspricht der Definition der Self-Attention und die umschließende Softmax-Funktion stellt die Einhaltung der Invariante sicher. Diese, vereinfacht ausgedrückt, gewichteten Relevanzwerte werden anschließend mit dem Value verrechnet, welcher der Repräsentation der kontextuellen Bedeutung der jeweiligen Komponente des Eingangsvektors entspricht\footnote{
+    Vgl. Tunstall, von Werra, Wolf: NLP with Transformers, S. 62ff.
+    \cite{tunstall2022natural}
+}. \\
 Sollen zwei Vektoren zu einander in Beziehung gesetzt werden, so wird einer der beiden für $Q$ und der andere für $K$ und $V$ verwendet. Man spricht in diesem Fall auch von \textit{Cross Attention}. \\
-Diese Berechnung kann auch mehrfach mit unterschiedlichen $W^Q$, $W^K$ und $W^V$ durchgeführt werden, um vielfältige Interpretationsmöglichkeiten der Sequenz abbilden zu können. Dies wird \textit{Multi-Head Attention} genannt.
+Diese Berechnung kann auch mehrfach mit unterschiedlichen $W^Q$, $W^K$ und $W^V$ durchgeführt werden, um vielfältige Interpretationsmöglichkeiten der Sequenz abbilden zu können. Dies wird \textit{Multi-Head Attention} genannt\footnote{
+    Vaswani et al.: Attention is All You Need, S. 4f.
+    \cite{vaswani2023attentionneed}
+}.
 
 % DDPM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Diffusionsmodelle}
@@ -348,7 +398,10 @@ Eine mögliche Antwort hierauf stellen Diffusionsmodelle (DMs)\acused{DM}\footno
 } dar. Die Kernidee der Generierung dieser Variante von Modellen ist dabei das iterative Herauskristallisieren von Informationen aus einem ursprünglichen Rauschbild über viele Zeitschritte hinweg. Intuitiv kann diese Funktionsweise damit begründet werden, dass jeder einzelne Schritt hierbei eine verhältnismäßig einfache Aufgabe ist, da das Ergebnis jedes Schrittes nur eine kleine Änderung des verrauschten Ausgangszustands darstellt. Alle Schritte zusammen jedoch ergeben ein sehr tiefes und mächtiges Modell. Vergleichbar ist dies mit einem Bildhauer, welcher beginnend mit einem unförmigen Steinblock Stück für Stück jeweils ein wenig der überflüssigen Masse entfernt und so die Form des Blocks immer mehr der gewünschten Form annähert, wobei jedes einzelne Entfernen für sich genommen nur wenig Einfluss hat.\\
 Die Formulierung eines Diffusionsmodells ist in zwei Prozesse aufgeteilt, wobei $t \in [0,T]$ den jeweiligen Zeitschritt angibt. Hierbei ist eine gängige Konvention $T=1000$: 
 \begin{itemize}
-    \item \textbf{Vorwärtsprozess} $q(x_{1:T}|x_0)$: \\
+    \item \textbf{Vorwärtsprozess} $q(x_{1:T}|x_0)$\footnote{
+       Vgl.  Dickstein et al.: Diffusion Models S. 3 f. 
+        \cite{pmlr-v37-sohl-dickstein15}
+    }: \\
     \begin{figure}[htbp]
         \centering
         \subfloat{%
@@ -369,7 +422,10 @@ Die Formulierung eines Diffusionsmodells ist in zwei Prozesse aufgeteilt, wobei 
         \caption{Illustration des Vorwärtsprozesses mit zunehmendem $t$}
         \label{fig:forward_process}
     \end{figure} \\
-    Das Ziel des Vorwärtsprozesses ist das iterative Einführen von zunehmendem in der Regel gaußschem Rauschen in die Eingabedaten $x_0$, wie in Abbildung \ref{fig:forward_process} illustriert. Die Daten zum letzten Zeitschritt $x_T$ stellen hierbei reines Rauschen dar, in welchem die Informationen von $x_0$ gänzlich zerstört wurden. Dieser Prozess ist der Grund für die Namensgebung von Diffusionsmodellen, da er dem Vorgang der Diffusion in der Physik grob ähnelt. Definiert ist er wie folgt:
+    Das Ziel des Vorwärtsprozesses ist das iterative Einführen von zunehmendem in der Regel gaußschem Rauschen in die Eingabedaten $x_0$, wie in Abbildung \ref{fig:forward_process} illustriert. Die Daten zum letzten Zeitschritt $x_T$ stellen hierbei reines Rauschen dar, in welchem die Informationen von $x_0$ gänzlich zerstört wurden. Dieser Prozess ist der Grund für die Namensgebung von Diffusionsmodellen, da er dem Vorgang der Diffusion in der Physik grob ähnelt. Definiert ist er wie folgt\footnote{
+        Dickstein et al.: Diffusion Models S. 4
+        \cite{pmlr-v37-sohl-dickstein15}
+    }:
     \begin{equation}
         q(x_{1:T}|x_0) := \prod_{t=1}^T q(x_t | x_{t-1}) 
     \end{equation}
@@ -387,7 +443,10 @@ Die Formulierung eines Diffusionsmodells ist in zwei Prozesse aufgeteilt, wobei 
     \end{equation}
     Mit $\alpha_t := 1 - \beta_t$ und $\bar\alpha_t := \prod_{s=1}^t \alpha_s$.
 
-    \item \textbf{Rückwärtsprozess} $p_\theta(x_{0:T})$: \\
+    \item \textbf{Rückwärtsprozess} $p_\theta(x_{0:T})$\footnote{
+        Vgl. Dickstein et al.: Diffusion Models S. 4. 
+        \cite{pmlr-v37-sohl-dickstein15}
+    }: \\
     \begin{figure}[htbp]
         \centering
         \subfloat{%
@@ -454,9 +513,21 @@ Die vorherige Definition von \ac{DM}s im Allgemeinen bietet bereits ein Verstän
     \cite{ho2020denoisingdiffusionprobabilisticmodels}
 } - untermauert die Notwendigkeit des Verrauschens noch deutlicher. \\
 Die grundlegende Umformulierung ist nun, dass anstelle des Erkennens der Struktur in einem Rauschbild das Rauschen in einer verrauschten Struktur erkannt und iterativ entfernt wird. Auf den ersten Blick mag dies bereits äquivalent wirken, und tatsächlich sind die zwei Herangehensweisen grundsätzlich äquivalent, allerdings erlaubt dieser Perspektivwechsel neue Erkenntnisse. \\
-Zuerst wird auf diese Weise der Zusammenhang zu sogenannten \ac{SMM}s  offensichtlich. \\
-Diese Klasse von generativen Modellen erlernt die Datenverteilung nicht direkt, sondern ihren Score respektiv zur Eingabe - also den Gradienten der Log-Likelihood. Auf diese Weise werden Eingabedaten auf einen Vektor abgebildet, welcher angibt, wie die einzelnen Komponenten der Eingabedaten verändert werden müssen, damit sie unter der Modellverteilung wahrscheinlicher werden. Hierüber wird indirekt ebenfalls die Datenverteilung erlernt. Der Samplingprozess unter einem solchen \ac{SMM} ist das iterative Anpassen eines ursprünglichen verrauschten Vektors zu einem Sample, welches eine hohe Wahrscheinlichkeit unter der erlernten Modellverteilung aufweist. \\
-Dieser Prozess entspricht exakt dem Rückwärtsprozess eines \ac{DM}. Nun kann die Frage aufkommen, wie der Score in einem \ac{DM} erlernt wird, wenn lediglich die Normalverteilungen des Vor- und Rückwärtsprozess angeglichen werden. Hier ist der genannte Perspektivwechsel von Vorteil. Zu erlernen, welches Rauschen in Daten vorhanden ist, ist äquivalent zum Erlernen des Scores. Um dies zu begreifen, kann man sich vor Augen führen, dass das Verrauschen eines einzelnen Datenpunktes bedeutet, dass er von seinem ursprünglichen Wert verschoben wird. Rauschen zu entfernen bedeutet somit, zu erlernen, in welche Richtung dieser Wert wieder zurückgeschoben werden muss. Mit anderen Worten also: Den Gradienten zu erlernen, welcher zum maximal wahrscheinlichen Ausgangswert weist - was wiederum genau die Definition von \ac{SMM}s ist. Von Vorteil bei dieser Art von Modellen ist, dass sie gleichzeitig die tatsächliche Datenverteilung erlernen, wenn auch indirekt, und trotzdem nicht an die Invarianten einer \ac{WDF} gebunden sind, da sie eben nur den Score erlernen. \\
+Zuerst wird auf diese Weise der Zusammenhang zu sogenannten Score Matching Models (SMMs)\footnote{
+    Hyvärinen: Estimation of Statistical Models by Score Matching
+    \cite{JMLR:v6:hyvarinen05a}
+}\acused{SMM} offensichtlich. \\
+Diese Klasse von generativen Modellen erlernt die Datenverteilung nicht direkt, sondern ihren Score respektiv zur Eingabe - also den Gradienten der Log-Likelihood. Auf diese Weise werden Eingabedaten auf einen Vektor abgebildet, welcher angibt, wie die einzelnen Komponenten der Eingabedaten verändert werden müssen, damit sie unter der Modellverteilung wahrscheinlicher werden. Hierüber wird indirekt ebenfalls die Datenverteilung erlernt. Der Samplingprozess unter einem solchen \ac{SMM} ist das iterative Anpassen eines ursprünglichen verrauschten Vektors zu einem Sample, welches eine hohe Wahrscheinlichkeit unter der erlernten Modellverteilung aufweist.\footnote{
+    Vgl. Hyvärinen: Estimation of Statistical Models by Score Matching, S. 2 f.
+    \cite{JMLR:v6:hyvarinen05a}
+} \\
+Dieser Prozess entspricht exakt dem Rückwärtsprozess eines \ac{DM}. Nun kann die Frage aufkommen, wie der Score in einem \ac{DM} erlernt wird, wenn lediglich die Normalverteilungen des Vor- und Rückwärtsprozess angeglichen werden. Hier ist der genannte Perspektivwechsel von Vorteil. Zu erlernen, welches Rauschen in Daten vorhanden ist, ist äquivalent zum Erlernen des Scores\footnote{
+    Vgl. Ho, Jain, Abbeel: Denoising Diffusion Probabilistic Models, S. 4
+    \cite{ho2020denoisingdiffusionprobabilisticmodels}
+}. Um dies zu begreifen, kann man sich vor Augen führen, dass das Verrauschen eines einzelnen Datenpunktes bedeutet, dass er von seinem ursprünglichen Wert verschoben wird. Rauschen zu entfernen bedeutet somit, zu erlernen, in welche Richtung dieser Wert wieder zurückgeschoben werden muss. Mit anderen Worten also: Den Gradienten zu erlernen, welcher zum maximal wahrscheinlichen Ausgangswert weist - was wiederum genau die Definition von \ac{SMM}s ist\footnote{
+    Vgl. Vincent: A Connection Between Score Matching and Denoising Autoencoders, S. 6
+    \cite{vincent2011connection}
+}. Von Vorteil bei dieser Art von Modellen ist, dass sie gleichzeitig die tatsächliche Datenverteilung erlernen, wenn auch indirekt, und trotzdem nicht an die Invarianten einer \ac{WDF} gebunden sind, da sie eben nur den Score erlernen. \\
 Unter der Annahme, dass die Kovarianzmatrix der Normalverteilungen konstant $\beta_t$ ist (diese Annahme wird im folgenden Unterabschnitt kritisch hinterfragt), kann so ein neues, deutlich simpleres Optimierungsziel formuliert werden\footnote{
     Ho, Jain, Abbeel: Denoising Diffusion Probabilistic Models, S. 5
     \cite{ho2020denoisingdiffusionprobabilisticmodels}
@@ -540,14 +611,22 @@ Hierbei wird zuallererst ein Null-Embedding $\diameter$ definiert, welches die A
 \subsubsection{Image To Image}
 \label{subsubsec:i2i}
 
-Durch die Markow-Kette des Rückwärtsprozesses beim Samplings in einem \ac{DM} ergibt sich die Möglichkeit, diesen Prozess zu \enquote{kapern}, um die Generierung genauer zu steuern. Konkret bedeutet dies, dass der Rückwärtsprozess nicht zwangsläufig bei $t=T$ beginnen muss. Tatsächlich kann ein beliebiges $t$ als Startpunkt gewählt werden, solange $x_t$ bekannt ist. Da der Rückwärtsprozess zu jedem Zeitschritt versucht, denselben Zeitschritt im Forwärtsprozess zu approximieren, kann für $x_t$ einfach $q(x_t|x_0)$ genutzt werden. Einfacher ausgedrückt heißt dies, dass ein Eingabedatum entsprechend Zeitschritt $t$ verrauscht werden und anschließend umgehend in den Rückwärtsprozess gegeben werden kann, um bei $t$ zu starten. Dies hat zur Folge, dass Samples, die auf diese Weise erzeugt wurden, dem eingegebenen Datenpunkt stärker ähneln. Die Stärke dieser Ähnlichkeit kann dabei über $t$ festgelegt werden - je kleiner $t$, desto weniger werden die Daten durch Rauschen zerstört, desto größer also die Ähnlichkeit.
-
+Durch die Markow-Kette des Rückwärtsprozesses beim Samplings in einem \ac{DM} ergibt sich die Möglichkeit, diesen Prozess zu \enquote{kapern}, um die Generierung genauer zu steuern. Konkret bedeutet dies, dass der Rückwärtsprozess nicht zwangsläufig bei $t=T$ beginnen muss. Tatsächlich kann ein beliebiges $t$ als Startpunkt gewählt werden, solange $x_t$ bekannt ist. Da der Rückwärtsprozess zu jedem Zeitschritt versucht, denselben Zeitschritt im Forwärtsprozess zu approximieren, kann für $x_t$ einfach $q(x_t|x_0)$ genutzt werden. Einfacher ausgedrückt heißt dies, dass ein Eingabedatum entsprechend Zeitschritt $t$ verrauscht werden und anschließend umgehend in den Rückwärtsprozess gegeben werden kann, um bei $t$ zu starten\footnote{
+    Vgl. Meng et al.: SDEdit: Guided Image Synthesis, S. 2 f.
+    \cite{meng2021sdedit}
+}. Dies hat zur Folge, dass Samples, die auf diese Weise erzeugt wurden, dem eingegebenen Datenpunkt stärker ähneln. Die Stärke dieser Ähnlichkeit kann dabei über $t$ festgelegt werden - je kleiner $t$, desto weniger werden die Daten durch Rauschen zerstört, desto größer also die Ähnlichkeit.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Inpainting}
 
-Ebenfalls ist es möglich, die Generierung lokal zu begrenzen, sodass gezielt nur Bereiche in einem Eingabedatum durch die Generierung betroffen werden. Hierfür wird zuerst eine Maske definiert, welche die gleiche Dimension wie die Eingabedaten hat. Anschließend erfolgt der Rückwärtsprozess. Hierbei wird nun in jedem Schritt der maskierte Bereich von $p_\theta(x_{t-1} | x_{t})$ durch $q(x_{t-1}|x_0)$ ersetzt. Auf diese Weise bleiben die maskierten Bereiche der Eingabedaten unverändert, wärend die Unmaskierten generiert werden. \\
+Ebenfalls ist es möglich, die Generierung lokal zu begrenzen, sodass gezielt nur Bereiche in einem Eingabedatum durch die Generierung betroffen werden. Hierfür wird zuerst eine Maske definiert, welche die gleiche Dimension wie die Eingabedaten hat. Anschließend erfolgt der Rückwärtsprozess. Hierbei wird nun in jedem Schritt der maskierte Bereich von $p_\theta(x_{t-1} | x_{t})$ durch $q(x_{t-1}|x_0)$ ersetzt. Auf diese Weise bleiben die maskierten Bereiche der Eingabedaten unverändert, wärend die Unmaskierten generiert werden\footnote{
+    Vgl. Lugmayr et al.: Inpainting using DDPMs, S. 4 f.
+    \cite{lugmayr2022repaint}
+}. \\
 Aufgrund des Umstands, dass diese Ersetzung in jedem Zeitschritt stattfindet, ist der Übergang zwischen Ursprungs- und neuen Daten sogar dann fließend und kohärent, wenn sich hierbei die Kontrollsignale unterscheiden.
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Diffusion Transformer}
@@ -559,15 +638,19 @@ Aufgrund des Umstands, dass diese Ersetzung in jedem Zeitschritt stattfindet, is
     \caption{Architektur eines \ac{DiT}s \cite{peebles2023scalable}}
     \label{fig:dit}
 \end{figure}
-\ac{DiT}\footnote{
+Diffusion Transformer (\ac{DiT})\footnote{
     Peebles, Xie: Scalable Diffusion Models with Transformers
     \cite{peebles2023scalable}
 } stellen eine Alternative zu U-Nets für die Umsetzung der Modellarchitektur von \ac{DM}s dar. \ac{DiT}s sind eine speziell für Diffusion angepasste Variante der \ac{ViT}s\footnote{
     Dosovitskiy et al.: An Image is Worth 16x16 Words 
     \cite{dosovitskiy2021imageworth16x16words}
 }.\\
-Ihre grundlegende Funktionsweise ist dabei stark verwandt mit der von normalen Transformern. Die Eingabedaten werden zunächst in kleinere Patches, vergleichbar mit den Zeitschritten einer Sequenz, unterteilt. Diese Patches werden anschließend mit einem Positional Encoding versehen, welches wie beispielsweise bei Bildern mehrdimensional sein kann. Diese angereicherten Patches werden anschließend in vielen Iterationen mittels sogenannter \ac{DiT} Blöcke, welche aus abwechselnden Self-Attention und \ac{AdaLN}-Blöcken beziehungsweise Cross-Attention-Blöcken bestehen, verarbeitet. Abschließend werden die einzelnen Patches wieder zu ihrer ursprünglichen Anordnung zusammengefügt. Die vorgestellte Architektur ist in Abbildung \ref{fig:dit} veranschaulicht.\\
-Diese Methode hat sich in einigen Kontexten als leistungsfähiger im Vergleich zu U-Nets erwiesen. Allerdings erfordern sie ebenfalls mehr Rechenkapazität, um vergleichbare oder bessere Ergebnisse zu erzeugen. Aufgrund dieser Leistungsfähigkeit werden \ac{DiT}s in einigen der aktuell leistungsfähigsten Modellen wie beispielsweise Stable Diffusion 3 verwendet.
+Ihre grundlegende Funktionsweise ist dabei stark verwandt mit der von normalen Transformern. Die Eingabedaten werden zunächst in kleinere Patches, vergleichbar mit den Zeitschritten einer Sequenz, unterteilt. Diese Patches werden anschließend mit einem Positional Encoding versehen, welches wie beispielsweise bei Bildern mehrdimensional sein kann. Diese angereicherten Patches werden anschließend in vielen Iterationen mittels sogenannter \ac{DiT}-Blöcke, welche aus abwechselnden Self-Attention und \ac{AdaLN}-Blöcken beziehungsweise Cross-Attention-Blöcken bestehen, verarbeitet. Abschließend werden die einzelnen Patches wieder zu ihrer ursprünglichen Anordnung zusammengefügt. Die vorgestellte Architektur ist in Abbildung \ref{fig:dit} veranschaulicht.\\
+Diese Methode hat sich in einigen Kontexten als leistungsfähiger im Vergleich zu U-Nets erwiesen. Allerdings erfordern sie ebenfalls mehr Rechenkapazität, um vergleichbare oder bessere Ergebnisse zu erzeugen. Aufgrund dieser Leistungsfähigkeit werden \ac{DiT}s in einigen der aktuell leistungsfähigsten Modellen wie beispielsweise Stable Diffusion 3 verwendet\footnote{
+    Vgl. Esser et al.: Scaling rectified flow transformers for image synthesis, S. 4
+    \cite{esser2024scaling}
+}.
+
 
 % LDM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Latente Diffusion}
@@ -638,7 +721,10 @@ Hierfür werden zunächst allen Eckpunkten des Gitters pseudozufällig ausgerich
 \begin{enumerate}
     \item Ermittle die Gradienten der Eckpunkte, die zur Gitterzelle des aktuellen Punktes gehören.
     \item Berechne das Skalarprodukt zwischen jedem dieser Gradienten und dem Verbindungsvektor des jeweiligen Eckpunktes zur relativen Position des Punktes innerhalb der Gitterzelle.
-    \item Interpoliere nun systematisch zwischen je zwei Skalarprodukten beziehungswiese Interpolationen $g_1$ und $g_2$ anhand der relevanten Koordinate der Position $x$ des Pixels mit der folgenden Funktion:
+    \item Interpoliere nun systematisch zwischen je zwei Skalarprodukten beziehungswiese Interpolationen $g_1$ und $g_2$ anhand der relevanten Koordinate der Position $x$ des Pixels mit der folgenden Funktion\footnote{
+        Perlin: Improving Noise, S. 2
+        \cite{perlin2002improving}
+    }:
     \begin{equation}
         f_\text{interp}(x, g_1, g_2) = (g_2 - g_1)(6x^5 - 15x^4 + 10x^3) 
         + g_1
@@ -656,7 +742,10 @@ Dieser Algorthmus eignet sich ebenfalls zur Generierung von unendlichen Rauschfe
 \subsubsection{Fraktales Rauschen}
 
 Eine einfache Rauschfunktion ist in ihrem Detailgrad fest an ihre Definition gebunden. Beim Perlin Rauschen beispielsweise ist dieser definiert über die Auflösung des Gitternetzes. Somit ist es hier nicht möglich, feine und grobe Strukturen gleichzeitig abzubilden. Eine oft angewandte Lösung für dieses Dilemma ist die Kombination der gleichen Rauschfunktion mit unterschiedlichen Amplituden und Frequenzen, sogenanntem fraktalen Rauschen. \\
-Hierbei werden sogenannte $O$ Oktaven einer Rauschfunktion $f$ summiert. Jede Oktave benutzt dabei dieselbe Rauschfunktion, unterscheidet sich jedoch in Frequenz und Amplitude von den anderen. Die jeweiligen Änderungen zwischen Oktaven werden über Parameter, die Persistenz $p$ und Lakunarität $l$, definiert. Kombiniert werden alle Oktaven zu einem einzigen Rauschbild anhand der folgenden Funktion:  
+Hierbei werden sogenannte $O$ Oktaven einer Rauschfunktion $f$ summiert. Jede Oktave benutzt dabei dieselbe Rauschfunktion, unterscheidet sich jedoch in Frequenz und Amplitude von den anderen. Die jeweiligen Änderungen zwischen Oktaven werden über Parameter, die Persistenz $p$ und Lakunarität $l$, definiert. Kombiniert werden alle Oktaven zu einem einzigen Rauschbild anhand der folgenden Funktion\footnote{
+    Vgl. Dustler et al.: Application of the fractal Perlin noise, S. 2 f.
+    \cite{dustler2015application}
+}:  
 \begin{equation}
     f_\text{fractal}(x) = \sum_{o=0}^{O-1} p^{o}f(l^ox)
 \end{equation}

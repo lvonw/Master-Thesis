@@ -27,7 +27,13 @@ Zum anderen könnten mit unterschiedlichen strengeren Kontrollsignalen experimen
 
 \subsubsection{Alternative Samplingalgorithmen}
 
-Aktuell sieht das implementierte Modell vor, dass dem normalen DDPM-Rückwärtsprozess entsprechend für das Sampling alle $T$ Zeitschritte durchlaufen werden müssen. Dies ist zeit- und rechenintensiv. Aus diesem Grund existieren bereits viele alternative Samplingalgorithmen, welche darauf abzielen, mit weniger Zeitschritten gute Ergebnisse zu erzeugen, wie z.B. DDIM oder DPM++. Die Eignung dieser Algorithmen zu überprüfen ist eine vielversprechende Option, um die nötige Rechenzeit drastisch zu reduzieren.
+Aktuell sieht das implementierte Modell vor, dass dem normalen DDPM-Rückwärtsprozess entsprechend für das Sampling alle $T$ Zeitschritte durchlaufen werden müssen. Dies ist zeit- und rechenintensiv. Aus diesem Grund existieren bereits viele alternative Samplingalgorithmen, welche darauf abzielen, mit weniger Zeitschritten gute Ergebnisse zu erzeugen, wie z.B. DDIM\footnote{
+    Song, Meng, Ermon: Denoising Diffusion Implicit Models
+    \cite{song2020denoising}
+} oder DPM++\footnote{
+    Lu et al.: DPM-Solver++
+    \cite{lu2023dpmsolverfastsolverguided}
+}. Die Eignung dieser Algorithmen zu überprüfen ist eine vielversprechende Option, um die nötige Rechenzeit drastisch zu reduzieren.
 
 \subsubsection{Flow Matching}
 
