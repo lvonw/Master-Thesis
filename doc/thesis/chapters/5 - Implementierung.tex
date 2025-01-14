@@ -16,9 +16,9 @@ Die hier dargestellten Quellcode-Ausschnitte der Implementierung sind zur besser
 \section {Datenframework}
 
 Bei der Implementierung des Datenframeworks war insbesondere die Datensatzagnostik der zentrale Leitgedanke. Es sollte einfach konfigurierbar sein, welche Daten genutzt werden sollten und welche nicht, sowohl für die \ac{DEM}s als auch die Kontrollsignale. Zusätlich sollten die Augmentierungen frei konfigurierbar sein, um gegebenenfalls welche hinzufügen zu können. \\
-Zu diesem Zweck wurde die Hauptroutine des Frameworks, welche zum Laden und zur Laufzeitverarbeitung der Daten zur Trainingszeit dient, wie in Abbildung \ref{fig:Data_runtime} dargestellt implementiert. Hierbei werden die bereits in Kapitel \ref{ch:Datenaufbereitung} geschilderten Schritte durchlaufen. Auffallend ist hierbei zusätzlich die Nutzung eines Caches, durch welchen die geladenen Daten im Arbeitsspeicher gehalten werden, was die Laufzeiteffizienz deutlich erhöht.
-\begin{figure}[htbp]
-\begin{lstlisting}[language=python]
+Zu diesem Zweck wurde die Hauptroutine des Frameworks, welche zum Laden und zur Laufzeitverarbeitung der Daten zur Trainingszeit dient, wie in Abbildung \ref{fig:Data_runtime} dargestellt implementiert. Hierbei werden die bereits in Kapitel \ref{ch:Datenaufbereitung} geschilderten Schritte durchlaufen. Auffallend ist hierbei zusätzlich die Nutzung eines Caches, durch welchen die geladenen Daten im Arbeitsspeicher gehalten werden, was die Laufzeiteffizienz deutlich erhöht. \\
+\begin{figure}[H]
+\begin{lstlisting}[language=python, aboveskip=0pt, belowskip=0pt]
 def __getitem__(self, index):
     cache       = GeoDatasetCache()
     file = self.dem_list[index]
@@ -35,7 +35,7 @@ def __getitem__(self, index):
         cache.label_tensor = label
         cache.label_frames.append(label_data_frame)
     label_frames = cache.label_frames
-    # Wende die Datenaugmentierungs Transformationen an 
+    # Wende die Datenaugmentierungs-Transformationen an 
     data_entry, label_frames = self.aug_transforms(
         data_entry, label_frames)
     # Ermittle die Klassen aus den Ausschnitten 
@@ -47,7 +47,7 @@ def __getitem__(self, index):
     \captionsetup{type=figure}
     \captionof{figure}{Laufzeitverarbeitung der DEM- und Klassendaten}
     \label{fig:Data_runtime}
-\end{figure} \\
+\end{figure}
 Sofern der Cache genutzt werden soll, kann dieser sowohl zur Trainingszeit als auch vorher gefüllt werden. Für die genaue Implementierung des Caches wurde eine Python distributed List verwendet, welche über den Itemindex angesprochen wird. Dies erlaubt es, mehrere Threads effizienter beim Laden der Daten zu nutzen, was beim Training einen deutlichen Performanzunterschied macht, vor allem auf schwächeren Maschinen. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,8 +201,8 @@ Zusätzlich kann auch eine Maske definiert werden, was erfordert, dass das zu ma
 Hiernach folgt die eigentliche Schleife des Rückwärtsprozesses beginnend bei dem definierten Startzeitschritt. Die \ac{CFG} wird in diesem Ausschnitt durch zwei separate Modellaufrufe umgesetzt, tatsächlich kann dies aber auch in einem einzigen Durchlauf bewerkstelligt werden. Dies ist zwar theoretisch laufzeiteffizienter, kann aber durch die erhöhten Grafikspeicher-Anforderungen auf schwächeren \ac{GPU}s in der Praxis langsamer sein, als zwei separate Samplingprozesse. \\
 Anschließend wird nach dem Entrauschen des aktuellen $x_t$ noch die Maske angewendet, bei welcher entsprechend den $\alpha$ Werten des Maskenbildes und der Gegenmaske die jeweiligen Bereiche des Maskenbildes übernommen werden. \\
 Abgeschlossen wird der Prozess durch die Entschlüsselung der latenten Repräsentation des Samples zurück in den Bildraum. \\
-Das in diesen Ausschnitten verwendete \texttt{self.model} bezieht sich hierbei auf ein reguläres \ac{DM}. Jedoch wird in dieser Arbeit, da zwei unterschiedliche Architekturen für das DM getestet werden, zunächst eine Abstraktion der DM-Funktionalität eingeführt. Diese ist agnostisch gegenüber der gewählten Architektur und stellt somit eine Wrapper-Klasse dar. Die \texttt{forward} Funktion dieses Wrappers ist in Abbildung \ref{fig:DM_forward} dargestellt. Diese übernimmt das Embedding des Zeitschrittes sowie der Kontrollsignale und leitet diese anschließend an die gewählte konkrete Implementierung des \ac{DM}s weiter. 
-\begin{figure}[htbp]
+Das in diesen Ausschnitten verwendete \texttt{self.model} bezieht sich hierbei auf ein reguläres \ac{DM}. Jedoch wird in dieser Arbeit, da zwei unterschiedliche Architekturen für das DM getestet werden, zunächst eine Abstraktion der DM-Funktionalität eingeführt. Diese ist agnostisch gegenüber der gewählten Architektur und stellt somit eine Wrapper-Klasse dar. Die \texttt{forward} Funktion dieses Wrappers ist in Abbildung \ref{fig:DM_forward} dargestellt. Diese übernimmt das Embedding des Zeitschrittes sowie der Kontrollsignale und leitet diese anschließend an die gewählte konkrete Implementierung des \ac{DM}s weiter. \\
+\begin{figure}[H]
 \begin{lstlisting}[language=python]
 def forward(self, x, ctrl_signal, t):
     timestep = self.__get_time_embedding(t, 
@@ -214,7 +214,7 @@ def forward(self, x, ctrl_signal, t):
     \captionsetup{type=figure}
     \captionof{figure}{Diffusionsmodell-Wrapper Inferenzfunktion}
     \label{fig:DM_forward}
-\end{figure} \\
+\end{figure}
 Dieses Zusammenspiel der einzelnen Komponenten ist zur Veranschaulichung noch einmal in Abbildung \ref{fig:LDM_arch} dargestellt.
 \begin{figure}[htbp]
     \centering
@@ -339,7 +339,7 @@ def __generate_sketch(model, labels, n, iterations,
 
 \subsection {Unendlich}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \subfloat{%
         \includegraphics[width=0.95\textwidth]{images/implementation/infinite.pdf}
@@ -355,8 +355,8 @@ Die unendliche Generierung erfordert die meiste eigene Logik für die Umsetzung 
     \item \textit{Sinus}: $\alpha(x) = -\sin(\frac{x\pi}{2}) + 1$
 \end{itemize}
 Dabei gilt jeweils, dass $x \in [0,1]$. $x$ ist die relative Position eines Pixels in dem maskierten Randbereich der Länge dieser Überlappung. Ein $\alpha$ von eins bedeutet im Übrigen, dass hier das Maskenbild vollständig übernommen wird - also eine maximale Maskierung. Bei allen anderen Werten wird anhand dieses $\alpha$ linear zwischen generiertem Sample und Maskenbild interpoliert. \\
-Hierauf folgt die Iteration über alle Zellen des Gitters wobei die einzelnen Generationschritte des Chunks ausgelagert werden. Abschließend wird durch das Gitter das finale Bild zusammengefügt. Hierbei ist wichtig, dass die einzelnen Chunks anhand der Generierungsreihenfolge in das Zielbild eingefügt werden, damit die überlappenden Bereiche bündig in einander übergehen. Dies liegt daran, dass natürlich nur die späteren Samples Kenntnis über die bereits generierten Nachbarn haben können, somit also erst bei ihrer Generierung die flüssigen Übergänge der Randbereiche entstehen. 
-\begin{figure}[htbp]
+Hierauf folgt die Iteration über alle Zellen des Gitters wobei die einzelnen Generationschritte des Chunks ausgelagert werden. Abschließend wird durch das Gitter das finale Bild zusammengefügt. Hierbei ist wichtig, dass die einzelnen Chunks anhand der Generierungsreihenfolge in das Zielbild eingefügt werden, damit die überlappenden Bereiche bündig in einander übergehen. Dies liegt daran, dass natürlich nur die späteren Samples Kenntnis über die bereits generierten Nachbarn haben können, somit also erst bei ihrer Generierung die flüssigen Übergänge der Randbereiche entstehen. \\
+\begin{figure}[H]
 \begin{lstlisting}[language=python]
 def __generate_infinite(model, labels, grid_x, grid_y,
     cfg_weight, sketch, alpha)
@@ -375,7 +375,7 @@ def __generate_infinite(model, labels, grid_x, grid_y,
     \captionsetup{type=figure}
     \captionof{figure}{Unendliche Generierung}
     \label{fig:gen_infinite}
-\end{figure} \\
+\end{figure}
 Die einzelnen Chunks werden anhand der Funktion in Abbildung \ref{fig:gen_chunk} synthetisiert. Diese besteht zuerst aus der Erstellung des Maskenbildes und der Maske anhand der bereits generierten benachbarten Zellen und dem Alphavektor. Die hieraus entstehende Maske hat die gleichen Dimensionen wie die Bilder und besteht an ihren Rändern aus den jeweils ausgerichteten Alphavektoren. Das Maskenbild ist lediglich eine Zusammenfügung der Ränder der benachbarten Zellen, wobei der Zwischenraum, also der unmaskierte Bereich, mit einer Skizze aufgefüllt werden kann. Dies soll die Abbildung des Maskenbildes auf die latente Repräsentation unterstützen, da es den sonst sehr unnatürlichen leeren Raum durch plausiblere Daten auffüllt. \\
 Der Prozess der Synthese für jeden Chunk wird hierfür in Abbildung \ref{fig:infinite} veranschaulicht.
 Nach der Synthese des Samples wird dieses ein letztes Mal mit dem Maskenbild interpoliert. Allerdings, geschieht dies nun im Bildbereich anstelle des latenten Raumes. Dies soll durch die Rekonstruktion an den Rändern eventuell entstandene Artefakte entfernen, um die Bündigkeit zu wahren. Abschließend wird der Chunk in das Gitter eingefügt, damit in der nächsten Iteration darauf aufgebaut werden kann.

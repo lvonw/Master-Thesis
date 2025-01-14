@@ -38,8 +38,8 @@ Der finale \ac{VAE} wurde für 167000 Trainingsschritte bei einer Batchgröße v
     \caption{Aufbau des finalen VAEs}
     \label{tab:vae_167k_aufbau}
 \end{table} \\
-Wie sich anhand der in Abbildung \ref{fig:vae_recons} präsentierten Ergebnisse erkennen lässt, ist der finale \ac{VAE} in der Lage, Eingabedaten in Form von \ac{DEM}s überzeugend zu rekonstruieren. Große Strukturen werden durchweg akkurat und mit großer Genaugikeit wiedergegeben. Durch die genutzten Techniken, welche die visuelle Ähnlichkeit verbessern, wie die Nutzung eines Diskriminators und \ac{LPIPS}, werden auch kleine Details abgebildet. Die Qualität der Rekonstruktionen ist hierbei ungeachtet der Art des Terrains oder Wertebereichs des Quellbildes durchgängig so hoch, dass auf den ersten Blick keinerlei Unterschiede zu erkennen sind. 
-\begin{figure}[htbp]
+Wie sich anhand der in Abbildung \ref{fig:vae_recons} präsentierten Ergebnisse erkennen lässt, ist der finale \ac{VAE} in der Lage, Eingabedaten in Form von \ac{DEM}s überzeugend zu rekonstruieren. Große Strukturen werden durchweg akkurat und mit großer Genaugikeit wiedergegeben. Durch die genutzten Techniken, welche die visuelle Ähnlichkeit verbessern, wie die Nutzung eines Diskriminators und \ac{LPIPS}, werden auch kleine Details abgebildet. Die Qualität der Rekonstruktionen ist hierbei ungeachtet der Art des Terrains oder Wertebereichs des Quellbildes durchgängig so hoch, dass auf den ersten Blick keinerlei Unterschiede zu erkennen sind. \\
+\begin{figure}[H]
     \centering
     \subfloat{%
         \includegraphics[width=0.24\textwidth]{images/results/vae/source1.png}
@@ -71,7 +71,7 @@ Wie sich anhand der in Abbildung \ref{fig:vae_recons} präsentierten Ergebnisse 
     
     \caption{Verschiedene Quellbild- und Rekonstruktions-Paare. Links Quellbild, rechts Rekonstruktion}
     \label{fig:vae_recons}
-\end{figure} \\
+\end{figure}
 Bei einer genaueren Betrachtung der kleineren Details lassen sich jedoch vor allem bei \ac{DEM}s mit hoher Varianz in den Werten kleiner Kompressionsartefakte beobachten. Besonders äußert sich dies in der bildlichen Schärfe der kleinen fraktalen Strukturen einer solchen Landschaft. Auch lassen sich auf der Detailebene dieser Terrains kleine punktuelle Artefakte erkennen, welche wahrscheinlich auf die Nutzung des PatchGAN Diskriminators zurückzuführen sind. Abbildung \ref{fig:vae_artefacts} zeigt eine Detailaufnahme eines solchen Bereiches.
 \begin{figure}[htbp]
     \centering
@@ -337,18 +337,22 @@ Durch die \ac{DEM}-basierte Skizzenkontrolle im Vergleich zu Signaturen ist es m
 \begin{figure}[htbp]
     \centering
     \subfloat{%
-        \includegraphics[width=0.32\textwidth]{images/results/sketch/sk_perlin_750s.png}
+        \includegraphics[width=0.40\textwidth]{images/results/sketch/sk_perlin_750s.png}
     }
     \subfloat{%
-        \includegraphics[width=0.32\textwidth]{images/results/sketch/sk_perlin_750.png}
+        \includegraphics[width=0.40\textwidth]{images/results/sketch/sk_perlin_750.png}
     }
+    
+    \vspace{-8pt}
+
     \subfloat{%
-        \includegraphics[width=0.32\textwidth]{images/results/sketch/sk_perlin_750r.png}
+        \includegraphics[width=0.70\textwidth]{images/results/sketch/sk_perlin_750r.png}
     }
     \caption{Skizzenbasiertes Sample mit Perlin-Rauschen als Skizze und Startzeitschritt $t=750$.}
     \label{fig:sketch_perlin}
 \end{figure}
 
+\clearpage
 % quantifizierung
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -418,6 +422,7 @@ Damit dies untersucht werden kann, werden nun weitentfernte Zellen des Rauschens
     \label{fig:disconnected}
 \end{figure}
 
+\clearpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Evaluation

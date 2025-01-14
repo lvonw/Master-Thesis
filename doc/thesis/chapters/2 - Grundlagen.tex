@@ -2,8 +2,9 @@
 \chapter{Grundlagen}
 \label{ch:Grundlagen}
 
-In diesem Kapitel werden die Grundlagen der verwendeten Themen und Technologien --- Begriffe und Sachverhalte --- erläutert, die für das Verständnis der folgenden Arbeit notwendig sind.
-Die Grundlagen werden ohne Bezug auf das konkrete Projekt allgemein dargestellt und dienen dem Verständnis des Hauptteils.
+In diesem Kapitel werden die für das Verständnis dieser Arbeit notwendigen Themen und Technologien - Begriffe und Sachverhalte - erläutert.
+Die Grundlagen werden ohne Bezug auf das konkrete Projekt allgemein dargestellt und dienen dem Verständnis des Hauptteils. \\
+Zuerst wird dabei eine Grundlage der mathematischen Terminologie gelegt. Anschließend wird hierauf aufbauend der Bereich der generativen Künstlichen Intelligenz betrachtet. Zulezt werden Methoden der Terraingenerierung beleuchtet.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mathematics
@@ -143,7 +144,7 @@ Der Vollständigkeit halber sei erwähnt, dass die KL-Divergenz allerdings per D
 
 \section{Generative Künstliche Intelligenz}
 
-Modelle der generativen \ac{KI} versuchen im Allgemeinen die Wahrscheinlichkeitsverteilung der Quelldaten, konventionell auch als Datenverteilung bezeichnet, zu modellieren. Sie unterscheiden sich somit von diskriminierenden Ansätzen, welche lediglich Eigenschaften dieser Verteilung erlernen\footnote{
+Modelle der generativen künstlichen Intelligenz (KI)\acused{KI} versuchen im Allgemeinen die Wahrscheinlichkeitsverteilung der Quelldaten, konventionell auch als Datenverteilung bezeichnet, zu modellieren. Sie unterscheiden sich somit von diskriminierenden Ansätzen, welche lediglich Eigenschaften dieser Verteilung erlernen\footnote{
     Vgl. Banh, Strobel: Generative artificial intelligence, S. 3
     \cite{banh2023generative}
 }.\\
@@ -195,9 +196,9 @@ Das Training eines solchen \ac{AE} ist sehr simpel. Man minimiere lediglich den 
 \end{equation}
 
 % VAE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{Variatonal Autoencoder}
+\subsubsection{Variational Autoencoder}
 
-Eine spezialisierte Variante der \ac{AE} sind sogenannte \ac{VAE}\footnote{
+Eine spezialisierte Variante der \ac{AE} sind sogenannte Variational Autoencoder (\ac{VAE})\footnote{
     Kingma, Welling: Auto-Encoding Variational Bayes
     \cite{kingma2013auto}
 }. Ihre Erweiterung zu \ac{AE} besteht in der Einführung einer Bedingung an den Code. Dieser kann in im ursprünglichen \ac{AE} ein beliebiger Vektor sein, solange er bei der Entschlüsselung von Vorteil ist. Je nach Anwendungsfall kann es allerdings hilfreich sein, wenn der Code selbst auch eine semantisch aussagekräftige Darstellung der Eingabe ist. Dies kann den Code zu einem geringerdimensionalen Substitut für die Ursprungsdaten machen. Hierbei ist allerdings wichtig zu beachten, dass es sich in aller Regel nicht um menschenverständliche Eigenschaften handelt. \\
@@ -508,7 +509,7 @@ Das Training erfolgt dabei pro Zeitschritt, welche üblicherweise für jeden Opt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Denoising Diffusion Probabilistic Models}
 
-Die vorherige Definition von \ac{DM}s im Allgemeinen bietet bereits ein Verständnis für die Leistungsfähigkeit dieser Klasse von Modellen. Das Prinzip des iterativen Erkennens von Strukturen in Rauschen ist bereits intuitiv leicht zu greifen. Eine besondere Formulierung von \ac{DM}s - \ac{DDPM}s\footnote{
+Die vorherige Definition von \ac{DM}s im Allgemeinen bietet bereits ein Verständnis für die Leistungsfähigkeit dieser Klasse von Modellen. Das Prinzip des iterativen Erkennens von Strukturen in Rauschen ist bereits intuitiv leicht zu greifen. Eine besondere Formulierung von \ac{DM}s - Denoising Diffusion Probabilistic Models (DDPM)\acused {DDPM}\footnote{
     Ho, Jain, Abbeel: Denoising Diffusion Probabilistic Models
     \cite{ho2020denoisingdiffusionprobabilisticmodels}
 } - untermauert die Notwendigkeit des Verrauschens noch deutlicher. \\
