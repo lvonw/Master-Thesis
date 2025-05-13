@@ -1,7 +1,7 @@
 import  os
 from    osgeo   import gdal
 from    tqdm    import tqdm
-import numpy    as np
+import  numpy    as np
 
 NEW_WIDTH   = 64
 NEW_HEIGHT  = 64
