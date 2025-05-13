@@ -2,8 +2,6 @@
 
 Terrain Generation using diffusion models
 
-Leopold von Wendt
-
 
 ## Datasets
 
